@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ClinData - Prototipo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <h1>ClinData</h1>
+        <span>Sistema de Expediente Clínico</span>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="container">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <button onclick="navigate('patients')">Pacientes</button>
+            <button onclick="navigate('newPatient')">Nuevo Paciente</button>
+            <button onclick="navigate('medicalRecord')">Expediente</button>
+        </aside>
+
+        <!-- CONTENIDO DINÁMICO -->
+        <main id="app">
+
+            <!-- FORMULARIO INICIAL -->
+            <section id="newPatientSection" class="section active">
+                <h2>Registro de Paciente</h2>
+
+                <form id="patientForm">
+                    <input type="text" id="name" placeholder="Nombre completo" required>
+                    <input type="number" id="age" placeholder="Edad" required>
+                    
+                    <select id="sex" required>
+                        <option value="">Sexo</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Femenino">Femenino</option>
+                    </select>
+
+                    <input type="text" id="address" placeholder="Domicilio" required>
+
+                    <button type="submit">Guardar</button>
+                </form>
+            </section>
+
+            <!-- LISTA DE PACIENTES -->
+            <section id="patientsSection" class="section">
+                <h2>Pacientes</h2>
+                <input type="text" id="search" placeholder="Buscar paciente...">
+                <div id="patientList"></div>
+            </section>
+
+            <!-- EXPEDIENTE (placeholder) -->
+            <section id="medicalRecordSection" class="section">
+                <h2>Expediente Clínico</h2>
+                <p>Selecciona un paciente para comenzar.</p>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

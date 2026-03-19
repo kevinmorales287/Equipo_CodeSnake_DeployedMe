@@ -1,0 +1,79 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+}
+
+/* NAVBAR */
+.navbar {
+    background-color: #1e293b;
+    color: white;
+    padding: 15px;
+}
+
+/* LAYOUT */
+.container {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 200px;
+    background-color: #0f172a;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar button {
+    margin: 5px 0;
+    padding: 10px;
+    border: none;
+    background-color: #1e293b;
+    color: white;
+    cursor: pointer;
+}
+
+.sidebar button:hover {
+    background-color: #334155;
+}
+
+/* MAIN */
+main {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* SECCIONES */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* FORMULARIOS */
+form {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+}
+
+input, select, button {
+    margin: 8px 0;
+    padding: 10px;
+}
+
+button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
