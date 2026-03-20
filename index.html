@@ -56,7 +56,29 @@
             <!-- EXPEDIENTE (placeholder) -->
             <section id="medicalRecordSection" class="section">
                 <h2>Expediente Clínico</h2>
-                <p>Selecciona un paciente para comenzar.</p>
+
+                <h3 id="patientName"></h3>
+
+                <form id="recordForm">
+
+                    <textarea id="interrogatorio" placeholder="Interrogatorio"></textarea>
+
+                    <textarea id="antecedentes" placeholder="Antecedentes"></textarea>
+
+                    <textarea id="padecimiento" placeholder="Padecimiento actual"></textarea>
+
+                    <textarea id="exploracion" placeholder="Exploración física"></textarea>
+
+                    <textarea id="diagnostico" placeholder="Diagnóstico"></textarea>
+                    <div id="suggestionsBox" class="suggestions-box"></div> <!-- Caja de sugerencias -->
+                    <div id="diagnosticoPreview" class="preview-box"></div> <!-- Abreviaturas -->
+
+                    <textarea id="tratamiento" placeholder="Tratamiento"></textarea>
+
+                    <button type="submit">Guardar expediente</button>
+                </form>
+                <button onclick="exportPDF('patient')">Exportar PDF (Paciente)</button>
+                <button onclick="exportPDF('doctor')">Exportar PDF (Médico)</button>
             </section>
 
         </main>
@@ -64,5 +86,6 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
