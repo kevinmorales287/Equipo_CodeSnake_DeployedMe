@@ -97,20 +97,12 @@ function bootApp() {
     document.getElementById("userAvatar").textContent = currentUser.displayName.charAt(0).toUpperCase();
     renderSidebar();
 
-    // Registrar el estado base en el historial (entrada 0 tras login)
-    // para que el botón Atrás funcione desde la primera sección
-    const homeSection = currentUser.role === "admin" ? "admin"
+    // Determinar la sección inicial según el rol
+    const homeSection = currentUser.role === "admin"  ? "admin"
                       : currentUser.role === "medico" ? "consultQueue"
                       : "patients";
 
-    // replaceState en la raíz para que la primera entrada del historial
-    // sea la home del rol (no la URL base en blanco)
-    history.replaceState(
-        { section: homeSection, patientId: null, consultationId: null, tab: "historia" },
-        document.title,
-        window.location.pathname === "/" ? window.location.pathname : window.location.pathname
-    );
-
+    // Navegar con hash (funciona en file:// y http://)
     navigate(homeSection);
 }
 
@@ -123,8 +115,8 @@ function handleLogout() {
     document.getElementById("loginUser").value = "";
     document.getElementById("loginPass").value = "";
     document.getElementById("loginError").classList.add("hidden");
-    // Volver a la raíz para que el historial no mantenga rutas autenticadas
-    history.replaceState(null, "ClinData", "/");
+    // Limpiar el hash para que el historial no mantenga rutas autenticadas
+    window.location.hash = "";
     document.title = "ClinData — Sistema de Expediente Clínico";
 }
 
@@ -147,43 +139,40 @@ window.addEventListener("DOMContentLoaded", () => {
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
 });
 
-// Listener del botón Atrás / Adelante del navegador
-window.addEventListener("popstate", (e) => {
-    // Si no hay sesión activa, mostrar login
+// =============================================
+//  LISTENER HASHCHANGE — Botón Atrás/Adelante
+// =============================================
+window.addEventListener("hashchange", () => {
+    // Si el cambio de hash lo hizo navigate(), no hacer nada doble
+    if (_navigating) return;
+
+    // Si no hay sesión activa, volver al login
     if (!currentUser) {
         document.getElementById("appShell").classList.add("hidden");
         document.getElementById("loginScreen").classList.remove("hidden");
+        window.location.hash = "";
         return;
     }
 
-    const state = e.state;
-    if (!state || !state.section) {
-        // Sin estado: ir al home del rol
-        const homeSection = currentUser.role === "admin"   ? "admin"
-                          : currentUser.role === "medico"  ? "consultQueue"
+    const hash    = window.location.hash || "";
+    const section = HASH_TO_SECTION[hash];
+
+    if (!section) {
+        // Hash desconocido → home del rol
+        const homeSection = currentUser.role === "admin"  ? "admin"
+                          : currentUser.role === "medico" ? "consultQueue"
                           : "patients";
         _activateSection(homeSection);
         return;
     }
 
     // Auto-guardar expediente si se estaba editando
-    if (state.section !== "medicalRecord" && currentConsultation && can("canWriteMedicalNotes")) {
+    if (section !== "medicalRecord" && currentConsultation && can("canWriteMedicalNotes")) {
         collectRecordFieldsSafe();
     }
 
-    // Restaurar entidades desde el estado guardado
-    if (state.patientId) {
-        currentPatient = patients.find(p => p.id === state.patientId) || null;
-    }
-    if (state.consultationId) {
-        currentConsultation = consultations.find(c => c.id === state.consultationId) || null;
-    }
-    if (state.tab) currentTab = state.tab;
-
-    document.title = state.title || "ClinData";
-
-    // Activar sección sin nuevo pushState
-    _activateSection(state.section);
+    document.title = ROUTE_TITLE[section] || "ClinData";
+    _activateSection(section);
 });
 
 // =============================================
@@ -220,55 +209,69 @@ function renderSidebar() {
 //  NAVEGACIÓN
 // =============================================
 // =============================================
-//  NAVEGACIÓN CON HISTORY API
+//  ROUTER DE HASH — compatible con file:// y http://
+//  Usa window.location.hash (#/patients, #/queue…)
+//  para que el botón Atrás funcione sin servidor.
 // =============================================
 
+const HASH_MAP = {
+    patients:            "#/patients",
+    newPatient:          "#/patients/new",
+    consultQueue:        "#/queue",
+    consultationHistory: "#/patient/history",
+    medicalRecord:       "#/patient/record",
+    triage:              "#/triage",
+    triageList:          "#/triage/queue",
+    admin:               "#/admin",
+};
+
+const HASH_TO_SECTION = {
+    "#/patients":        "patients",
+    "#/patients/new":    "newPatient",
+    "#/queue":           "consultQueue",
+    "#/patient/history": "consultationHistory",
+    "#/patient/record":  "medicalRecord",
+    "#/triage":          "triage",
+    "#/triage/queue":    "triageList",
+    "#/admin":           "admin",
+};
+
+const ROUTE_TITLE = {
+    patients:            "Pacientes · ClinData",
+    newPatient:          "Nuevo Paciente · ClinData",
+    consultQueue:        "Cola de Consulta · ClinData",
+    consultationHistory: "Expediente · ClinData",
+    medicalRecord:       "Consulta · ClinData",
+    triage:              "Triage · ClinData",
+    triageList:          "Cola de Urgencias · ClinData",
+    admin:               "Administración · ClinData",
+};
+
 // navigate() — punto de entrada público.
-// Empuja una nueva entrada en el historial y activa la sección.
+// Cambia el hash y activa la sección. El cambio de hash
+// dispara hashchange, pero lo ignoramos si viene de aquí
+// usando la bandera _navigating.
+let _navigating = false;
+
 function navigate(section) {
-    // Auto-guardar campos del expediente si se estaba en esa vista
+    // Auto-guardar expediente al salir de esa vista
     if (section !== "medicalRecord" && currentConsultation && can("canWriteMedicalNotes")) {
         collectRecordFieldsSafe();
     }
 
-    const sectionPath = {
-        patients:            "/patients",
-        newPatient:          "/patients/new",
-        consultQueue:        "/queue",
-        consultationHistory: "/patient/history",
-        medicalRecord:       "/patient/record",
-        triage:              "/triage",
-        triageList:          "/triage/queue",
-        admin:               "/admin",
-    };
-    const routeTitle = {
-        patients:            "Pacientes · ClinData",
-        newPatient:          "Nuevo Paciente · ClinData",
-        consultQueue:        "Cola de Consulta · ClinData",
-        consultationHistory: "Expediente · ClinData",
-        medicalRecord:       "Consulta · ClinData",
-        triage:              "Triage · ClinData",
-        triageList:          "Cola de Urgencias · ClinData",
-        admin:               "Administración · ClinData",
-    };
+    const hash  = HASH_MAP[section] || "#/patients";
+    const title = ROUTE_TITLE[section] || "ClinData";
 
-    const urlPath = sectionPath[section] || "/";
-    const title   = routeTitle[section]  || "ClinData";
-    const state   = {
-        section,
-        patientId:      currentPatient?.id      ?? null,
-        consultationId: currentConsultation?.id ?? null,
-        tab:            currentTab              ?? "historia",
-    };
+    _navigating = true;
+    window.location.hash = hash;
+    _navigating = false;
 
-    history.pushState(state, title, urlPath);
     document.title = title;
-
     _activateSection(section);
 }
 
-// _activateSection() — lógica interna de activación de sección,
-// usada tanto por navigate() como por el listener popstate.
+// _activateSection() — lógica visual pura, sin tocar el hash.
+// La llaman navigate() y el listener hashchange.
 function _activateSection(section) {
     const map = {
         patients:            "patientsSection",
@@ -311,18 +314,9 @@ function _activateSection(section) {
     if (section === "triage" && typeof abrevInit === "function") abrevInit();
 }
 
-// Versión segura de collectRecordFields que no lanza errores
-// si los elementos aún no están en el DOM
+// Versión segura de collectRecordFields (no lanza si el DOM no está listo)
 function collectRecordFieldsSafe() {
     try { collectRecordFields(); saveConsultations(); } catch(e) { /* silencioso */ }
-}
-
-// Navegar a la pantalla raíz según el rol del usuario
-function navigateToRoleHome() {
-    if (!currentUser) return;
-    if (currentUser.role === "admin")   navigate("admin");
-    else if (currentUser.role === "medico") navigate("consultQueue");
-    else navigate("patients");
 }
 
 // =============================================
