@@ -395,38 +395,161 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 ::-webkit-scrollbar-thumb{background:var(--border-medium);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
 
-<<<<<<< HEAD
 /* RESPONSIVE */
 @media(max-width:900px){.triage-form-grid{grid-template-columns:1fr;}.symptoms-grid{grid-template-columns:1fr 1fr;}.patient-stats{display:none;}.brand-tagline{display:none;}.pfc-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:640px){main{padding:16px;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:1;}.sidebar{width:56px;}.nav-item span{display:none;}.nav-item{justify-content:center;}}
-=======
-/* ===== NUEVO EXPEDIENTE: SECCIONES CON RECUADROS ===== */
-.rec-seccion{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
-.rec-sec-header{padding:11px 16px;background:var(--bg-surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
-.rec-sec-title{font-size:13px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:8px;}
-.rec-chev{font-size:11px;color:var(--text-muted);transition:transform .2s;display:inline-block;}
-.rec-chev.rc-open{transform:rotate(180deg);}
-.rec-subsec{border-bottom:1px solid var(--border);}
-.rec-subsec:last-child{border-bottom:none;}
-.rec-sub-header{padding:8px 16px 8px 28px;background:var(--bg-surface-2);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
-.rec-sub-body{padding:14px 16px 16px 28px;display:flex;flex-direction:column;gap:10px;}
-.rec-field{display:flex;flex-direction:column;gap:4px;}
-.rec-field label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;}
-.rec-field input[type="text"],.rec-field input[type="number"]{width:100%;border:1px solid var(--border-medium);border-radius:var(--radius);padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);background:var(--bg-surface);outline:none;text-transform:uppercase;height:34px;}
-.rec-field input[type="text"]:focus,.rec-field input[type="number"]:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
-.rec-field input[type="text"]:disabled,.rec-field input[type="number"]:disabled{background:var(--bg-surface-2);color:var(--text-secondary);cursor:not-allowed;}
-.rec-field textarea{width:100%;border:1px solid var(--border-medium);border-radius:var(--radius);padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);background:var(--bg-surface);outline:none;text-transform:uppercase;resize:vertical;min-height:58px;line-height:1.5;}
-.rec-field textarea:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
-.rec-field textarea:disabled{background:var(--bg-surface-2);color:var(--text-secondary);cursor:not-allowed;}
-.rec-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.rec-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-.rec-aparatos{display:grid!important;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 16px 28px!important;}
-.rec-vitales{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-.rec-vital{background:var(--bg-surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;text-align:center;}
-.rec-vital span{display:block;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.rec-vital input{width:100%;border:none;background:transparent;text-align:center;font-size:15px;font-weight:600;color:var(--text-primary);outline:none;font-family:var(--font);}
+/* =============================================
+   ClinData — Estilos NOM-004-SSA3-2012 v3
+   Expediente Clínico Electrónico
+   ============================================= */
 
-/* RESPONSIVE */
-@media(max-width:900px){.triage-form-grid{grid-template-columns:1fr;}.symptoms-grid{grid-template-columns:1fr 1fr;}.patient-stats{display:none;}.brand-tagline{display:none;}.pfc-grid{grid-template-columns:1fr 1fr;}.rec-grid2{grid-template-columns:1fr;}.rec-grid3{grid-template-columns:1fr 1fr;}.rec-aparatos{grid-template-columns:1fr!important;}.rec-vitales{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){main{padding:16px;}.form-grid{grid-template-columns:1fr;}.form-group.full{grid-column:1;}.sidebar{width:56px;}.nav-item span{display:none;}.nav-item{justify-content:center;}.rec-grid3{grid-template-columns:1fr;}.rec-vitales{grid-template-columns:repeat(2,1fr);}}
->>>>>>> ExperimentalBranch_AzulGonzález
+/* ===== ETIQUETA NOM ===== */
+.nom-section-label{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;padding:14px 0 10px;border-bottom:2px solid var(--brand-light);margin-bottom:16px;}
+.nom-tag{margin-left:auto;background:#eff6ff;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;border:1px solid #bfdbfe;}
+
+/* ===== TABS DEL EXPEDIENTE ===== */
+.record-tabs{display:flex;gap:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;margin-bottom:0;box-shadow:var(--shadow-sm);}
+.record-tab{flex:1;padding:11px 16px;background:var(--bg-surface-2);border:none;border-right:1px solid var(--border);border-bottom:2px solid transparent;font-size:13px;font-weight:500;font-family:var(--font);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;white-space:nowrap;}
+.record-tab:last-child{border-right:none;}
+.record-tab:hover{background:var(--bg-surface);color:var(--text-primary);}
+.record-tab.active{background:var(--bg-surface);color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.record-tab-content{display:none;}
+.record-tab-content.active{display:flex;flex-direction:column;gap:14px;}
+
+/* ===== BLOQUES DEL EXPEDIENTE ===== */
+.record-block{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+.record-block-header{display:flex;align-items:center;gap:14px;padding:14px 20px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);}
+.record-block-icon{font-size:22px;flex-shrink:0;}
+.record-block-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+.record-block-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--mono);}
+.record-block-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+/* ===== SECCIONES DENTRO DE BLOQUES ===== */
+.record-section-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.record-section-title{padding:9px 16px;background:var(--bg-surface-2);border-bottom:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.record-section-card textarea{width:100%;border:none;outline:none;padding:12px 16px;font-size:13px;font-family:var(--font);color:var(--text-primary);resize:vertical;min-height:80px;background:transparent;line-height:1.6;}
+.record-section-card textarea:disabled{background:var(--bg-surface-2);color:var(--text-secondary);cursor:not-allowed;}
+.record-section-card input[type="text"]:not(.apnp-detail):not(.med-input):not(.sistema-item input):not(.segmento-item input){width:calc(100% - 32px);margin:0 16px 12px;border:1px solid var(--border-medium);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;}
+.record-section-card input[type="text"]:focus,.record-section-card input[type="number"]:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== APNP — GRID ===== */
+.apnp-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:14px 16px 0;border-bottom:1px solid var(--border);}
+.apnp-item{padding:10px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.apnp-item:nth-child(even){border-right:none;}
+.apnp-item:nth-last-child(-n+2){border-bottom:none;}
+.apnp-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px;}
+.apnp-radios{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+.apnp-radios label{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--text-secondary);cursor:pointer;}
+.apnp-radios input[type="radio"]{accent-color:var(--accent);cursor:pointer;}
+.apnp-detail{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;font-size:12px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;background:var(--bg-surface-2);}
+.apnp-detail:focus{border-color:var(--brand);background:var(--bg-surface);}
+
+/* ===== APP — GRID ===== */
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.app-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.app-grid textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.app-grid textarea:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== PADECIMIENTO ACTUAL ===== */
+.padecimiento-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.padecimiento-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.padecimiento-grid .full-col{grid-column:1/-1;}
+.padecimiento-grid textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.padecimiento-grid textarea:focus{border-color:var(--brand);}
+
+/* ===== REVISIÓN POR SISTEMAS ===== */
+.sistemas-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.sistema-item{display:flex;flex-direction:column;gap:4px;}
+.sistema-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px;}
+.sistema-item input{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12.5px;font-family:var(--font);outline:none;color:var(--text-primary);transition:border-color .15s;}
+.sistema-item input:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== SIGNOS VITALES ===== */
+.vitales-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 16px;}
+.vitales-grid.compact{grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 14px;}
+.vital-item{display:flex;flex-direction:column;gap:5px;}
+.vital-item label{font-size:11px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.3px;}
+.vital-unit{font-size:10px;color:var(--text-muted);font-weight:400;text-transform:none;}
+.vital-item input{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13.5px;font-family:var(--mono);font-weight:500;color:var(--text-primary);outline:none;text-align:center;transition:border-color .15s,box-shadow .15s;}
+.vital-item input:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.12);}
+.vital-item input:disabled{background:var(--bg-surface-2);cursor:not-allowed;}
+.imc-field{background:var(--bg-surface-2)!important;font-size:11.5px!important;font-weight:600;color:var(--accent)!important;}
+
+/* ===== EXPLORACIÓN POR SEGMENTOS ===== */
+.exploracion-segmentos{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.segmento-item{display:flex;flex-direction:column;gap:5px;}
+.segmento-item.full-col{grid-column:1/-1;}
+.segmento-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px;}
+.segmento-item textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.segmento-item textarea:focus{border-color:var(--brand);}
+
+/* ===== DIAGNÓSTICO ===== */
+.diagnostico-tipos{display:flex;flex-direction:column;gap:12px;padding:14px 16px;}
+.diagnostico-tipos .form-group{display:flex;flex-direction:column;gap:6px;}
+.diagnostico-tipos textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);resize:vertical;min-height:70px;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.diagnostico-tipos textarea:focus{border-color:var(--brand);}
+
+/* ===== PRONÓSTICO ===== */
+.pronostico-wrap{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.pronostico-radios,.destino-radios{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+.pronostico-opt{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border-medium);border-radius:20px;font-size:12.5px;color:var(--text-secondary);cursor:pointer;transition:all .12s;font-family:var(--font);}
+.pronostico-opt:hover{border-color:var(--accent);color:var(--accent);}
+.pronostico-opt input[type="radio"]{display:none;}
+.pronostico-opt:has(input:checked){border-color:var(--accent);background:var(--brand-light);color:var(--accent);font-weight:600;}
+.opt-bueno:has(input:checked){border-color:#16a34a;background:#f0fdf4;color:#15803d;}
+.opt-reservado:has(input:checked){border-color:#d97706;background:#fffbeb;color:#b45309;}
+.opt-grave:has(input:checked){border-color:#ea580c;background:#fff7ed;color:#c2410c;}
+.opt-critico:has(input:checked){border-color:#dc2626;background:#fef2f2;color:#b91c1c;}
+.pronostico-wrap textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);}
+.pronostico-wrap textarea:focus{border-color:var(--brand);}
+
+/* ===== MEDICAMENTOS ===== */
+.btn-add-med{margin-left:auto;background:#f0fdf4;border:1px solid #86efac;color:#15803d;border-radius:var(--radius);padding:5px 11px;font-size:11.5px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap;}
+.btn-add-med:hover{background:#dcfce7;border-color:#4ade80;}
+.medicamentos-list{padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+.med-empty{font-size:12.5px;color:var(--text-muted);font-style:italic;text-align:center;padding:16px 0;}
+.med-row{display:flex;align-items:flex-start;gap:10px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.med-num{width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:6px;}
+.med-fields{flex:1;display:grid;grid-template-columns:1fr .8fr .5fr .4fr .5fr .5fr;gap:6px;}
+.med-input{border:1px solid var(--border);border-radius:var(--radius);padding:7px 8px;font-size:12.5px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;width:100%;}
+.med-input:focus{border-color:var(--brand);}
+.med-delete{background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:6px;cursor:pointer;color:var(--text-muted);transition:all .12s;flex-shrink:0;margin-top:2px;}
+.med-delete:hover{color:var(--error);background:#fef2f2;border-color:#fca5a5;}
+.tratamiento-libre-wrap{}
+.tratamiento-libre-wrap textarea{min-height:70px;}
+
+/* ===== INDICACIONES ===== */
+.indicaciones-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.indicaciones-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.indicaciones-grid input{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;}
+.indicaciones-grid input:focus{border-color:var(--brand);}
+
+/* ===== TIPO DE NOTA BADGE ===== */
+.tipo-nota-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;margin-bottom:2px;}
+
+/* ===== FORM-GROUPS WITHIN RECORD BLOCKS ===== */
+.form-group .apnp-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+
+/* ===== RESPONSIVE RECORD ===== */
+@media(max-width:1100px){
+    .vitales-grid{grid-template-columns:repeat(3,1fr);}
+    .vitales-grid.compact{grid-template-columns:repeat(4,1fr);}
+    .med-fields{grid-template-columns:1fr .7fr .5fr .5fr;}.med-input.med-freq,.med-input.med-dur{display:none;}
+}
+@media(max-width:900px){
+    .apnp-grid{grid-template-columns:1fr;}
+    .apnp-item{border-right:none;}
+    .apnp-item:nth-child(even){border-right:none;}
+    .app-grid{grid-template-columns:1fr;}
+    .padecimiento-grid{grid-template-columns:1fr;}
+    .padecimiento-grid .full-col{grid-column:1;}
+    .sistemas-grid{grid-template-columns:1fr;}
+    .vitales-grid{grid-template-columns:repeat(2,1fr);}
+    .vitales-grid.compact{grid-template-columns:repeat(3,1fr);}
+    .exploracion-segmentos{grid-template-columns:1fr;}
+    .segmento-item.full-col{grid-column:1;}
+    .indicaciones-grid{grid-template-columns:1fr;}
+    .med-fields{grid-template-columns:1fr .7fr;}.med-input.med-conc,.med-input.med-dosis,.med-input.med-via,.med-input.med-freq,.med-input.med-dur{display:none;}
+    .record-tab{font-size:11.5px;padding:9px 10px;gap:4px;}
+    .diagnostico-tipos{gap:8px;}
+}

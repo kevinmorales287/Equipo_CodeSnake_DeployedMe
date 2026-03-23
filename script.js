@@ -1,6 +1,7 @@
 // =============================================
-//  ClinData — script.js  v2
+//  ClinData — script.js  v3
 //  Sistema de Expediente Clínico Electrónico
+//  NOM-004-SSA3-2012
 // =============================================
 
 // ===== PERMISOS POR ROL =====
@@ -55,6 +56,7 @@ let currentPatient      = null;
 let currentConsultation = null;
 let autoSaveTimer       = null;
 let addToQueuePatientId = null;
+let currentTab          = "historia";
 
 // ===== DATOS PERSISTENTES =====
 let patients      = JSON.parse(localStorage.getItem("cd_patients"))  || [];
@@ -94,7 +96,6 @@ function bootApp() {
     document.getElementById("userRoleBadge").textContent = labels[currentUser.role] || currentUser.role;
     document.getElementById("userAvatar").textContent = currentUser.displayName.charAt(0).toUpperCase();
     renderSidebar();
-    // Primera pantalla según rol
     if (currentUser.role === "admin") navigate("admin");
     else if (currentUser.role === "medico") navigate("consultQueue");
     else navigate("patients");
@@ -120,7 +121,6 @@ window.addEventListener("DOMContentLoaded", () => {
     const saved = sessionStorage.getItem("cd_session");
     if (saved) {
         currentUser = JSON.parse(saved);
-        // Re-sync user from storage in case it was updated
         const fresh = systemUsers.find(u => u.id === currentUser.id);
         if (fresh) currentUser = fresh;
         bootApp();
@@ -138,7 +138,6 @@ function renderSidebar() {
     const nav = document.getElementById("sidebarNav");
     if (!nav) return;
     const items = [];
-
     if (can("canViewPatients")) {
         items.push({ id: "nav-patients", section: "patients", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, label: "Pacientes" });
     }
@@ -155,7 +154,6 @@ function renderSidebar() {
     if (can("canManageUsers")) {
         items.push({ id: "nav-admin", section: "admin", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`, label: "Gestión de Usuarios" });
     }
-
     nav.innerHTML = items.map(item => `
         <button class="nav-item" onclick="navigate('${item.section}')" id="${item.id}" data-section="${item.section}">
             ${item.icon}
@@ -203,6 +201,24 @@ function navigate(section) {
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
     if (section === "medicalRecord")       setupRecordActions();
+    if (section === "triage" && typeof abrevInit === "function") abrevInit();
+}
+
+// =============================================
+//  TABS DE TIPO DE NOTA
+// =============================================
+function switchRecordTab(tabName, btn) {
+    currentTab = tabName;
+    document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
+    const tabEl = document.getElementById("tab-" + tabName);
+    if (tabEl) tabEl.classList.add("active");
+    if (btn) btn.classList.add("active");
+    // Store tab selection in consultation
+    if (currentConsultation) {
+        currentConsultation.tipoNota = tabName;
+        saveConsultations();
+    }
 }
 
 // =============================================
@@ -215,22 +231,31 @@ function submitPatient() {
     const address = document.getElementById("address").value.trim();
     const phone  = document.getElementById("phone").value.trim();
     const dob    = document.getElementById("dob").value;
+    const email  = document.getElementById("email")?.value.trim() || "";
+    const occupation = document.getElementById("occupation")?.value.trim() || "";
+    const emergencyContact = document.getElementById("emergencyContact")?.value.trim() || "";
+    const ethnicGroup = document.getElementById("ethnicGroup")?.value.trim() || "";
     const allergies = document.getElementById("allergies").value.trim();
+    const chronicConditions = document.getElementById("chronicConditions")?.value.trim() || "";
     const reason = document.getElementById("consultReason").value.trim();
 
     if (!name || !age || !sex || !address || !reason) {
         showToast("Completa los campos obligatorios (nombre, edad, sexo, domicilio, motivo).", "error"); return;
     }
 
-    const patient = { id: Date.now(), name, age, sex, address, phone, dob, allergies, alerts: "", currentTreatment: "", createdAt: new Date().toISOString(), createdBy: currentUser?.username };
+    const patient = {
+        id: Date.now(), name, age, sex, address, phone, dob, email, occupation,
+        emergencyContact, ethnicGroup, allergies, chronicConditions,
+        alerts: "", currentTreatment: "",
+        createdAt: new Date().toISOString(), createdBy: currentUser?.username
+    };
     patients.push(patient);
     savePatients();
 
-    // Add to consult queue immediately
     addPatientToQueue(patient.id, reason, true);
     showToast("Paciente registrado y agregado a la cola de consulta.", "success");
 
-    ["name","age","sex","address","phone","dob","allergies","consultReason"].forEach(id => {
+    ["name","age","sex","address","phone","dob","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = "";
     });
     navigate("consultQueue");
@@ -241,7 +266,6 @@ function renderPatients(customList = null) {
     if (!container) return;
     const list = customList !== null ? customList : patients;
 
-    // Header actions
     const ha = document.getElementById("patientsHeaderActions");
     if (ha) {
         ha.innerHTML = can("canRegisterPatients") ? `<button class="btn-primary" onclick="navigate('newPatient')">
@@ -314,7 +338,6 @@ function renderConsultQueue() {
     const container = document.getElementById("consultQueue");
     if (!container) return;
 
-    // Actions
     const actEl = document.getElementById("consultQueueActions");
     if (actEl && can("canAddToQueue")) {
         actEl.innerHTML = `<button class="btn-secondary" onclick="navigate('patients')">
@@ -362,16 +385,46 @@ function attendFromQueue(queueId) {
 
     currentPatient = p;
 
-    // Create new consultation
     const consult = {
         id: Date.now(), patientId: p.id,
         date: new Date().toISOString(),
         createdBy: currentUser?.displayName || "Sistema",
         queueReason: qEntry.reason,
         isNewPatient: qEntry.isNewPatient,
-        interrogatorio: "", antecedentes: "", padecimiento: "",
-        exploracion: "", diagnostico: "", tratamiento: "",
-        notaImportante: "",
+        tipoNota: "historia",
+        // Campos NOM-004 — Historia Clínica
+        ahf: "", apnp_otros: "",
+        app_enfermedades: "", app_cirugias: "", app_traumatismos: "",
+        app_alergias: "", app_transfusiones: "", app_medicamentos: "",
+        padecimiento_inicio: "", padecimiento_sintomas: "",
+        sis_cardiovascular: "", sis_respiratorio: "", sis_digestivo: "",
+        sis_neurologico: "", sis_urinario: "", sis_musculoesqueletico: "",
+        sis_piel: "", sis_endocrino: "", sis_genitoreproductivo: "", sis_psiquiatrico: "",
+        // Signos vitales
+        sv_tas: "", sv_tad: "", sv_fc: "", sv_fr: "", sv_temp: "",
+        sv_spo2: "", sv_glucemia: "", sv_peso: "", sv_talla: "", sv_dolor: "", sv_habitus: "",
+        // Exploración por segmentos
+        exp_cabeza: "", exp_torax: "", exp_abdomen: "",
+        exp_extremidades: "", exp_neurologico: "", exp_genitourinario: "", exp_otros: "",
+        // Estudios
+        estudios_previos: "", estudios_imagen: "", estudios_solicitados: "",
+        // Diagnóstico y pronóstico
+        diagnostico: "", diagnostico_secundario: "", pronostico_detalle: "",
+        // Tratamiento
+        tratamiento: "", indicaciones_reposo: "", indicaciones_dieta: "",
+        indicaciones_cita: "", indicaciones_referencia: "",
+        medicamentos: [],
+        // Nota evolución
+        evolucion_clinica: "", evol_ta: "", evol_fc: "", evol_fr: "",
+        evol_temp: "", evol_spo2: "", evol_peso: "",
+        evolucion_resultados: "", evolucion_diagnostico: "", evolucion_tratamiento: "",
+        // Urgencias
+        urg_tas: "", urg_tad: "", urg_fc: "", urg_fr: "", urg_temp: "",
+        urg_spo2: "", urg_glucemia: "", urg_glasgow: "",
+        urg_motivo: "", urg_exploracion: "", urg_estudios: "",
+        urg_diagnostico: "", urg_tratamiento: "",
+        // Comunes
+        notaImportante: "", evolucion_nota: "",
         triageLevel: null, triageData: null,
         status: "active",
         attachments: []
@@ -380,7 +433,6 @@ function attendFromQueue(queueId) {
     saveConsultations();
     currentConsultation = consult;
 
-    // Mark queue entry as attended
     qEntry.status = "attended";
     saveConsultQueue();
 
@@ -407,7 +459,6 @@ function renderConsultationHistory() {
     document.getElementById("historyPatientName").textContent = currentPatient.name;
     document.getElementById("historyPatientInfo").textContent = `${currentPatient.age} años · ${currentPatient.sex}`;
 
-    // Header actions
     const ha = document.getElementById("historyHeaderActions");
     if (ha) {
         let btns = "";
@@ -416,7 +467,6 @@ function renderConsultationHistory() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Nueva consulta</button>`;
         }
-        // Both roles can edit patient data
         btns += `<button class="btn-secondary" onclick="openEditPatientModal()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Editar datos</button>`;
@@ -438,6 +488,7 @@ function renderConsultationHistory() {
         </div>`; return;
     }
 
+    const tipoLabels = { historia: "Historia Clínica", evolucion: "Nota de Evolución", urgencias: "Nota de Urgencias" };
     container.innerHTML = sorted.map((c, idx) => {
         const num = sorted.length - idx;
         const diagPreview = c.diagnostico ? c.diagnostico.substring(0,90)+(c.diagnostico.length>90?"...":"") : "Sin diagnóstico registrado";
@@ -447,11 +498,13 @@ function renderConsultationHistory() {
         const statusBadge = c.status === "closed" ? `<span class="status-closed">Atendido</span>` : `<span class="status-active">Activo</span>`;
         const attachCount = (c.attachments||[]).length;
         const attachBadge = attachCount > 0 ? `<span class="attach-count-badge">📎 ${attachCount}</span>` : "";
+        const tipoLabel = tipoLabels[c.tipoNota] || "Historia Clínica";
+        const tipoBadge = `<span class="tipo-nota-badge">${tipoLabel}</span>`;
         return `<div class="consult-card" onclick="openConsultation(${c.id})">
             <div class="consult-card-left">
                 <div class="consult-number">Consulta ${num}</div>
                 <div class="consult-date">${formatDateFull(c.date)}</div>
-                ${triageBadge}${isNew}${statusBadge}${attachBadge}
+                ${tipoBadge}${triageBadge}${isNew}${statusBadge}${attachBadge}
             </div>
             <div class="consult-card-body">
                 <div class="consult-field"><span class="consult-field-label">Diagnóstico</span><span class="consult-field-value">${diagPreview}</span></div>
@@ -471,11 +524,10 @@ function renderPatientFullCard() {
     const p = currentPatient;
     const patientConsults = consultations.filter(c => c.patientId === p.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const lastConsult = patientConsults[0];
-    const prevConsult = patientConsults[1]; // For nota importante
 
     const lastDx = lastConsult?.diagnostico ? lastConsult.diagnostico.substring(0,100)+"..." : "Sin diagnóstico previo";
     const currentTx = p.currentTreatment || lastConsult?.tratamiento || "Sin tratamiento registrado";
-    const notaImp = lastConsult?.notaImportante || null;
+    const notaImp = lastConsult?.notaImportante || lastConsult?.evolucion_nota || null;
     const alertas = p.alerts || null;
 
     document.getElementById("patientFullCard").innerHTML = `
@@ -488,6 +540,7 @@ function renderPatientFullCard() {
                     <span class="pfc-tag">⚧ ${p.sex}</span>
                     ${p.dob ? `<span class="pfc-tag">📅 ${formatDate(p.dob)}</span>` : ""}
                     ${p.phone ? `<span class="pfc-tag">📞 ${p.phone}</span>` : ""}
+                    ${p.occupation ? `<span class="pfc-tag">💼 ${p.occupation}</span>` : ""}
                     ${p.address ? `<span class="pfc-tag">📍 ${p.address}</span>` : ""}
                 </div>
             </div>
@@ -497,6 +550,7 @@ function renderPatientFullCard() {
                 <div class="pfc-item-label">Alergias</div>
                 <div class="pfc-item-value">${p.allergies || "No registradas"}</div>
             </div>
+            ${p.chronicConditions ? `<div class="pfc-item pfc-alert"><div class="pfc-item-label">🩺 Padecimientos crónicos</div><div class="pfc-item-value">${p.chronicConditions}</div></div>` : ""}
             ${alertas ? `<div class="pfc-item pfc-alert"><div class="pfc-item-label">⚠ Alertas médicas</div><div class="pfc-item-value">${alertas}</div></div>` : ""}
             <div class="pfc-item">
                 <div class="pfc-item-label">Último diagnóstico</div>
@@ -512,7 +566,37 @@ function renderPatientFullCard() {
 
 function createNewConsultation() {
     if (!currentPatient) return;
-    const consult = { id: Date.now(), patientId: currentPatient.id, date: new Date().toISOString(), createdBy: currentUser?.displayName||"Sistema", interrogatorio:"", antecedentes:"", padecimiento:"", exploracion:"", diagnostico:"", tratamiento:"", notaImportante:"", triageLevel:null, triageData:null, status:"active", attachments:[] };
+    const consult = {
+        id: Date.now(), patientId: currentPatient.id,
+        date: new Date().toISOString(),
+        createdBy: currentUser?.displayName||"Sistema",
+        tipoNota: "historia",
+        ahf: "", apnp_otros: "",
+        app_enfermedades: "", app_cirugias: "", app_traumatismos: "",
+        app_alergias: "", app_transfusiones: "", app_medicamentos: "",
+        padecimiento_inicio: "", padecimiento_sintomas: "",
+        sis_cardiovascular: "", sis_respiratorio: "", sis_digestivo: "",
+        sis_neurologico: "", sis_urinario: "", sis_musculoesqueletico: "",
+        sis_piel: "", sis_endocrino: "", sis_genitoreproductivo: "", sis_psiquiatrico: "",
+        sv_tas: "", sv_tad: "", sv_fc: "", sv_fr: "", sv_temp: "",
+        sv_spo2: "", sv_glucemia: "", sv_peso: "", sv_talla: "", sv_dolor: "", sv_habitus: "",
+        exp_cabeza: "", exp_torax: "", exp_abdomen: "",
+        exp_extremidades: "", exp_neurologico: "", exp_genitourinario: "", exp_otros: "",
+        estudios_previos: "", estudios_imagen: "", estudios_solicitados: "",
+        diagnostico: "", diagnostico_secundario: "", pronostico_detalle: "",
+        tratamiento: "", indicaciones_reposo: "", indicaciones_dieta: "",
+        indicaciones_cita: "", indicaciones_referencia: "",
+        medicamentos: [],
+        evolucion_clinica: "", evol_ta: "", evol_fc: "", evol_fr: "",
+        evol_temp: "", evol_spo2: "", evol_peso: "",
+        evolucion_resultados: "", evolucion_diagnostico: "", evolucion_tratamiento: "",
+        urg_tas: "", urg_tad: "", urg_fc: "", urg_fr: "", urg_temp: "",
+        urg_spo2: "", urg_glucemia: "", urg_glasgow: "",
+        urg_motivo: "", urg_exploracion: "", urg_estudios: "",
+        urg_diagnostico: "", urg_tratamiento: "",
+        notaImportante: "", evolucion_nota: "",
+        triageLevel: null, triageData: null, status: "active", attachments: []
+    };
     consultations.push(consult);
     saveConsultations();
     currentConsultation = consult;
@@ -531,7 +615,7 @@ function openConsultation(consultId) {
 }
 
 // =============================================
-//  EXPEDIENTE / CONSULTA
+//  EXPEDIENTE / CONSULTA  (NOM-004-SSA3-2012)
 // =============================================
 function renderMedicalRecord() {
     if (!currentConsultation || !currentPatient) return;
@@ -550,7 +634,7 @@ function renderMedicalRecord() {
         banner.classList.add("hidden");
     }
 
-    // Summary bar for returning patients
+    // Summary bar
     const allConsults = consultations.filter(c => c.patientId === currentPatient.id && c.id !== currentConsultation.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const summaryBar = document.getElementById("recordSummaryBar");
     if (allConsults.length > 0) {
@@ -561,136 +645,213 @@ function renderMedicalRecord() {
             <div class="rsb-label">Resumen del paciente</div>
             <div class="rsb-items">
                 ${p.allergies ? `<div class="rsb-item rsb-warn"><span>⚠</span><div><b>Alergias:</b> ${p.allergies}</div></div>` : ""}
+                ${p.chronicConditions ? `<div class="rsb-item rsb-warn"><span>🩺</span><div><b>Crónicos:</b> ${p.chronicConditions}</div></div>` : ""}
                 ${p.alerts ? `<div class="rsb-item rsb-warn"><span>🚨</span><div><b>Alertas:</b> ${p.alerts}</div></div>` : ""}
                 ${prev.diagnostico ? `<div class="rsb-item"><span>🧾</span><div><b>Último Dx:</b> ${prev.diagnostico.substring(0,80)}</div></div>` : ""}
                 ${prev.tratamiento ? `<div class="rsb-item"><span>💊</span><div><b>Tratamiento previo:</b> ${prev.tratamiento.substring(0,80)}</div></div>` : ""}
-                ${prev.notaImportante ? `<div class="rsb-item rsb-nota"><span>📌</span><div><b>Nota anterior:</b> ${prev.notaImportante}</div></div>` : ""}
+                ${(prev.notaImportante||prev.evolucion_nota) ? `<div class="rsb-item rsb-nota"><span>📌</span><div><b>Nota anterior:</b> ${(prev.notaImportante||prev.evolucion_nota)}</div></div>` : ""}
             </div>`;
     } else {
         summaryBar.classList.add("hidden");
     }
 
-<<<<<<< HEAD
-    // Fill fields
-    const fields = ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"];
-    fields.forEach(f => {
-        const el = document.getElementById(f);
-        if (el) el.value = currentConsultation[f] || "";
-    });
+    // Restore tab
+    const tipoNota = currentConsultation.tipoNota || "historia";
+    currentTab = tipoNota;
+    document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
+    const tabEl = document.getElementById("tab-" + tipoNota);
+    if (tabEl) tabEl.classList.add("active");
+    const tabBtn = document.querySelector(`.record-tab[data-tab="${tipoNota}"]`);
+    if (tabBtn) tabBtn.classList.add("active");
+
+    // Fill all fields
+    fillRecordFields();
 
     // Read-only if enfermero
     const isReadOnly = !can("canWriteMedicalNotes");
-    fields.forEach(f => {
-        const el = document.getElementById(f);
-=======
-    // Fill fields — nuevos campos estructurados
-    const camposSimples = {
-        "hf-madre": currentConsultation["hf-madre"],
-        "hf-padre": currentConsultation["hf-padre"],
-        "hf-abp":   currentConsultation["hf-abp"],
-        "hf-abpa":  currentConsultation["hf-abpa"],
-        "hf-abm":   currentConsultation["hf-abm"],
-        "hf-abma":  currentConsultation["hf-abma"],
-        "hf-hijos": currentConsultation["hf-hijos"],
-        "hf-herm":  currentConsultation["hf-herm"],
-        "hf-otros": currentConsultation["hf-otros"],
-        "pp-inf": currentConsultation["pp-inf"],
-        "pp-ets": currentConsultation["pp-ets"],
-        "pp-deg": currentConsultation["pp-deg"],
-        "pp-neo": currentConsultation["pp-neo"],
-        "pp-qx":  currentConsultation["pp-qx"],
-        "pp-tx":  currentConsultation["pp-tx"],
-        "pp-alg": currentConsultation["pp-alg"],
-        "pp-meds":currentConsultation["pp-meds"],
-        "pnp-ocu":currentConsultation["pnp-ocu"],
-        "pnp-esc":currentConsultation["pnp-esc"],
-        "pnp-ec": currentConsultation["pnp-ec"],
-        "pnp-ali":currentConsultation["pnp-ali"],
-        "pnp-act":currentConsultation["pnp-act"],
-        "pnp-emb":currentConsultation["pnp-emb"],
-        "pnp-mac":currentConsultation["pnp-mac"],
-        "pnp-vac":currentConsultation["pnp-vac"],
-        "interrogatorio": currentConsultation.interrogatorio,
-        "padecimiento":   currentConsultation.padecimiento,
-        "pad-fac":        currentConsultation["pad-fac"],
-        "sis-dig": currentConsultation["sis-dig"],
-        "sis-res": currentConsultation["sis-res"],
-        "sis-car": currentConsultation["sis-car"],
-        "sis-gen": currentConsultation["sis-gen"],
-        "sis-end": currentConsultation["sis-end"],
-        "sis-hem": currentConsultation["sis-hem"],
-        "sis-ner": currentConsultation["sis-ner"],
-        "sis-mus": currentConsultation["sis-mus"],
-        "sis-teg": currentConsultation["sis-teg"],
-        "v-fc":   currentConsultation["v-fc"],
-        "v-fr":   currentConsultation["v-fr"],
-        "v-ta":   currentConsultation["v-ta"],
-        "v-temp": currentConsultation["v-temp"],
-        "v-spo2": currentConsultation["v-spo2"],
-        "v-peso": currentConsultation["v-peso"],
-        "v-talla":currentConsultation["v-talla"],
-        "v-imc":  currentConsultation["v-imc"],
-        "v-hab":  currentConsultation["v-hab"],
-        "v-glas": currentConsultation["v-glas"],
-        "eap-cab":currentConsultation["eap-cab"],
-        "eap-tor":currentConsultation["eap-tor"],
-        "eap-abd":currentConsultation["eap-abd"],
-        "eap-gen":currentConsultation["eap-gen"],
-        "eap-ext":currentConsultation["eap-ext"],
-        "eap-neu":currentConsultation["eap-neu"],
-        "eap-piel":currentConsultation["eap-piel"],
-        "eap-col":currentConsultation["eap-col"],
-        "exploracion":  currentConsultation.exploracion,
-        "diagnostico":  currentConsultation.diagnostico,
-        "lab-rx":       currentConsultation["lab-rx"],
-        "lab-gb":       currentConsultation["lab-gb"],
-        "tratamiento":  currentConsultation.tratamiento,
-        "trat-nf":      currentConsultation["trat-nf"],
-        "trat-sig":     currentConsultation["trat-sig"],
-        "notaEvolucion":currentConsultation.notaEvolucion,
-        "notaImportante":currentConsultation.notaImportante,
-    };
-    Object.entries(camposSimples).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val || "";
-    });
-
-    // Read-only si es enfermero
-    const isReadOnly = !can("canWriteMedicalNotes");
-    const todosLosCampos = Object.keys(camposSimples);
-    todosLosCampos.forEach(id => {
-        const el = document.getElementById(id);
->>>>>>> ExperimentalBranch_AzulGonzález
-        if (el) el.disabled = isReadOnly;
-    });
+    setRecordReadOnly(isReadOnly);
     const dropZone = document.getElementById("attachDropZone");
     if (dropZone) dropZone.style.display = isReadOnly ? "none" : "";
 
+    // IMC auto-calc
+    setupIMCCalc();
     setupRecordActions();
     renderAttachments();
     setupAttachments();
     setupAutocomplete();
     setupAbbreviationDetection();
+    renderMedicamentos();
+    if (typeof abrevInit === "function") abrevInit();
     if (!isReadOnly) { startAutoSave(); setupAutoSaveEvents(); }
 }
 
+// Lista de todos los campos del expediente
+const ALL_RECORD_FIELDS = [
+    "ahf","apnp_otros",
+    "app_enfermedades","app_cirugias","app_traumatismos","app_alergias","app_transfusiones","app_medicamentos",
+    "padecimiento_inicio","padecimiento_sintomas",
+    "sis_cardiovascular","sis_respiratorio","sis_digestivo","sis_neurologico","sis_urinario",
+    "sis_musculoesqueletico","sis_piel","sis_endocrino","sis_genitoreproductivo","sis_psiquiatrico",
+    "sv_tas","sv_tad","sv_fc","sv_fr","sv_temp","sv_spo2","sv_glucemia","sv_peso","sv_talla","sv_dolor","sv_habitus",
+    "exp_cabeza","exp_torax","exp_abdomen","exp_extremidades","exp_neurologico","exp_genitourinario","exp_otros",
+    "estudios_previos","estudios_imagen","estudios_solicitados",
+    "diagnostico","diagnostico_secundario","pronostico_detalle",
+    "tratamiento","indicaciones_reposo","indicaciones_dieta","indicaciones_cita","indicaciones_referencia",
+    "evolucion_clinica","evol_ta","evol_fc","evol_fr","evol_temp","evol_spo2","evol_peso",
+    "evolucion_resultados","evolucion_diagnostico","evolucion_tratamiento","evolucion_nota",
+    "urg_tas","urg_tad","urg_fc","urg_fr","urg_temp","urg_spo2","urg_glucemia","urg_glasgow",
+    "urg_motivo","urg_exploracion","urg_estudios","urg_diagnostico","urg_tratamiento",
+    "notaImportante"
+];
+
+function fillRecordFields() {
+    ALL_RECORD_FIELDS.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.value = currentConsultation[f] || "";
+    });
+    // Radios APNP
+    ["tabaquismo","alcoholismo","toxicomanias","actfisica"].forEach(name => {
+        const val = currentConsultation["radio_" + name] || (name === "actfisica" ? "Sedentario" : "Negativo");
+        const radio = document.querySelector(`input[name="${name}"][value="${val}"]`);
+        if (radio) radio.checked = true;
+    });
+    // Radio pronóstico
+    if (currentConsultation.pronostico_radio) {
+        const r = document.querySelector(`input[name="pronostico"][value="${currentConsultation.pronostico_radio}"]`);
+        if (r) r.checked = true;
+    }
+    // Radio destino urgencias
+    if (currentConsultation.destino_urg) {
+        const r = document.querySelector(`input[name="destino_urg"][value="${currentConsultation.destino_urg}"]`);
+        if (r) r.checked = true;
+    }
+    const ddEl = document.getElementById("urg_destino_detalle");
+    if (ddEl) ddEl.value = currentConsultation.urg_destino_detalle || "";
+
+    // Detalles APNP
+    ["tabaquismo","alcoholismo","toxicomanias","actfisica"].forEach(name => {
+        const el = document.getElementById(name + "_detalle");
+        if (el) el.value = currentConsultation[name + "_detalle"] || "";
+    });
+    // IMC
+    calcIMC();
+}
+
+function setRecordReadOnly(isReadOnly) {
+    ALL_RECORD_FIELDS.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.disabled = isReadOnly;
+    });
+    document.querySelectorAll(".apnp-radios input, .pronostico-radios input, .destino-radios input").forEach(el => el.disabled = isReadOnly);
+    document.querySelectorAll(".apnp-detail").forEach(el => el.disabled = isReadOnly);
+    const addMedBtn = document.getElementById("btnAgregarMed");
+    if (addMedBtn) addMedBtn.style.display = isReadOnly ? "none" : "";
+}
+
+function setupIMCCalc() {
+    const peso = document.getElementById("sv_peso");
+    const talla = document.getElementById("sv_talla");
+    if (!peso || !talla) return;
+    const handler = () => calcIMC();
+    peso.removeEventListener("input", peso._imcHandler);
+    talla.removeEventListener("input", talla._imcHandler);
+    peso._imcHandler = handler;
+    talla._imcHandler = handler;
+    peso.addEventListener("input", handler);
+    talla.addEventListener("input", handler);
+}
+
+function calcIMC() {
+    const peso = parseFloat(document.getElementById("sv_peso")?.value);
+    const talla = parseFloat(document.getElementById("sv_talla")?.value);
+    const imcEl = document.getElementById("sv_imc");
+    if (!imcEl) return;
+    if (peso && talla) {
+        const tallaM = talla / 100;
+        const imc = (peso / (tallaM * tallaM)).toFixed(1);
+        let cat = "";
+        if (imc < 18.5) cat = "Bajo peso";
+        else if (imc < 25) cat = "Normal";
+        else if (imc < 30) cat = "Sobrepeso";
+        else cat = "Obesidad";
+        imcEl.value = `${imc} (${cat})`;
+    } else {
+        imcEl.value = "";
+    }
+}
+
+// ===== MEDICAMENTOS =====
+function agregarMedicamento() {
+    if (!currentConsultation) return;
+    if (!currentConsultation.medicamentos) currentConsultation.medicamentos = [];
+    const med = { id: Date.now(), nombre: "", concentracion: "", dosis: "", via: "", frecuencia: "", duracion: "" };
+    currentConsultation.medicamentos.push(med);
+    saveConsultations();
+    renderMedicamentos();
+}
+
+function renderMedicamentos() {
+    const list = document.getElementById("medicamentosList");
+    if (!list || !currentConsultation) return;
+    const meds = currentConsultation.medicamentos || [];
+    const isReadOnly = !can("canWriteMedicalNotes");
+
+    if (meds.length === 0) {
+        list.innerHTML = `<div class="med-empty">Sin medicamentos prescritos. Use el botón "Agregar medicamento" o el campo de texto libre abajo.</div>`;
+        return;
+    }
+
+    list.innerHTML = meds.map((m, idx) => `
+        <div class="med-row" data-id="${m.id}">
+            <div class="med-num">${idx + 1}</div>
+            <div class="med-fields">
+                <input class="med-input" type="text" placeholder="Nombre del medicamento" value="${m.nombre||''}" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'nombre',this.value)">
+                <input class="med-input med-conc" type="text" placeholder="Concentración" value="${m.concentracion||''}" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'concentracion',this.value)">
+                <input class="med-input med-dosis" type="text" placeholder="Dosis" value="${m.dosis||''}" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'dosis',this.value)">
+                <select class="med-input med-via" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'via',this.value)">
+                    <option value="">Vía...</option>
+                    <option ${m.via==='VO'?'selected':''}>VO</option>
+                    <option ${m.via==='IV'?'selected':''}>IV</option>
+                    <option ${m.via==='IM'?'selected':''}>IM</option>
+                    <option ${m.via==='SC'?'selected':''}>SC</option>
+                    <option ${m.via==='SL'?'selected':''}>SL</option>
+                    <option ${m.via==='Tópica'?'selected':''}>Tópica</option>
+                    <option ${m.via==='Inhalada'?'selected':''}>Inhalada</option>
+                </select>
+                <input class="med-input med-freq" type="text" placeholder="Frecuencia (ej: c/8h)" value="${m.frecuencia||''}" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'frecuencia',this.value)">
+                <input class="med-input med-dur" type="text" placeholder="Duración (ej: 7 días)" value="${m.duracion||''}" ${isReadOnly?'disabled':''} onchange="updateMedicamento(${m.id},'duracion',this.value)">
+            </div>
+            ${!isReadOnly ? `<button class="med-delete" onclick="eliminarMedicamento(${m.id})" title="Eliminar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            </button>` : ''}
+        </div>`).join("");
+}
+
+function updateMedicamento(id, field, value) {
+    if (!currentConsultation) return;
+    const med = (currentConsultation.medicamentos || []).find(m => m.id === id);
+    if (med) { med[field] = value; saveConsultations(); }
+}
+
+function eliminarMedicamento(id) {
+    if (!currentConsultation) return;
+    currentConsultation.medicamentos = (currentConsultation.medicamentos || []).filter(m => m.id !== id);
+    saveConsultations();
+    renderMedicamentos();
+}
+
+// ===== GUARDAR RECORD =====
 function setupRecordActions() {
     const el = document.getElementById("recordFormActions");
     if (!el) return;
     const headerEl = document.getElementById("recordHeaderActions");
 
     const pdfBtns = `
-<<<<<<< HEAD
-        <button class="btn-secondary" onclick="exportPDF('patient')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            PDF Paciente</button>
-        <button class="btn-secondary" onclick="exportPDF('doctor')">
-=======
         <button class="btn-secondary" onclick="abrevIniciarExport('patient')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             PDF Paciente</button>
         <button class="btn-secondary" onclick="abrevIniciarExport('doctor')">
->>>>>>> ExperimentalBranch_AzulGonzález
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             PDF Médico</button>`;
 
@@ -710,45 +871,39 @@ function setupRecordActions() {
     }
 }
 
-function saveRecord() {
+function collectRecordFields() {
     if (!currentConsultation) return;
-<<<<<<< HEAD
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(f => {
+    ALL_RECORD_FIELDS.forEach(f => {
         const el = document.getElementById(f);
         if (el) currentConsultation[f] = el.value;
     });
-=======
-    const ids = [
-        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
-        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
-        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
-        "interrogatorio","padecimiento","pad-fac",
-        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
-        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
-        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
-        "exploracion","diagnostico","lab-rx","lab-gb",
-        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
-    ];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) currentConsultation[id] = el.value.toUpperCase();
+    // Radios
+    ["tabaquismo","alcoholismo","toxicomanias","actfisica"].forEach(name => {
+        const checked = document.querySelector(`input[name="${name}"]:checked`);
+        if (checked) currentConsultation["radio_" + name] = checked.value;
+        const detail = document.getElementById(name + "_detalle");
+        if (detail) currentConsultation[name + "_detalle"] = detail.value;
     });
-    // Mantener compatibilidad con campos legacy
-    currentConsultation.antecedentes = [
-        currentConsultation["pp-deg"], currentConsultation["pp-qx"],
-        currentConsultation["pp-inf"], currentConsultation["pp-meds"]
-    ].filter(Boolean).join(" | ") || "";
->>>>>>> ExperimentalBranch_AzulGonzález
+    const pronostico = document.querySelector('input[name="pronostico"]:checked');
+    if (pronostico) currentConsultation.pronostico_radio = pronostico.value;
+    const destino = document.querySelector('input[name="destino_urg"]:checked');
+    if (destino) currentConsultation.destino_urg = destino.value;
+    const dd = document.getElementById("urg_destino_detalle");
+    if (dd) currentConsultation.urg_destino_detalle = dd.value;
+    currentConsultation.tipoNota = currentTab;
+}
+
+function saveRecord() {
+    collectRecordFields();
     saveConsultations();
     showToast("Consulta guardada.", "success");
     showAutoSave();
 }
 
 function closeConsultation() {
-    saveRecord();
+    collectRecordFields();
     if (!currentConsultation) return;
     currentConsultation.status = "closed";
-    // Update patient's currentTreatment from this consultation
     if (currentPatient && currentConsultation.tratamiento) {
         currentPatient.currentTreatment = currentConsultation.tratamiento;
         savePatients();
@@ -766,52 +921,12 @@ function startAutoSave() {
 function stopAutoSave() { if (autoSaveTimer) clearInterval(autoSaveTimer); }
 function saveCurrentRecord() {
     if (!currentConsultation) return;
-<<<<<<< HEAD
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(f => {
-        const el = document.getElementById(f);
-        if (el) currentConsultation[f] = el.value;
-    });
-=======
-    const ids = [
-        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
-        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
-        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
-        "interrogatorio","padecimiento","pad-fac",
-        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
-        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
-        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
-        "exploracion","diagnostico","lab-rx","lab-gb",
-        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
-    ];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) currentConsultation[id] = el.value.toUpperCase();
-    });
-    currentConsultation.antecedentes = [
-        currentConsultation["pp-deg"], currentConsultation["pp-qx"],
-        currentConsultation["pp-inf"], currentConsultation["pp-meds"]
-    ].filter(Boolean).join(" | ") || "";
->>>>>>> ExperimentalBranch_AzulGonzález
+    collectRecordFields();
     saveConsultations();
     showAutoSave();
 }
 function setupAutoSaveEvents() {
-<<<<<<< HEAD
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(id => {
-=======
-    const ids = [
-        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
-        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
-        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
-        "interrogatorio","padecimiento","pad-fac",
-        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
-        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
-        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
-        "exploracion","diagnostico","lab-rx","lab-gb",
-        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
-    ];
-    ids.forEach(id => {
->>>>>>> ExperimentalBranch_AzulGonzález
+    ALL_RECORD_FIELDS.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", saveCurrentRecord);
     });
@@ -834,7 +949,6 @@ function setupAttachments() {
     if (!input || !zone || !can("canWriteMedicalNotes")) return;
 
     input.onchange = e => handleFiles(e.target.files);
-
     zone.ondragover = e => { e.preventDefault(); zone.classList.add("drag-over"); };
     zone.ondragleave = () => zone.classList.remove("drag-over");
     zone.ondrop = e => { e.preventDefault(); zone.classList.remove("drag-over"); handleFiles(e.dataTransfer.files); };
@@ -911,7 +1025,11 @@ function openEditPatientModal() {
     document.getElementById("editAddress").value = p.address || "";
     document.getElementById("editPhone").value = p.phone || "";
     document.getElementById("editDob").value = p.dob || "";
+    document.getElementById("editEmail").value = p.email || "";
+    document.getElementById("editOccupation").value = p.occupation || "";
+    document.getElementById("editEmergencyContact").value = p.emergencyContact || "";
     document.getElementById("editAllergies").value = p.allergies || "";
+    document.getElementById("editChronicConditions").value = p.chronicConditions || "";
     document.getElementById("editCurrentTreatment").value = p.currentTreatment || "";
     document.getElementById("editAlerts").value = p.alerts || "";
     document.getElementById("editPatientModal").classList.remove("hidden");
@@ -925,7 +1043,11 @@ function saveEditedPatient() {
     currentPatient.address = document.getElementById("editAddress").value.trim() || currentPatient.address;
     currentPatient.phone = document.getElementById("editPhone").value.trim();
     currentPatient.dob = document.getElementById("editDob").value;
+    currentPatient.email = document.getElementById("editEmail").value.trim();
+    currentPatient.occupation = document.getElementById("editOccupation").value.trim();
+    currentPatient.emergencyContact = document.getElementById("editEmergencyContact").value.trim();
     currentPatient.allergies = document.getElementById("editAllergies").value.trim();
+    currentPatient.chronicConditions = document.getElementById("editChronicConditions").value.trim();
     currentPatient.currentTreatment = document.getElementById("editCurrentTreatment").value.trim();
     currentPatient.alerts = document.getElementById("editAlerts").value.trim();
     savePatients();
@@ -1051,11 +1173,38 @@ function attendTriage(triageId) {
     if(!entry) return;
     let patient = patients.find(p=>p.name.toLowerCase()===entry.name.toLowerCase());
     if(!patient){
-        patient={id:Date.now(),name:entry.name,age:entry.age,sex:entry.sex||"No especificado",address:"Urgencias",phone:"",dob:"",allergies:"",alerts:"",currentTreatment:"",createdAt:new Date().toISOString(),createdBy:currentUser?.username};
+        patient={id:Date.now(),name:entry.name,age:entry.age,sex:entry.sex||"No especificado",address:"Urgencias",phone:"",dob:"",email:"",occupation:"",emergencyContact:"",ethnicGroup:"",allergies:"",chronicConditions:"",alerts:"",currentTreatment:"",createdAt:new Date().toISOString(),createdBy:currentUser?.username};
         patients.push(patient); savePatients();
     }
     currentPatient=patient;
-    const consult={id:Date.now(),patientId:patient.id,date:new Date().toISOString(),createdBy:currentUser?.displayName||"Sistema",interrogatorio:`Motivo de urgencia: ${entry.reason}\n${entry.notes?"Notas: "+entry.notes:""}`,antecedentes:"",padecimiento:"",exploracion:`FC: ${entry.vitals.FC||"—"} lpm | FR: ${entry.vitals.FR||"—"} rpm | TA: ${entry.vitals.TAS||"—"}/${entry.vitals.TAD||"—"} mmHg | Temp: ${entry.vitals.temp||"—"}°C | SpO₂: ${entry.vitals.spo2||"—"}% | Glucemia: ${entry.vitals.gluc||"—"} mg/dL`,diagnostico:"",tratamiento:"",notaImportante:"",triageLevel:`Nivel ${entry.level}`,triageData:{...entry.vitals,number:entry.level,label:entry.levelLabel,color:entry.levelColor,reason:entry.reason},status:"active",attachments:[]};
+    const consult={
+        id:Date.now(), patientId:patient.id, date:new Date().toISOString(),
+        createdBy:currentUser?.displayName||"Sistema",
+        tipoNota: "urgencias",
+        ahf:"", apnp_otros:"",
+        app_enfermedades:"", app_cirugias:"", app_traumatismos:"", app_alergias:"", app_transfusiones:"", app_medicamentos:"",
+        padecimiento_inicio:"", padecimiento_sintomas:"",
+        sis_cardiovascular:"", sis_respiratorio:"", sis_digestivo:"", sis_neurologico:"", sis_urinario:"",
+        sis_musculoesqueletico:"", sis_piel:"", sis_endocrino:"", sis_genitoreproductivo:"", sis_psiquiatrico:"",
+        sv_tas:"", sv_tad:"", sv_fc:"", sv_fr:"", sv_temp:"", sv_spo2:"", sv_glucemia:"", sv_peso:"", sv_talla:"", sv_dolor:"", sv_habitus:"",
+        exp_cabeza:"", exp_torax:"", exp_abdomen:"", exp_extremidades:"", exp_neurologico:"", exp_genitourinario:"", exp_otros:"",
+        estudios_previos:"", estudios_imagen:"", estudios_solicitados:"",
+        diagnostico:"", diagnostico_secundario:"", pronostico_detalle:"",
+        tratamiento:"", indicaciones_reposo:"", indicaciones_dieta:"", indicaciones_cita:"", indicaciones_referencia:"",
+        medicamentos:[],
+        evolucion_clinica:"", evol_ta:"", evol_fc:"", evol_fr:"", evol_temp:"", evol_spo2:"", evol_peso:"",
+        evolucion_resultados:"", evolucion_diagnostico:"", evolucion_tratamiento:"",
+        urg_tas: entry.vitals?.TAS?.toString()||"", urg_tad: entry.vitals?.TAD?.toString()||"",
+        urg_fc: entry.vitals?.FC?.toString()||"", urg_fr: entry.vitals?.FR?.toString()||"",
+        urg_temp: entry.vitals?.temp?.toString()||"", urg_spo2: entry.vitals?.spo2?.toString()||"",
+        urg_glucemia: entry.vitals?.gluc?.toString()||"", urg_glasgow:"",
+        urg_motivo: entry.reason||"", urg_exploracion: entry.notes||"",
+        urg_estudios:"", urg_diagnostico:"", urg_tratamiento:"",
+        notaImportante:"", evolucion_nota:"",
+        triageLevel:`Nivel ${entry.level}`,
+        triageData:{...entry.vitals,number:entry.level,label:entry.levelLabel,color:entry.levelColor,reason:entry.reason},
+        status:"active", attachments:[]
+    };
     consultations.push(consult); saveConsultations();
     currentConsultation=consult;
     entry.active=false; saveTriageQueue();
@@ -1162,7 +1311,9 @@ const suggestionsDB = [
     "dolor torácico","fiebre sin foco aparente","cefalea tensional","infección respiratoria aguda",
     "gastritis crónica","asma bronquial","neumonía adquirida en la comunidad","infección urinaria",
     "apendicitis aguda","fractura","enfermedad pulmonar obstructiva crónica","hipotiroidismo",
-    "hipertiroidismo","anemia","insuficiencia cardíaca","infarto agudo de miocardio","accidente cerebrovascular"
+    "hipertiroidismo","anemia","insuficiencia cardíaca","infarto agudo de miocardio","accidente cerebrovascular",
+    "pancreatitis aguda","colecistitis aguda","apendicitis","celulitis","dermatitis","conjuntivitis",
+    "otitis media aguda","faringoamigdalitis","sinusitis aguda","bronquitis aguda"
 ];
 const abbreviations = {
     "DM":"diabetes mellitus","HTA":"hipertensión arterial","FC":"frecuencia cardiaca",
@@ -1174,7 +1325,9 @@ const abbreviations = {
     "VO":"vía oral","IV":"vía intravenosa","SC":"vía subcutánea","IM":"vía intramuscular",
     "c/8h":"cada 8 horas","c/12h":"cada 12 horas","c/24h":"cada 24 horas",
     "EPOC":"enfermedad pulmonar obstructiva crónica","SpO2":"saturación de oxígeno",
-    "TAS":"tensión arterial sistólica","TAD":"tensión arterial diastólica"
+    "TAS":"tensión arterial sistólica","TAD":"tensión arterial diastólica",
+    "AHF":"antecedentes heredofamiliares","APP":"antecedentes personales patológicos",
+    "APNP":"antecedentes personales no patológicos","IMC":"índice de masa corporal"
 };
 
 function getLastWord(t){const w=t.split(" ");return w[w.length-1].toLowerCase();}
@@ -1208,34 +1361,92 @@ function setupAbbreviationDetection() {
 function expandAbbreviations(text,mode="patient"){if(!text)return"";return text.split(" ").map(w=>{if(abbreviations[w])return mode==="patient"?abbreviations[w]:`${abbreviations[w]} (${w})`;return w;}).join(" ");}
 
 // =============================================
-//  EXPORTAR PDF
+//  EXPORTAR PDF  (NOM-004-SSA3-2012)
 // =============================================
 function exportPDF(type) {
     if (!currentConsultation||!currentPatient) return;
     const {jsPDF}=window.jspdf; const doc=new jsPDF();
     let y=15; const margin=15, pageW=210, contentW=pageW-margin*2;
-    doc.setFillColor(15,23,42); doc.rect(0,0,pageW,22,"F");
+
+    // Header
+    doc.setFillColor(15,23,42); doc.rect(0,0,pageW,24,"F");
     doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont(undefined,"bold");
     doc.text("ClinData — Expediente Clínico",margin,14);
-    doc.setFontSize(9); doc.setFont(undefined,"normal");
-    doc.text(type==="patient"?"Versión para paciente":"Versión para médico",pageW-margin,14,{align:"right"});
-    y=30; doc.setTextColor(0,0,0);
-    doc.setFontSize(12); doc.setFont(undefined,"bold");
+    doc.setFontSize(8); doc.setFont(undefined,"normal");
+    doc.text("NOM-004-SSA3-2012",margin,20);
+    doc.text(type==="patient"?"Versión para paciente":"Versión para médico / equipo de salud",pageW-margin,14,{align:"right"});
+
+    // Datos del paciente
+    y=32; doc.setTextColor(0,0,0);
+    doc.setFontSize(13); doc.setFont(undefined,"bold");
     doc.text(`Paciente: ${currentPatient.name}`,margin,y); y+=7;
-    doc.setFontSize(10); doc.setFont(undefined,"normal");
-    doc.text(`Edad: ${currentPatient.age} años  |  Sexo: ${currentPatient.sex}  |  Fecha: ${formatDateFull(currentConsultation.date)}`,margin,y); y+=7;
-    if(currentPatient.allergies) {doc.text(`Alergias: ${currentPatient.allergies}`,margin,y); y+=7;}
-    doc.setDrawColor(200,200,200); doc.line(margin,y,pageW-margin,y); y+=7;
-    function addSection(title,text){if(y>260){doc.addPage();y=15;}doc.setFontSize(11);doc.setFont(undefined,"bold");doc.setTextColor(14,165,233);doc.text(title,margin,y);y+=5;doc.setTextColor(0,0,0);doc.setFont(undefined,"normal");doc.setFontSize(10);const lines=doc.splitTextToSize(text||"Sin información registrada.",contentW);lines.forEach(l=>{if(y>270){doc.addPage();y=15;}doc.text(l,margin,y);y+=5.5;});y+=4;}
-    addSection("Interrogatorio",expandAbbreviations(currentConsultation.interrogatorio,type));
-    addSection("Antecedentes",expandAbbreviations(currentConsultation.antecedentes,type));
-    addSection("Padecimiento actual",expandAbbreviations(currentConsultation.padecimiento,type));
-    addSection("Exploración física",expandAbbreviations(currentConsultation.exploracion,type));
-    addSection("Diagnóstico",expandAbbreviations(currentConsultation.diagnostico,type));
-    addSection("Tratamiento",expandAbbreviations(currentConsultation.tratamiento,type));
+    doc.setFontSize(9.5); doc.setFont(undefined,"normal");
+    doc.text(`Edad: ${currentPatient.age} años  |  Sexo: ${currentPatient.sex}  |  Fecha: ${formatDateFull(currentConsultation.date)}`,margin,y); y+=5.5;
+    if(currentPatient.dob) {doc.text(`Nacimiento: ${formatDate(currentPatient.dob)}  |  Domicilio: ${currentPatient.address||"—"}`,margin,y); y+=5.5;}
+    if(currentPatient.occupation||currentPatient.phone) {doc.text(`Ocupación: ${currentPatient.occupation||"—"}  |  Tel: ${currentPatient.phone||"—"}`,margin,y); y+=5.5;}
+    if(currentPatient.allergies) {doc.setTextColor(180,0,0);doc.text(`⚠ Alergias: ${currentPatient.allergies}`,margin,y);doc.setTextColor(0,0,0); y+=5.5;}
+    if(currentPatient.chronicConditions) {doc.text(`Padecimientos crónicos: ${currentPatient.chronicConditions}`,margin,y); y+=5.5;}
+    doc.setDrawColor(200,200,200); doc.line(margin,y,pageW-margin,y); y+=6;
+
+    function addSection(title,text) {
+        if(!text||text.trim()==="") return;
+        if(y>255){doc.addPage();y=15;}
+        doc.setFontSize(10.5);doc.setFont(undefined,"bold");doc.setTextColor(14,165,233);
+        doc.text(title,margin,y);y+=5.5;
+        doc.setTextColor(0,0,0);doc.setFont(undefined,"normal");doc.setFontSize(9.5);
+        const lines=doc.splitTextToSize(expandAbbreviations(text,type),contentW);
+        lines.forEach(l=>{if(y>270){doc.addPage();y=15;}doc.text(l,margin,y);y+=5;});
+        y+=3;
+    }
+
+    const c = currentConsultation;
+    const tipoNota = c.tipoNota || "historia";
+
+    if(tipoNota==="historia") {
+        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("HISTORIA CLÍNICA / NOTA DE INGRESO",margin,y);y+=7;
+        addSection("Antecedentes Heredofamiliares (AHF)",c.ahf);
+        const apnp=[c.apnp_otros].filter(Boolean).join("\n");
+        addSection("Antecedentes Personales No Patológicos (APNP)",apnp||"");
+        const app=[c.app_enfermedades,c.app_cirugias,c.app_traumatismos,c.app_alergias,c.app_transfusiones,c.app_medicamentos].filter(Boolean).join("\n");
+        addSection("Antecedentes Personales Patológicos (APP)",app||"");
+        const pad=[(c.padecimiento_inicio?"Inicio: "+c.padecimiento_inicio:""),(c.padecimiento_sintomas?"Síntomas: "+c.padecimiento_sintomas:"")].filter(Boolean).join("\n");
+        addSection("Padecimiento Actual",pad||"");
+        const svText=`TA: ${c.sv_tas||"—"}/${c.sv_tad||"—"} mmHg | FC: ${c.sv_fc||"—"} lpm | FR: ${c.sv_fr||"—"} rpm | Temp: ${c.sv_temp||"—"}°C | SpO₂: ${c.sv_spo2||"—"}% | Peso: ${c.sv_peso||"—"} kg | Talla: ${c.sv_talla||"—"} cm | Glucemia: ${c.sv_glucemia||"—"} mg/dL | Dolor: ${c.sv_dolor||"—"}/10`;
+        addSection("Signos Vitales y Somatometría",svText);
+        const expText=[c.exp_cabeza&&"Cabeza/cuello: "+c.exp_cabeza,c.exp_torax&&"Tórax: "+c.exp_torax,c.exp_abdomen&&"Abdomen: "+c.exp_abdomen,c.exp_extremidades&&"Extremidades: "+c.exp_extremidades,c.exp_neurologico&&"Neurológico: "+c.exp_neurologico,c.exp_otros&&"Otros: "+c.exp_otros].filter(Boolean).join("\n");
+        addSection("Exploración Física",expText||"");
+        addSection("Estudios de Laboratorio y Gabinete",c.estudios_previos);
+        addSection("Diagnóstico Principal",c.diagnostico);
+        addSection("Diagnósticos Secundarios / Diferenciales",c.diagnostico_secundario);
+        addSection("Pronóstico",(c.pronostico_radio?c.pronostico_radio+": ":"")+c.pronostico_detalle);
+        const medsTxt=(c.medicamentos||[]).map((m,i)=>`${i+1}. ${m.nombre||""} ${m.concentracion||""} — ${m.dosis||""} ${m.via||""} ${m.frecuencia||""} por ${m.duracion||""}`).join("\n");
+        addSection("Medicamentos Prescritos",medsTxt||c.tratamiento||"");
+        addSection("Indicaciones al Paciente",[c.indicaciones_reposo&&"Reposo: "+c.indicaciones_reposo,c.indicaciones_dieta&&"Dieta: "+c.indicaciones_dieta,c.indicaciones_cita&&"Seguimiento: "+c.indicaciones_cita,c.indicaciones_referencia&&"Referencia: "+c.indicaciones_referencia].filter(Boolean).join("\n"));
+        if(c.notaImportante) addSection("Nota Importante",c.notaImportante);
+    } else if(tipoNota==="evolucion") {
+        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("NOTA DE EVOLUCIÓN",margin,y);y+=7;
+        addSection("Evolución del cuadro clínico",c.evolucion_clinica);
+        if(c.evol_ta||c.evol_fc) addSection("Signos Vitales",`TA: ${c.evol_ta||"—"} | FC: ${c.evol_fc||"—"} lpm | FR: ${c.evol_fr||"—"} rpm | Temp: ${c.evol_temp||"—"}°C | SpO₂: ${c.evol_spo2||"—"}%`);
+        addSection("Nuevos Resultados de Estudios",c.evolucion_resultados);
+        addSection("Diagnóstico Actualizado",c.evolucion_diagnostico);
+        addSection("Tratamiento e Indicaciones",c.evolucion_tratamiento);
+        if(c.evolucion_nota) addSection("Nota Importante",c.evolucion_nota);
+    } else if(tipoNota==="urgencias") {
+        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("NOTA INICIAL DE URGENCIAS",margin,y);y+=7;
+        addSection("Signos Vitales al Ingreso",`TA: ${c.urg_tas||"—"}/${c.urg_tad||"—"} mmHg | FC: ${c.urg_fc||"—"} lpm | FR: ${c.urg_fr||"—"} rpm | Temp: ${c.urg_temp||"—"}°C | SpO₂: ${c.urg_spo2||"—"}% | Glucemia: ${c.urg_glucemia||"—"} mg/dL | Glasgow: ${c.urg_glasgow||"—"}`);
+        addSection("Motivo de Atención en Urgencias",c.urg_motivo);
+        addSection("Resumen Interrogatorio y Exploración",c.urg_exploracion);
+        addSection("Resultados de Estudios Iniciales",c.urg_estudios);
+        addSection("Diagnóstico en Urgencias",c.urg_diagnostico);
+        addSection("Tratamiento y Pronóstico",c.urg_tratamiento);
+    }
+
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text(`ClinData — ${new Date().toLocaleDateString("es-MX")} — Página ${i}/${pages}`,pageW/2,290,{align:"center"});}
-    doc.save(`expediente_${currentPatient.name.replace(/\s/g,"_")}_${type}.pdf`);
+    for(let i=1;i<=pages;i++){
+        doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(150);
+        doc.text(`ClinData — NOM-004-SSA3-2012 — ${new Date().toLocaleDateString("es-MX")} — Página ${i}/${pages}`,pageW/2,290,{align:"center"});
+    }
+    doc.save(`expediente_${currentPatient.name.replace(/\s/g,"_")}_${tipoNota}_${type}.pdf`);
 }
 
 // =============================================
@@ -1244,27 +1455,4 @@ function exportPDF(type) {
 function formatDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"});}
 function formatDateFull(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{weekday:"short",day:"2-digit",month:"long",year:"numeric"});}
 function formatTime(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
-<<<<<<< HEAD
 function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
-=======
-function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
-
-// =============================================
-//  NUEVO EXPEDIENTE: toggle secciones e IMC
-// =============================================
-function recTog(id) {
-    const body = document.getElementById("rbody-" + id);
-    const chev = document.getElementById("rchev-" + id);
-    if (!body) return;
-    const open = body.style.display === "none";
-    body.style.display = open ? "" : "none";
-    if (chev) chev.classList.toggle("rc-open", open);
-}
-
-function recCalcIMC() {
-    const p = parseFloat(document.getElementById("v-peso")?.value);
-    const t = parseFloat(document.getElementById("v-talla")?.value);
-    const el = document.getElementById("v-imc");
-    if (el) el.value = (p > 0 && t > 0) ? (p / (t * t)).toFixed(1) : "";
-}
->>>>>>> ExperimentalBranch_AzulGonzález
