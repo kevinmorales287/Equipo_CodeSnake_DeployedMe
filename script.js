@@ -203,7 +203,6 @@ function navigate(section) {
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
     if (section === "medicalRecord")       setupRecordActions();
-    if (section === "triage" && typeof abrevInit === "function") abrevInit();
 }
 
 // =============================================
@@ -571,17 +570,83 @@ function renderMedicalRecord() {
         summaryBar.classList.add("hidden");
     }
 
-    // Fill fields
-    const fields = ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"];
-    fields.forEach(f => {
-        const el = document.getElementById(f);
-        if (el) el.value = currentConsultation[f] || "";
+    // Fill fields — nuevos campos estructurados
+    const camposSimples = {
+        "hf-madre": currentConsultation["hf-madre"],
+        "hf-padre": currentConsultation["hf-padre"],
+        "hf-abp":   currentConsultation["hf-abp"],
+        "hf-abpa":  currentConsultation["hf-abpa"],
+        "hf-abm":   currentConsultation["hf-abm"],
+        "hf-abma":  currentConsultation["hf-abma"],
+        "hf-hijos": currentConsultation["hf-hijos"],
+        "hf-herm":  currentConsultation["hf-herm"],
+        "hf-otros": currentConsultation["hf-otros"],
+        "pp-inf": currentConsultation["pp-inf"],
+        "pp-ets": currentConsultation["pp-ets"],
+        "pp-deg": currentConsultation["pp-deg"],
+        "pp-neo": currentConsultation["pp-neo"],
+        "pp-qx":  currentConsultation["pp-qx"],
+        "pp-tx":  currentConsultation["pp-tx"],
+        "pp-alg": currentConsultation["pp-alg"],
+        "pp-meds":currentConsultation["pp-meds"],
+        "pnp-ocu":currentConsultation["pnp-ocu"],
+        "pnp-esc":currentConsultation["pnp-esc"],
+        "pnp-ec": currentConsultation["pnp-ec"],
+        "pnp-ali":currentConsultation["pnp-ali"],
+        "pnp-act":currentConsultation["pnp-act"],
+        "pnp-emb":currentConsultation["pnp-emb"],
+        "pnp-mac":currentConsultation["pnp-mac"],
+        "pnp-vac":currentConsultation["pnp-vac"],
+        "interrogatorio": currentConsultation.interrogatorio,
+        "padecimiento":   currentConsultation.padecimiento,
+        "pad-fac":        currentConsultation["pad-fac"],
+        "sis-dig": currentConsultation["sis-dig"],
+        "sis-res": currentConsultation["sis-res"],
+        "sis-car": currentConsultation["sis-car"],
+        "sis-gen": currentConsultation["sis-gen"],
+        "sis-end": currentConsultation["sis-end"],
+        "sis-hem": currentConsultation["sis-hem"],
+        "sis-ner": currentConsultation["sis-ner"],
+        "sis-mus": currentConsultation["sis-mus"],
+        "sis-teg": currentConsultation["sis-teg"],
+        "v-fc":   currentConsultation["v-fc"],
+        "v-fr":   currentConsultation["v-fr"],
+        "v-ta":   currentConsultation["v-ta"],
+        "v-temp": currentConsultation["v-temp"],
+        "v-spo2": currentConsultation["v-spo2"],
+        "v-peso": currentConsultation["v-peso"],
+        "v-talla":currentConsultation["v-talla"],
+        "v-imc":  currentConsultation["v-imc"],
+        "v-hab":  currentConsultation["v-hab"],
+        "v-glas": currentConsultation["v-glas"],
+        "eap-cab":currentConsultation["eap-cab"],
+        "eap-tor":currentConsultation["eap-tor"],
+        "eap-abd":currentConsultation["eap-abd"],
+        "eap-gen":currentConsultation["eap-gen"],
+        "eap-ext":currentConsultation["eap-ext"],
+        "eap-neu":currentConsultation["eap-neu"],
+        "eap-piel":currentConsultation["eap-piel"],
+        "eap-col":currentConsultation["eap-col"],
+        "exploracion":  currentConsultation.exploracion,
+        "diagnostico":  currentConsultation.diagnostico,
+        "lab-rx":       currentConsultation["lab-rx"],
+        "lab-gb":       currentConsultation["lab-gb"],
+        "tratamiento":  currentConsultation.tratamiento,
+        "trat-nf":      currentConsultation["trat-nf"],
+        "trat-sig":     currentConsultation["trat-sig"],
+        "notaEvolucion":currentConsultation.notaEvolucion,
+        "notaImportante":currentConsultation.notaImportante,
+    };
+    Object.entries(camposSimples).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || "";
     });
 
-    // Read-only if enfermero
+    // Read-only si es enfermero
     const isReadOnly = !can("canWriteMedicalNotes");
-    fields.forEach(f => {
-        const el = document.getElementById(f);
+    const todosLosCampos = Object.keys(camposSimples);
+    todosLosCampos.forEach(id => {
+        const el = document.getElementById(id);
         if (el) el.disabled = isReadOnly;
     });
     const dropZone = document.getElementById("attachDropZone");
@@ -592,7 +657,6 @@ function renderMedicalRecord() {
     setupAttachments();
     setupAutocomplete();
     setupAbbreviationDetection();
-    if (typeof abrevInit === "function") abrevInit();
     if (!isReadOnly) { startAutoSave(); setupAutoSaveEvents(); }
 }
 
@@ -627,10 +691,26 @@ function setupRecordActions() {
 
 function saveRecord() {
     if (!currentConsultation) return;
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(f => {
-        const el = document.getElementById(f);
-        if (el) currentConsultation[f] = el.value;
+    const ids = [
+        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
+        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
+        "interrogatorio","padecimiento","pad-fac",
+        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
+        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
+        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
+        "exploracion","diagnostico","lab-rx","lab-gb",
+        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
+    ];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) currentConsultation[id] = el.value.toUpperCase();
     });
+    // Mantener compatibilidad con campos legacy
+    currentConsultation.antecedentes = [
+        currentConsultation["pp-deg"], currentConsultation["pp-qx"],
+        currentConsultation["pp-inf"], currentConsultation["pp-meds"]
+    ].filter(Boolean).join(" | ") || "";
     saveConsultations();
     showToast("Consulta guardada.", "success");
     showAutoSave();
@@ -658,15 +738,41 @@ function startAutoSave() {
 function stopAutoSave() { if (autoSaveTimer) clearInterval(autoSaveTimer); }
 function saveCurrentRecord() {
     if (!currentConsultation) return;
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(f => {
-        const el = document.getElementById(f);
-        if (el) currentConsultation[f] = el.value;
+    const ids = [
+        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
+        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
+        "interrogatorio","padecimiento","pad-fac",
+        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
+        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
+        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
+        "exploracion","diagnostico","lab-rx","lab-gb",
+        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
+    ];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) currentConsultation[id] = el.value.toUpperCase();
     });
+    currentConsultation.antecedentes = [
+        currentConsultation["pp-deg"], currentConsultation["pp-qx"],
+        currentConsultation["pp-inf"], currentConsultation["pp-meds"]
+    ].filter(Boolean).join(" | ") || "";
     saveConsultations();
     showAutoSave();
 }
 function setupAutoSaveEvents() {
-    ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento","notaImportante"].forEach(id => {
+    const ids = [
+        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
+        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
+        "interrogatorio","padecimiento","pad-fac",
+        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
+        "v-fc","v-fr","v-ta","v-temp","v-spo2","v-peso","v-talla","v-imc","v-hab","v-glas",
+        "eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
+        "exploracion","diagnostico","lab-rx","lab-gb",
+        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
+    ];
+    ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", saveCurrentRecord);
     });
@@ -1100,3 +1206,22 @@ function formatDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLo
 function formatDateFull(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{weekday:"short",day:"2-digit",month:"long",year:"numeric"});}
 function formatTime(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
 function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
+
+// =============================================
+//  NUEVO EXPEDIENTE: toggle secciones e IMC
+// =============================================
+function recTog(id) {
+    const body = document.getElementById("rbody-" + id);
+    const chev = document.getElementById("rchev-" + id);
+    if (!body) return;
+    const open = body.style.display === "none";
+    body.style.display = open ? "" : "none";
+    if (chev) chev.classList.toggle("rc-open", open);
+}
+
+function recCalcIMC() {
+    const p = parseFloat(document.getElementById("v-peso")?.value);
+    const t = parseFloat(document.getElementById("v-talla")?.value);
+    const el = document.getElementById("v-imc");
+    if (el) el.value = (p > 0 && t > 0) ? (p / (t * t)).toFixed(1) : "";
+}

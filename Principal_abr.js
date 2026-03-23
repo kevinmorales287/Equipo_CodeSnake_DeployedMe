@@ -34,7 +34,7 @@ const ABREV_CATALOGO = {
 // ── Normalizar token: quita diagonal y caracteres especiales
 // C/8H → C8H, SpO2 → SPO2
 function abrevNormalizar(token) {
-    return token.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ0-9]/g, "");
+    return token.toUpperCase().replace(/[^A-ZÁÉÍÓÚ0-9]/g, "");
 }
 
 // ── Lista extensa de palabras a IGNORAR
@@ -149,7 +149,7 @@ function abrevDetectar(texto) {
         // - empieza con letra mayúscula
         // - máximo 6 caracteres (sin diagonal)
         // - es puramente alfanumérico después de normalizar
-        const esAbrev = /^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ0-9]{0,5}$/.test(normalizado);
+        const esAbrev = /^[A-ZÁÉÍÓÚ][A-ZÁÉÍÓÚ0-9]{0,5}$/.test(normalizado);
         if (!esAbrev) return;
 
         // Ignorar si es una palabra larga (más de 6 chars = palabra completa probablemente)
@@ -289,8 +289,17 @@ let _abrevReemplazos = {};   // { "IRCC": "IRC" } — correcciones tipográficas
 function abrevIniciarExport(tipo) {
     if (!currentConsultation || !currentPatient) return;
 
-    const campos = ["interrogatorio","antecedentes","padecimiento","exploracion","diagnostico","tratamiento"];
-    const textoTotal = campos.map(f => currentConsultation[f] || "").join(" ");
+    const todosLosCampos = [
+        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
+        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
+        "interrogatorio","padecimiento","pad-fac",
+        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
+        "v-hab","v-glas","eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
+        "exploracion","diagnostico","lab-rx","lab-gb",
+        "tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante"
+    ];
+    const textoTotal = todosLosCampos.map(f => currentConsultation[f] || "").join(" ");
 
     const {similares, desconocidas} = abrevDetectar(textoTotal);
     const items = [
@@ -530,9 +539,8 @@ function abrevEjecutarPDF(tipo, extras, reemplazos) {
     const catalogoFull = {...ABREV_CATALOGO, ...abrevAprendidas, ...extras};
 
     function expandir(texto) {
-        if (!texto) return "Sin información registrada.";
+        if (!texto || texto.trim() === "") return "No refiere.";
         let t = texto.toUpperCase();
-        // Aplicar correcciones tipográficas
         Object.entries(reemplazos || {}).forEach(([mal, bien]) => {
             t = t.replace(new RegExp(`\\b${mal}\\b`, "g"), bien);
         });
@@ -542,16 +550,19 @@ function abrevEjecutarPDF(tipo, extras, reemplazos) {
             if (!norm || ABREV_IGNORAR.has(norm)) return parte;
             const match = catalogoFull[norm];
             if (!match) return parte;
-            const exp = match.toUpperCase();
+            const exp = match.charAt(0).toUpperCase() + match.slice(1);
             return tipo === "patient" ? exp : `${exp} (${parte.trim()})`;
         }).join("");
     }
+
+    function val(id) { return currentConsultation[id] || ""; }
 
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
     let y = 15;
     const margin = 15, pageW = 210, contentW = pageW - margin * 2;
 
+    // Header
     doc.setFillColor(15,23,42); doc.rect(0,0,pageW,22,"F");
     doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont(undefined,"bold");
     doc.text("ClinData — Expediente Clínico", margin, 14);
@@ -569,20 +580,136 @@ function abrevEjecutarPDF(tipo, extras, reemplazos) {
     function addSection(title, text) {
         if (y > 260) { doc.addPage(); y = 15; }
         doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
-        doc.text(title, margin, y); y += 5;
+        doc.text(title, margin, y); y += 6;
         doc.setTextColor(0,0,0); doc.setFont(undefined,"normal"); doc.setFontSize(10);
-        const lines = doc.splitTextToSize(text, contentW);
+        const lines = doc.splitTextToSize(expandir(text), contentW);
         lines.forEach(l => { if(y>270){doc.addPage();y=15;} doc.text(l,margin,y); y+=5.5; });
         y += 4;
     }
 
-    addSection("Interrogatorio",      expandir(currentConsultation.interrogatorio));
-    addSection("Antecedentes",        expandir(currentConsultation.antecedentes));
-    addSection("Padecimiento actual", expandir(currentConsultation.padecimiento));
-    addSection("Exploración física",  expandir(currentConsultation.exploracion));
-    addSection("Diagnóstico",         expandir(currentConsultation.diagnostico));
-    addSection("Tratamiento",         expandir(currentConsultation.tratamiento));
+    function addSubSection(title, text) {
+        if (!text || text.trim() === "") return;
+        if (y > 265) { doc.addPage(); y = 15; }
+        doc.setFontSize(9); doc.setFont(undefined,"bold"); doc.setTextColor(100,100,100);
+        doc.text(title.toUpperCase(), margin + 4, y); y += 5;
+        doc.setTextColor(0,0,0); doc.setFont(undefined,"normal"); doc.setFontSize(10);
+        const lines = doc.splitTextToSize(expandir(text), contentW - 4);
+        lines.forEach(l => { if(y>270){doc.addPage();y=15;} doc.text(l, margin+4, y); y+=5.5; });
+        y += 2;
+    }
 
+    // ── ANTECEDENTES HEREDOFAMILIARES ──
+    addSection("Antecedentes heredofamiliares",
+        [val("hf-madre") && `Madre: ${val("hf-madre")}`,
+         val("hf-padre") && `Padre: ${val("hf-padre")}`,
+         val("hf-abp")   && `Abuelo paterno: ${val("hf-abp")}`,
+         val("hf-abpa")  && `Abuela paterna: ${val("hf-abpa")}`,
+         val("hf-abm")   && `Abuelo materno: ${val("hf-abm")}`,
+         val("hf-abma")  && `Abuela materna: ${val("hf-abma")}`,
+         val("hf-hijos") && `Hijos/as: ${val("hf-hijos")}`,
+         val("hf-herm")  && `Hermanos/as: ${val("hf-herm")}`,
+         val("hf-otros") && `Otros: ${val("hf-otros")}`,
+        ].filter(Boolean).join("  |  ") || "No refiere."
+    );
+
+    // ── ANTECEDENTES PATOLÓGICOS ──
+    if (y > 240) { doc.addPage(); y = 15; }
+    doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
+    doc.text("Antecedentes personales patológicos", margin, y); y += 6;
+    addSubSection("Enf. degenerativas", val("pp-deg"));
+    addSubSection("Enf. inflamatorias / infecciosas", val("pp-inf"));
+    addSubSection("Enf. de transmisión sexual", val("pp-ets"));
+    addSubSection("Enf. neoplásicas", val("pp-neo"));
+    addSubSection("Quirúrgicos", val("pp-qx"));
+    addSubSection("Traumáticos / Hospitalizaciones", val("pp-tx"));
+    addSubSection("Alergias", val("pp-alg"));
+    addSubSection("Medicamentos actuales", val("pp-meds"));
+    y += 2;
+
+    // ── ANTECEDENTES NO PATOLÓGICOS ──
+    addSection("Antecedentes personales no patológicos",
+        [val("pnp-ocu") && `Ocupación: ${val("pnp-ocu")}`,
+         val("pnp-esc") && `Escolaridad: ${val("pnp-esc")}`,
+         val("pnp-ec")  && `Estado civil: ${val("pnp-ec")}`,
+         val("pnp-emb") && `Embarazos: ${val("pnp-emb")}`,
+         val("pnp-mac") && `Anticonceptivo: ${val("pnp-mac")}`,
+         val("pnp-vac") && `Vacunación: ${val("pnp-vac")}`,
+         val("pnp-ali") && `Alimentación: ${val("pnp-ali")}`,
+         val("pnp-act") && `Actividad física: ${val("pnp-act")}`,
+        ].filter(Boolean).join("  |  ") || "No refiere."
+    );
+
+    // ── PADECIMIENTO ACTUAL ──
+    addSection("Padecimiento actual — Interrogatorio", val("interrogatorio"));
+    if (val("padecimiento")) addSubSection("Tiempo de evolución", val("padecimiento"));
+    if (val("pad-fac"))      addSubSection("Factores modificantes", val("pad-fac"));
+
+    // ── INTERROGATORIO POR APARATOS ──
+    if (y > 240) { doc.addPage(); y = 15; }
+    doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
+    doc.text("Interrogatorio por aparatos y sistemas", margin, y); y += 6;
+    ["dig","res","car","gen","end","hem","ner","mus","teg"].forEach(s => {
+        const nombres = {dig:"Digestivo",res:"Respiratorio",car:"Cardiovascular",
+            gen:"Genitourinario",end:"Sistema endocrino",hem:"Hematopoyético",
+            ner:"Sistema nervioso",mus:"Musculoesquelético",teg:"Tegumentario"};
+        addSubSection(nombres[s], val(`sis-${s}`));
+    });
+    y += 2;
+
+    // ── EXPLORACIÓN FÍSICA ──
+    if (y > 240) { doc.addPage(); y = 15; }
+    doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
+    doc.text("Exploración física", margin, y); y += 6;
+    const vitalesTexto = [
+        val("v-fc")   && `FC: ${val("v-fc")} lpm`,
+        val("v-fr")   && `FR: ${val("v-fr")} rpm`,
+        val("v-ta")   && `TA: ${val("v-ta")} mmHg`,
+        val("v-temp") && `Temp: ${val("v-temp")}°C`,
+        val("v-spo2") && `SpO2: ${val("v-spo2")}%`,
+        val("v-peso") && `Peso: ${val("v-peso")} kg`,
+        val("v-talla")&& `Talla: ${val("v-talla")} m`,
+        val("v-imc")  && `IMC: ${val("v-imc")}`,
+        val("v-hab")  && `Hábitus: ${val("v-hab")}`,
+        val("v-glas") && `Glasgow: ${val("v-glas")}`,
+    ].filter(Boolean).join("  |  ");
+    if (vitalesTexto) addSubSection("Signos vitales", vitalesTexto);
+    ["cab","tor","abd","gen","ext","neu","piel","col"].forEach(r => {
+        const nombres = {cab:"Cabeza y cuello",tor:"Tórax",abd:"Abdomen",
+            gen:"Genitourinario",ext:"Extremidades",neu:"Neurológico",
+            piel:"Piel y tegumentos",col:"Columna vertebral"};
+        addSubSection(nombres[r], val(`eap-${r}`));
+    });
+    if (val("exploracion")) addSubSection("Nota libre", val("exploracion"));
+    y += 2;
+
+    // ── DIAGNÓSTICO ──
+    addSection("Diagnóstico (CIE-10)", val("diagnostico"));
+
+    // ── LABORATORIOS ──
+    if (val("lab-rx") || val("lab-gb")) {
+        if (y > 240) { doc.addPage(); y = 15; }
+        doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
+        doc.text("Laboratorios y estudios", margin, y); y += 6;
+        addSubSection("Radiográfico", val("lab-rx"));
+        addSubSection("Laboratorio / Gabinete", val("lab-gb"));
+        y += 2;
+    }
+
+    // ── TRATAMIENTO ──
+    addSection("Tratamiento", val("tratamiento"));
+    if (val("trat-nf"))  addSubSection("Indicaciones no farmacológicas", val("trat-nf"));
+    if (val("trat-sig")) addSubSection("Seguimiento / Próxima cita", val("trat-sig"));
+
+    // ── NOTAS DE EVOLUCIÓN ──
+    if (val("notaEvolucion") || val("notaImportante")) {
+        if (y > 240) { doc.addPage(); y = 15; }
+        doc.setFontSize(11); doc.setFont(undefined,"bold"); doc.setTextColor(14,165,233);
+        doc.text("Notas de evolución", margin, y); y += 6;
+        addSubSection("Nota de evolución", val("notaEvolucion"));
+        addSubSection("Nota importante", val("notaImportante"));
+    }
+
+    // Footer
     const pages = doc.internal.getNumberOfPages();
     for (let i=1;i<=pages;i++) {
         doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150);
@@ -596,9 +723,13 @@ function abrevEjecutarPDF(tipo, extras, reemplazos) {
 // =============================================
 function abrevInit() {
     abrevActivarMayusculas([
-        "interrogatorio","antecedentes","padecimiento",
-        "exploracion","tratamiento","notaImportante",
-        "triageName","triageReason","triageNotes",
-        "name","address"
+        "hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+        "pp-inf","pp-ets","pp-deg","pp-neo","pp-qx","pp-tx","pp-alg","pp-meds",
+        "pnp-ocu","pnp-esc","pnp-ec","pnp-ali","pnp-act","pnp-emb","pnp-mac","pnp-vac",
+        "interrogatorio","padecimiento","pad-fac",
+        "sis-dig","sis-res","sis-car","sis-gen","sis-end","sis-hem","sis-ner","sis-mus","sis-teg",
+        "v-hab","v-glas","eap-cab","eap-tor","eap-abd","eap-gen","eap-ext","eap-neu","eap-piel","eap-col",
+        "exploracion","tratamiento","trat-nf","trat-sig","notaEvolucion","notaImportante",
+        "triageName","triageReason","triageNotes","name","address"
     ]);
 }
