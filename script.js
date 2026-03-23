@@ -96,9 +96,22 @@ function bootApp() {
     document.getElementById("userRoleBadge").textContent = labels[currentUser.role] || currentUser.role;
     document.getElementById("userAvatar").textContent = currentUser.displayName.charAt(0).toUpperCase();
     renderSidebar();
-    if (currentUser.role === "admin") navigate("admin");
-    else if (currentUser.role === "medico") navigate("consultQueue");
-    else navigate("patients");
+
+    // Registrar el estado base en el historial (entrada 0 tras login)
+    // para que el botón Atrás funcione desde la primera sección
+    const homeSection = currentUser.role === "admin" ? "admin"
+                      : currentUser.role === "medico" ? "consultQueue"
+                      : "patients";
+
+    // replaceState en la raíz para que la primera entrada del historial
+    // sea la home del rol (no la URL base en blanco)
+    history.replaceState(
+        { section: homeSection, patientId: null, consultationId: null, tab: "historia" },
+        document.title,
+        window.location.pathname === "/" ? window.location.pathname : window.location.pathname
+    );
+
+    navigate(homeSection);
 }
 
 function handleLogout() {
@@ -110,6 +123,9 @@ function handleLogout() {
     document.getElementById("loginUser").value = "";
     document.getElementById("loginPass").value = "";
     document.getElementById("loginError").classList.add("hidden");
+    // Volver a la raíz para que el historial no mantenga rutas autenticadas
+    history.replaceState(null, "ClinData", "/");
+    document.title = "ClinData — Sistema de Expediente Clínico";
 }
 
 function togglePassword() {
@@ -129,6 +145,45 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginUser").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("loginPass").focus(); });
     const s = document.getElementById("search");
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
+});
+
+// Listener del botón Atrás / Adelante del navegador
+window.addEventListener("popstate", (e) => {
+    // Si no hay sesión activa, mostrar login
+    if (!currentUser) {
+        document.getElementById("appShell").classList.add("hidden");
+        document.getElementById("loginScreen").classList.remove("hidden");
+        return;
+    }
+
+    const state = e.state;
+    if (!state || !state.section) {
+        // Sin estado: ir al home del rol
+        const homeSection = currentUser.role === "admin"   ? "admin"
+                          : currentUser.role === "medico"  ? "consultQueue"
+                          : "patients";
+        _activateSection(homeSection);
+        return;
+    }
+
+    // Auto-guardar expediente si se estaba editando
+    if (state.section !== "medicalRecord" && currentConsultation && can("canWriteMedicalNotes")) {
+        collectRecordFieldsSafe();
+    }
+
+    // Restaurar entidades desde el estado guardado
+    if (state.patientId) {
+        currentPatient = patients.find(p => p.id === state.patientId) || null;
+    }
+    if (state.consultationId) {
+        currentConsultation = consultations.find(c => c.id === state.consultationId) || null;
+    }
+    if (state.tab) currentTab = state.tab;
+
+    document.title = state.title || "ClinData";
+
+    // Activar sección sin nuevo pushState
+    _activateSection(state.section);
 });
 
 // =============================================
@@ -164,44 +219,110 @@ function renderSidebar() {
 // =============================================
 //  NAVEGACIÓN
 // =============================================
+// =============================================
+//  NAVEGACIÓN CON HISTORY API
+// =============================================
+
+// navigate() — punto de entrada público.
+// Empuja una nueva entrada en el historial y activa la sección.
 function navigate(section) {
+    // Auto-guardar campos del expediente si se estaba en esa vista
+    if (section !== "medicalRecord" && currentConsultation && can("canWriteMedicalNotes")) {
+        collectRecordFieldsSafe();
+    }
+
+    const sectionPath = {
+        patients:            "/patients",
+        newPatient:          "/patients/new",
+        consultQueue:        "/queue",
+        consultationHistory: "/patient/history",
+        medicalRecord:       "/patient/record",
+        triage:              "/triage",
+        triageList:          "/triage/queue",
+        admin:               "/admin",
+    };
+    const routeTitle = {
+        patients:            "Pacientes · ClinData",
+        newPatient:          "Nuevo Paciente · ClinData",
+        consultQueue:        "Cola de Consulta · ClinData",
+        consultationHistory: "Expediente · ClinData",
+        medicalRecord:       "Consulta · ClinData",
+        triage:              "Triage · ClinData",
+        triageList:          "Cola de Urgencias · ClinData",
+        admin:               "Administración · ClinData",
+    };
+
+    const urlPath = sectionPath[section] || "/";
+    const title   = routeTitle[section]  || "ClinData";
+    const state   = {
+        section,
+        patientId:      currentPatient?.id      ?? null,
+        consultationId: currentConsultation?.id ?? null,
+        tab:            currentTab              ?? "historia",
+    };
+
+    history.pushState(state, title, urlPath);
+    document.title = title;
+
+    _activateSection(section);
+}
+
+// _activateSection() — lógica interna de activación de sección,
+// usada tanto por navigate() como por el listener popstate.
+function _activateSection(section) {
+    const map = {
+        patients:            "patientsSection",
+        newPatient:          "newPatientSection",
+        consultQueue:        "consultQueueSection",
+        consultationHistory: "consultationHistorySection",
+        medicalRecord:       "medicalRecordSection",
+        triage:              "triageSection",
+        triageList:          "triageListSection",
+        admin:               "adminSection"
+    };
+    const navMap = {
+        patients:            "nav-patients",
+        newPatient:          "nav-newPatient",
+        consultQueue:        "nav-consultQueue",
+        consultationHistory: "nav-patients",
+        medicalRecord:       "nav-patients",
+        triage:              "nav-triage",
+        triageList:          "nav-triageList",
+        admin:               "nav-admin"
+    };
+
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
     document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
     stopAutoSave();
-
-    const map = {
-        patients: "patientsSection",
-        newPatient: "newPatientSection",
-        consultQueue: "consultQueueSection",
-        consultationHistory: "consultationHistorySection",
-        medicalRecord: "medicalRecordSection",
-        triage: "triageSection",
-        triageList: "triageListSection",
-        admin: "adminSection"
-    };
-    const navMap = {
-        patients: "nav-patients",
-        newPatient: "nav-newPatient",
-        consultQueue: "nav-consultQueue",
-        consultationHistory: "nav-patients",
-        medicalRecord: "nav-patients",
-        triage: "nav-triage",
-        triageList: "nav-triageList",
-        admin: "nav-admin"
-    };
 
     const sectionEl = map[section] ? document.getElementById(map[section]) : null;
     if (sectionEl) sectionEl.classList.add("active");
     const navEl = navMap[section] ? document.getElementById(navMap[section]) : null;
     if (navEl) navEl.classList.add("active");
 
+    window.scrollTo({ top: 0, behavior: "instant" });
+
     if (section === "patients")            renderPatients();
     if (section === "consultQueue")        renderConsultQueue();
     if (section === "consultationHistory") renderConsultationHistory();
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
-    if (section === "medicalRecord")       setupRecordActions();
+    if (section === "medicalRecord")       renderMedicalRecord();
     if (section === "triage" && typeof abrevInit === "function") abrevInit();
+}
+
+// Versión segura de collectRecordFields que no lanza errores
+// si los elementos aún no están en el DOM
+function collectRecordFieldsSafe() {
+    try { collectRecordFields(); saveConsultations(); } catch(e) { /* silencioso */ }
+}
+
+// Navegar a la pantalla raíz según el rol del usuario
+function navigateToRoleHome() {
+    if (!currentUser) return;
+    if (currentUser.role === "admin")   navigate("admin");
+    else if (currentUser.role === "medico") navigate("consultQueue");
+    else navigate("patients");
 }
 
 // =============================================
