@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1774383482622,
+    "usuario": "admin.sys",
+    "accion": "PUT",
+    "entidad": "usuarios",
+    "entidad_id": 1,
+    "datos_anteriores": "{}",
+    "datos_nuevos": "{\"displayName\":\"Dr. Juan Garcia\",\"username\":\"dr.garcia\",\"role\":\"medico\"}",
+    "ip": "::1",
+    "fecha_hora": "2026-03-24 20:18:02"
+  }
+]

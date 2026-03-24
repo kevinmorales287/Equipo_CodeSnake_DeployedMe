@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "username": "dr.garcia",
+    "password": "Medico#2026",
+    "role": "medico",
+    "displayName": "Dr. Juan Garcia"
+  },
+  {
+    "id": 2,
+    "username": "enf.lopez",
+    "password": "Enfermero#2026",
+    "role": "enfermero",
+    "displayName": "Enf. Lopez"
+  },
+  {
+    "id": 3,
+    "username": "admin.sys",
+    "password": "Admin#2026",
+    "role": "admin",
+    "displayName": "Administrador"
+  }
+]

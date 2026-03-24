@@ -33,6 +33,7 @@ const ROLE_PERMISSIONS = {
         canViewQueue: false,
         canAddToQueue: false,
         canManageUsers: true,
+        canViewAudit: true, // TAREA 1
         sidebarLabel: "Administrador"
     }
 };
@@ -61,7 +62,18 @@ let patients      = JSON.parse(localStorage.getItem("cd_patients"))  || [];
 let consultations = JSON.parse(localStorage.getItem("cd_consults"))  || [];
 let triageQueue   = JSON.parse(localStorage.getItem("cd_triage"))    || [];
 let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
-let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
+let systemUsers   = []; // Se carga desde API
+
+const API_URL = "";
+
+async function loadSystemUsers() {
+    try {
+        const res = await fetch(`${API_URL}/api/usuarios`);
+        systemUsers = await res.json();
+    } catch (err) {
+        systemUsers = JSON.parse(localStorage.getItem("cd_users")) || DEFAULT_USERS;
+    }
+}
 
 function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
 function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
@@ -116,12 +128,12 @@ function togglePassword() {
     i.type = i.type === "password" ? "text" : "password";
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
+    await loadSystemUsers();
     const saved = sessionStorage.getItem("cd_session");
     if (saved) {
         currentUser = JSON.parse(saved);
-        // Re-sync user from storage in case it was updated
-        const fresh = systemUsers.find(u => u.id === currentUser.id);
+        const fresh = systemUsers.find(u => u.id == currentUser.id);
         if (fresh) currentUser = fresh;
         bootApp();
     }
@@ -155,6 +167,9 @@ function renderSidebar() {
     if (can("canManageUsers")) {
         items.push({ id: "nav-admin", section: "admin", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`, label: "Gestión de Usuarios" });
     }
+    if (can("canViewAudit")) {
+        items.push({ id: "nav-auditoria", section: "auditoria", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, label: "Auditoría" });
+    }
 
     nav.innerHTML = items.map(item => `
         <button class="nav-item" onclick="navigate('${item.section}')" id="${item.id}" data-section="${item.section}">
@@ -179,7 +194,8 @@ function navigate(section) {
         medicalRecord: "medicalRecordSection",
         triage: "triageSection",
         triageList: "triageListSection",
-        admin: "adminSection"
+        admin: "adminSection",
+        auditoria: "auditoriaSection"
     };
     const navMap = {
         patients: "nav-patients",
@@ -189,7 +205,8 @@ function navigate(section) {
         medicalRecord: "nav-patients",
         triage: "nav-triage",
         triageList: "nav-triageList",
-        admin: "nav-admin"
+        admin: "nav-admin",
+        auditoria: "nav-auditoria"
     };
 
     const sectionEl = map[section] ? document.getElementById(map[section]) : null;
@@ -202,6 +219,7 @@ function navigate(section) {
     if (section === "consultationHistory") renderConsultationHistory();
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
+    if (section === "auditoria")           renderAuditLogs();
     if (section === "medicalRecord")       setupRecordActions();
 }
 
@@ -1075,30 +1093,62 @@ function openEditUserModal(userId) {
     document.getElementById("userModal").classList.remove("hidden");
 }
 
-function saveUserFromModal() {
+async function saveUserFromModal() {
     const id = document.getElementById("editUserId").value;
-    const displayName = document.getElementById("modalDisplayName").value.trim();
-    const username    = document.getElementById("modalUsername").value.trim();
-    const password    = document.getElementById("modalPassword").value;
-    const role        = document.getElementById("modalRole").value;
+    const body = {
+        displayName: document.getElementById("modalDisplayName").value.trim(),
+        username: document.getElementById("modalUsername").value.trim(),
+        role: document.getElementById("modalRole").value
+    };
+    const pass = document.getElementById("modalPassword").value;
+    if (pass) body.password = pass;
 
-    if (!displayName||!username||!role) { showToast("Completa todos los campos obligatorios.", "error"); return; }
-    if (!id && !password) { showToast("La contraseña es obligatoria para un usuario nuevo.", "error"); return; }
-    if (password && password.length < 8) { showToast("La contraseña debe tener al menos 8 caracteres.", "error"); return; }
+    if (!body.displayName||!body.username||!body.role) { showToast("Completa todos los campos obligatorios.", "error"); return; }
+    
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `${API_URL}/api/usuarios/${id}` : `${API_URL}/api/usuarios`;
 
-    const duplicate = systemUsers.find(u => u.username===username && u.id != id);
-    if (duplicate) { showToast("Ese nombre de usuario ya existe.", "error"); return; }
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser.username },
+            body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            showToast("Usuario guardado.", "success");
+            closeModal("userModal");
+            await loadSystemUsers();
+            renderUserTable();
+        }
+    } catch (err) { showToast("Error de conexión", "error"); }
+}
 
-    if (id) {
-        const u = systemUsers.find(x=>x.id==id);
-        if (u) { u.displayName=displayName; u.username=username; u.role=role; if(password) u.password=password; }
-    } else {
-        systemUsers.push({ id: Date.now(), username, password, role, displayName });
-    }
-    saveSystemUsers();
-    closeModal("userModal");
-    showToast("Usuario guardado.", "success");
-    renderUserTable();
+let currentAuditLogs = [];
+async function renderAuditLogs() {
+    const body = document.getElementById("auditTableBody");
+    if (!body) return;
+    try {
+        const res = await fetch(`${API_URL}/api/auditoria`);
+        currentAuditLogs = await res.json();
+        body.innerHTML = currentAuditLogs.map((l, idx) => `
+            <tr>
+                <td><small>${formatDateFull(l.fecha_hora)} ${formatTime(l.fecha_hora)}</small></td>
+                <td><b>${l.usuario}</b></td>
+                <td><span class="role-pill ${l.accion === 'DELETE' ? 'role-admin-pill' : 'role-medico-pill'}">${l.accion}</span></td>
+                <td>${l.entidad} <small>(${l.entidad_id||'-'})</small></td>
+                <td><button class="btn-table-edit" onclick="viewAuditDetail(${idx})">Ver</button></td>
+            </tr>
+        `).join("");
+    } catch(err) { body.innerHTML = '<tr><td colspan="5">Error al cargar logs</td></tr>'; }
+}
+
+function viewAuditDetail(idx) {
+    const log = currentAuditLogs[idx];
+    if (!log) return;
+    try {
+        const data = JSON.parse(log.datos_nuevos || '{}');
+        alert(`DETALLES DE LA ACCIÓN\n\nUsuario: ${log.usuario}\nAcción: ${log.accion}\nEntidad: ${log.entidad}\n\nDatos:\n${JSON.stringify(data, null, 2)}`);
+    } catch(e) { alert("Error al procesar datos: " + log.datos_nuevos); }
 }
 
 function deleteUser(userId) {
@@ -1141,18 +1191,66 @@ const abbreviations = {
 function getLastWord(t){const w=t.split(" ");return w[w.length-1].toLowerCase();}
 function getSuggestions(w){if(w.length<2)return[];return suggestionsDB.filter(i=>i.toLowerCase().includes(w)).slice(0,6);}
 
+let autocompleteTimeout = null;
+
 function setupAutocomplete() {
-    const input=document.getElementById("diagnostico"), box=document.getElementById("suggestionsBox");
-    if(!input||!box) return;
-    input.removeEventListener("input",input._autocompleteHandler);
-    input._autocompleteHandler=()=>{
-        const s=getSuggestions(getLastWord(input.value)); box.innerHTML="";
-        if(!s.length) return;
-        s.forEach(sg=>{const d=document.createElement("div");d.className="suggestion-item";d.textContent=sg;d.onclick=()=>{applySuggestion(input,sg);box.innerHTML="";};box.appendChild(d);});
-    };
-    input.addEventListener("input",input._autocompleteHandler);
-    document.addEventListener("click",e=>{if(!box.contains(e.target)&&e.target!==input)box.innerHTML="";});
+    const fields = ['diagnostico', 'interrogatorio', 'tratamiento', 'exploracion'];
+    fields.forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener('input', (e) => {
+            clearTimeout(autocompleteTimeout);
+            const val = e.target.value;
+            const words = val.split(/[ \n]+/);
+            const lastWord = words[words.length - 1];
+            if (lastWord.length < 2) { hideSuggestions(); return; }
+            autocompleteTimeout = setTimeout(() => searchAutocomplete(lastWord, input), 300);
+        });
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.suggestions-box')) hideSuggestions(); });
 }
+
+async function searchAutocomplete(q, input) {
+    const box = document.getElementById("suggestionsBox");
+    if (!box) return;
+    let html = '';
+    // 1. Abreviaturas (Expertas)
+    const result = window.abrevHelper.detectar(q);
+    if (result.conocidas.length > 0 || result.similares.length > 0) {
+        html += '<div class="sugg-category">Abreviaturas</div>';
+        [...result.conocidas, ...result.similares].forEach(a => {
+            const label = a.exp || a.sugerencias?.[0]?.exp || a.token;
+            html += `<div class="suggestion-item" onclick="applySugg('${label}', '${input.id}')"><b>${a.token}</b>: ${label}</div>`;
+        });
+    }
+    // 2. CIE-10 (API)
+    try {
+        const res = await fetch(`${API_URL}/api/conceptos?q=${q}`);
+        const concepts = await res.json();
+        if (concepts.length > 0) {
+            html += '<div class="sugg-category">CIE-10</div>';
+            concepts.forEach(c => {
+                html += `<div class="suggestion-item" onclick="applySugg('${c.codigo} - ${c.descripcion}', '${input.id}')"><b>${c.codigo}</b> ${c.descripcion}</div>`;
+            });
+        }
+    } catch(e){}
+
+    if (html) {
+        const r = input.getBoundingClientRect();
+        box.style.left = r.left + "px"; box.style.top = (r.bottom + window.scrollY) + "px";
+        box.style.width = r.width + "px"; box.innerHTML = html; box.style.display = 'block';
+    } else hideSuggestions();
+}
+
+function applySugg(val, inputId) {
+    const input = document.getElementById(inputId);
+    const words = input.value.split(/[ \n]+/);
+    words.pop();
+    input.value = words.join(" ") + (words.length > 0 ? " " : "") + val + " ";
+    hideSuggestions(); input.focus();
+}
+
+function hideSuggestions() { const b = document.getElementById("suggestionsBox"); if(b) b.style.display='none'; }
 
 function applySuggestion(input,s){const w=input.value.split(" ");w.pop();w.push(s);input.value=w.join(" ")+" ";input.focus();}
 
@@ -1171,32 +1269,42 @@ function expandAbbreviations(text,mode="patient"){if(!text)return"";return text.
 // =============================================
 //  EXPORTAR PDF
 // =============================================
-function exportPDF(type) {
-    if (!currentConsultation||!currentPatient) return;
-    const {jsPDF}=window.jspdf; const doc=new jsPDF();
-    let y=15; const margin=15, pageW=210, contentW=pageW-margin*2;
-    doc.setFillColor(15,23,42); doc.rect(0,0,pageW,22,"F");
-    doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont(undefined,"bold");
-    doc.text("ClinData — Expediente Clínico",margin,14);
-    doc.setFontSize(9); doc.setFont(undefined,"normal");
-    doc.text(type==="patient"?"Versión para paciente":"Versión para médico",pageW-margin,14,{align:"right"});
-    y=30; doc.setTextColor(0,0,0);
-    doc.setFontSize(12); doc.setFont(undefined,"bold");
-    doc.text(`Paciente: ${currentPatient.name}`,margin,y); y+=7;
-    doc.setFontSize(10); doc.setFont(undefined,"normal");
-    doc.text(`Edad: ${currentPatient.age} años  |  Sexo: ${currentPatient.sex}  |  Fecha: ${formatDateFull(currentConsultation.date)}`,margin,y); y+=7;
-    if(currentPatient.allergies) {doc.text(`Alergias: ${currentPatient.allergies}`,margin,y); y+=7;}
-    doc.setDrawColor(200,200,200); doc.line(margin,y,pageW-margin,y); y+=7;
-    function addSection(title,text){if(y>260){doc.addPage();y=15;}doc.setFontSize(11);doc.setFont(undefined,"bold");doc.setTextColor(14,165,233);doc.text(title,margin,y);y+=5;doc.setTextColor(0,0,0);doc.setFont(undefined,"normal");doc.setFontSize(10);const lines=doc.splitTextToSize(text||"Sin información registrada.",contentW);lines.forEach(l=>{if(y>270){doc.addPage();y=15;}doc.text(l,margin,y);y+=5.5;});y+=4;}
-    addSection("Interrogatorio",expandAbbreviations(currentConsultation.interrogatorio,type));
-    addSection("Antecedentes",expandAbbreviations(currentConsultation.antecedentes,type));
-    addSection("Padecimiento actual",expandAbbreviations(currentConsultation.padecimiento,type));
-    addSection("Exploración física",expandAbbreviations(currentConsultation.exploracion,type));
-    addSection("Diagnóstico",expandAbbreviations(currentConsultation.diagnostico,type));
-    addSection("Tratamiento",expandAbbreviations(currentConsultation.tratamiento,type));
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150);doc.text(`ClinData — ${new Date().toLocaleDateString("es-MX")} — Página ${i}/${pages}`,pageW/2,290,{align:"center"});}
-    doc.save(`expediente_${currentPatient.name.replace(/\s/g,"_")}_${type}.pdf`);
+function abrevIniciarExport(type) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = currentPatient;
+    const c = currentConsultation;
+
+    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(18); doc.text("ClinData — REPORTE CLÍNICO", 15, 18);
+    doc.setFontSize(10); doc.text(`Generado el ${new Date().toLocaleString()}`, 15, 25);
+
+    doc.setTextColor(0,0,0); doc.setFontSize(12); doc.text("DATOS DEL PACIENTE", 15, 40);
+    doc.autoTable({
+        startY: 45,
+        head: [['Campo', 'Información']],
+        body: [['Nombre', p.name], ['Edad', p.age], ['Sexo', p.sex], ['Alergias', p.allergies||'Ninguna']],
+        theme: 'grid'
+    });
+
+    doc.text("NOTA MÉDICA", 15, doc.lastAutoTable.finalY + 10);
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 15,
+        head: [['Sección', 'Contenido']],
+        body: [
+            ['Padecimiento', c.padecimiento || '—'],
+            ['Exploración', c.exploracion || '—'],
+            ['Diagnóstico', c.diagnostico || '—'],
+            ['Tratamiento', c.tratamiento || '—']
+        ],
+        theme: 'striped'
+    });
+
+    const pages = doc.internal.getNumberOfPages();
+    for(let i=1; i<=pages; i++) {
+        doc.setPage(i); doc.setFontSize(8); doc.text(`Página ${i} de ${pages}`, 105, 285, {align:'center'});
+    }
+    doc.save(`ClinData_${p.name.replace(/\s/g,'_')}.pdf`);
 }
 
 // =============================================

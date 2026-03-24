@@ -1,26 +1,21 @@
-// server.js — Punto de entrada del servidor
-// Corre con: node server.js
-
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 
 const abreviaturasRouter = require('./api/abreviaturas');
+const { router: auditoriaRouter, middleware: auditMiddleware } = require('./api/auditoria');
+const usuariosRouter = require('./api/usuarios');
+const conceptosRouter = require('./api/conceptos');
 
 const app  = express();
-const PORT = 3000;
-
-// Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(auditMiddleware);
+app.use(express.static(path.join(__dirname)));
 
-// Sirve los archivos de la carpeta public (tu HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Rutas de la API
 app.use('/api/abreviaturas', abreviaturasRouter);
+app.use('/api/auditoria', auditoriaRouter);
+app.use('/api/usuarios', usuariosRouter);
+app.use('/api/conceptos', conceptosRouter);
 
-// Inicia el servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+app.listen(3000, () => console.log('ClinData Server http://localhost:3000'));

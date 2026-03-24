@@ -3,7 +3,7 @@
 
 const express = require('express');
 const router  = express.Router();
-const db      = require('../db');
+const db      = require('../Db');
 
 // GET /api/abreviaturas
 // Devuelve todas las abreviaturas, o filtra por ?q=HTA&seccion=diagnostico
