@@ -110,6 +110,9 @@ function bootApp() {
     if (currentUser.role === "admin") navigate("admin");
     else if (currentUser.role === "medico") navigate("consultQueue");
     else navigate("patients");
+    
+    // Inicializar componentes globales
+    initAutocomplete();
 }
 
 function handleLogout() {
@@ -1191,56 +1194,6 @@ const abbreviations = {
 function getLastWord(t){const w=t.split(" ");return w[w.length-1].toLowerCase();}
 function getSuggestions(w){if(w.length<2)return[];return suggestionsDB.filter(i=>i.toLowerCase().includes(w)).slice(0,6);}
 
-let autocompleteTimeout = null;
-
-function setupAutocomplete() {
-    const fields = ['diagnostico', 'interrogatorio', 'tratamiento', 'exploracion'];
-    fields.forEach(id => {
-        const input = document.getElementById(id);
-        if (!input) return;
-        input.addEventListener('input', (e) => {
-            clearTimeout(autocompleteTimeout);
-            const val = e.target.value;
-            const words = val.split(/[ \n]+/);
-            const lastWord = words[words.length - 1];
-            if (lastWord.length < 2) { hideSuggestions(); return; }
-            autocompleteTimeout = setTimeout(() => searchAutocomplete(lastWord, input), 300);
-        });
-    });
-    document.addEventListener('click', (e) => { if (!e.target.closest('.suggestions-box')) hideSuggestions(); });
-}
-
-async function searchAutocomplete(q, input) {
-    const box = document.getElementById("suggestionsBox");
-    if (!box) return;
-    let html = '';
-    // 1. Abreviaturas (Expertas)
-    const result = window.abrevHelper.detectar(q);
-    if (result.conocidas.length > 0 || result.similares.length > 0) {
-        html += '<div class="sugg-category">Abreviaturas</div>';
-        [...result.conocidas, ...result.similares].forEach(a => {
-            const label = a.exp || a.sugerencias?.[0]?.exp || a.token;
-            html += `<div class="suggestion-item" onclick="applySugg('${label}', '${input.id}')"><b>${a.token}</b>: ${label}</div>`;
-        });
-    }
-    // 2. CIE-10 (API)
-    try {
-        const res = await fetch(`${API_URL}/api/conceptos?q=${q}`);
-        const concepts = await res.json();
-        if (concepts.length > 0) {
-            html += '<div class="sugg-category">CIE-10</div>';
-            concepts.forEach(c => {
-                html += `<div class="suggestion-item" onclick="applySugg('${c.codigo} - ${c.descripcion}', '${input.id}')"><b>${c.codigo}</b> ${c.descripcion}</div>`;
-            });
-        }
-    } catch(e){}
-
-    if (html) {
-        const r = input.getBoundingClientRect();
-        box.style.left = r.left + "px"; box.style.top = (r.bottom + window.scrollY) + "px";
-        box.style.width = r.width + "px"; box.innerHTML = html; box.style.display = 'block';
-    } else hideSuggestions();
-}
 
 function applySugg(val, inputId) {
     const input = document.getElementById(inputId);
@@ -1267,44 +1220,356 @@ function setupAbbreviationDetection() {
 function expandAbbreviations(text,mode="patient"){if(!text)return"";return text.split(" ").map(w=>{if(abbreviations[w])return mode==="patient"?abbreviations[w]:`${abbreviations[w]} (${w})`;return w;}).join(" ");}
 
 // =============================================
-//  EXPORTAR PDF
+//  TABS Y DINÁMICOS (NOM-004)
 // =============================================
-function abrevIniciarExport(type) {
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('tab-' + tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+
+    if (tabId === 'nota-enfermeria') renderVitalesEnfermeria();
+}
+
+function addMedRow(tableId) {
+    const tbody = document.getElementById(tableId);
+    const tr = document.createElement('tr');
+    if (tableId === 'med-tbl-cuerpo') {
+        tr.innerHTML = `
+            <td><input type="text" class="med-nombre" placeholder="Nombre"></td>
+            <td><input type="text" class="med-dosis" placeholder="500mg"></td>
+            <td><input type="text" class="med-via" placeholder="Oral"></td>
+            <td><input type="text" class="med-frec" placeholder="c/8h"></td>
+            <td><input type="text" class="med-dur" placeholder="5 días"></td>
+            <td><button class="btn-dismiss" onclick="delMedRow(this)">×</button></td>
+        `;
+    } else {
+        tr.innerHTML = `
+            <td><input type="text" class="med-nombre"></td>
+            <td><input type="text" class="med-dosis"></td>
+            <td><input type="text" class="med-hora"></td>
+            <td><input type="text" class="med-via"></td>
+            <td><input type="text" class="med-enf"></td>
+            <td><button class="btn-dismiss" onclick="delMedRow(this)">×</button></td>
+        `;
+    }
+    tbody.appendChild(tr);
+}
+
+function delMedRow(btn) { btn.closest('tr').remove(); }
+
+function renderVitalesEnfermeria() {
+    const container = document.getElementById('enf-vitales-container');
+    if (!container) return;
+    // Copiar vitales de la nota médica si existen para editarlos
+    const v = {
+        peso: document.getElementById('v-peso')?.value || '--',
+        talla: document.getElementById('v-talla')?.value || '--',
+        ta: document.getElementById('v-ta')?.value || '--/--',
+        fc: document.getElementById('v-fc')?.value || '--',
+        temp: document.getElementById('v-temp')?.value || '--'
+    };
+    container.innerHTML = `
+        <div class="pfc-row">
+            <span class="pfc-tag">Peso: ${v.peso}kg</span>
+            <span class="pfc-tag">Talla: ${v.talla}cm</span>
+            <span class="pfc-tag">T/A: ${v.ta}</span>
+            <span class="pfc-tag">FC: ${v.fc}</span>
+            <span class="pfc-tag">Temp: ${v.temp}°C</span>
+        </div>
+    `;
+}
+
+// =============================================
+//  AUTOCOMPLETADO AVANZADO (CIE-10 + ABREVIATURAS)
+// =============================================
+let selectedDiagnosticos = [];
+
+function initAutocomplete() {
+    const diagInput = document.getElementById('diagnostico');
+    if (!diagInput) return;
+
+    diagInput.addEventListener('input', debounce(async (e) => {
+        const query = e.target.value.trim();
+        if (query.length < 2) { hideSuggestions(); return; }
+
+        // 1. Buscar en Abreviaturas Locales
+        const abrevsMatched = Object.entries(abbreviations)
+            .filter(([k, v]) => k.toLowerCase().startsWith(query.toLowerCase()))
+            .map(([k, v]) => ({ codigo: k, descripcion: v, isAbrev: true }));
+
+        // 2. Buscar en CIE-10 (API memory cache)
+        let cieResults = [];
+        try {
+            const res = await fetch(`/api/conceptos?q=${encodeURIComponent(query)}`);
+            cieResults = await res.json();
+        } catch (err) { console.error("Error CIE-10:", err); }
+
+        showSuggestions([...abrevsMatched, ...cieResults], diagInput);
+    }, 250));
+
+    // Navegación por teclado
+    diagInput.addEventListener('keydown', handleAutocompleteKey);
+}
+
+function showSuggestions(results, input) {
+    const box = document.getElementById('suggestionsBox');
+    if (results.length === 0) { hideSuggestions(); return; }
+
+    box.innerHTML = results.map((r, idx) => `
+        <div class="suggestion-item" data-index="${idx}" onclick="selectSugg(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+            <span class="sugg-code ${r.isAbrev ? 'sugg-abrev' : 'sugg-cie'}">${r.codigo}</span>
+            <span class="sugg-text">${highlightMatch(r.descripcion, input.value)}</span>
+        </div>
+    `).join("");
+    box.style.display = 'block';
+}
+
+function selectSugg(item) {
+    if (!selectedDiagnosticos.find(d => d.codigo === item.codigo)) {
+        selectedDiagnosticos.push(item);
+        renderDiagnosticosBadges();
+    }
+    document.getElementById('diagnostico').value = "";
+    hideSuggestions();
+}
+
+function renderDiagnosticosBadges() {
+    const container = document.getElementById('diagnosticosSeleccionados');
+    container.innerHTML = selectedDiagnosticos.map((d, i) => `
+        <div class="pfc-tag">
+            <b>${d.codigo}</b> ${d.descripcion}
+            <span style="cursor:pointer;margin-left:5px" onclick="removeDiag(${i})">×</span>
+        </div>
+    `).join("");
+}
+
+function removeDiag(idx) {
+    selectedDiagnosticos.splice(idx, 1);
+    renderDiagnosticosBadges();
+}
+
+function highlightMatch(text, query) {
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+function hideSuggestions() {
+    const box = document.getElementById('suggestionsBox');
+    if (box) box.style.display = 'none';
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+function handleAutocompleteKey(e) {
+    const box = document.getElementById('suggestionsBox');
+    if (box.style.display === 'none') return;
+
+    const items = box.querySelectorAll('.suggestion-item');
+    let current = Array.from(items).findIndex(i => i.classList.contains('active'));
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (current < items.length - 1) {
+            if (current >= 0) items[current].classList.remove('active');
+            items[current + 1].classList.add('active');
+            items[current + 1].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (current > 0) {
+            items[current].classList.remove('active');
+            items[current - 1].classList.add('active');
+            items[current - 1].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (e.key === 'Enter' && current >= 0) {
+        e.preventDefault();
+        items[current].click();
+    } else if (e.key === 'Escape') {
+        hideSuggestions();
+    }
+}
+
+// =============================================
+//  GUARDADO DE NOTAS (NOM-004)
+// =============================================
+async function saveMedicalNote() {
+    const data = {
+        patient_id: currentPatient.id,
+        user_id: currentUser.id,
+        motivo: document.getElementById('med-motivo').value,
+        padecimiento: document.getElementById('med-padecimiento').value,
+        interrogatorio: document.getElementById('med-interrogatorio').value,
+        exploracion: document.getElementById('med-exploracion').value,
+        pronostico: document.getElementById('med-pronostico').value,
+        tipo_diagnostico: document.getElementById('med-tipo-diag').value,
+        signos_vitales: {
+            peso: document.getElementById('v-peso').value,
+            talla: document.getElementById('v-talla').value,
+            ta: document.getElementById('v-ta').value,
+            fc: document.getElementById('v-fc').value,
+            fr: document.getElementById('v-fr').value,
+            temp: document.getElementById('v-temp').value,
+            spo2: document.getElementById('v-spo2').value,
+            glucosa: document.getElementById('v-glucosa').value
+        },
+        diagnosticos: selectedDiagnosticos,
+        medicamentos: Array.from(document.querySelectorAll('#med-tbl-cuerpo tr')).map(tr => ({
+            nombre: tr.querySelector('.med-nombre').value,
+            dosis: tr.querySelector('.med-dosis').value,
+            via: tr.querySelector('.med-via').value,
+            frecuencia: tr.querySelector('.med-frec').value,
+            duracion: tr.querySelector('.med-dur').value
+        }))
+    };
+
+    try {
+        const res = await fetch('/api/notas-medicas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) showToast("Nota Médica guardada con éxito", "success");
+        else showToast("Error al guardar nota", "error");
+    } catch (err) { console.error(err); }
+}
+
+async function saveNursingNote() {
+    const data = {
+        patient_id: currentPatient.id,
+        user_id: currentUser.id,
+        fecha_hora: document.getElementById('enf-fecha').value,
+        nombre_enfermero: document.getElementById('enf-nombre').value,
+        actividades: document.getElementById('enf-actividades').value,
+        estado_paciente: document.getElementById('enf-estado').value,
+        plan_cuidados: document.getElementById('enf-plan').value,
+        medicamentos: Array.from(document.querySelectorAll('#enf-tbl-cuerpo tr')).map(tr => ({
+            nombre: tr.querySelector('.med-nombre').value,
+            dosis: tr.querySelector('.med-dosis').value,
+            hora: tr.querySelector('.med-hora').value,
+            via: tr.querySelector('.med-via').value,
+            enfermera: tr.querySelector('.med-enf').value
+        }))
+    };
+
+    try {
+        const res = await fetch('/api/notas-enfermeria', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) showToast("Nota de Enfermería guardada con éxito", "success");
+        else showToast("Error al guardar nota", "error");
+    } catch (err) { console.error(err); }
+}
+
+// =============================================
+//  GENERAR PDF NOM-004 (Multi-página)
+// =============================================
+function generarPDF_NOM004() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const p = currentPatient;
-    const c = currentConsultation;
+    
+    // Configuración estética
+    const primaryColor = [15, 23, 42]; // Navy dark
+    const secondaryColor = [241, 245, 249]; // Light gray
 
-    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 30, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(18); doc.text("ClinData — REPORTE CLÍNICO", 15, 18);
-    doc.setFontSize(10); doc.text(`Generado el ${new Date().toLocaleString()}`, 15, 25);
+    // --- PÁGINA 1: NOTA MÉDICA ---
+    drawHeader(doc, "EXPEDIENTE CLÍNICO - NOTA MÉDICA (NOM-004)");
+    
+    // Info Paciente
+    doc.setFontSize(10); doc.setTextColor(...primaryColor);
+    doc.text(`PACIENTE: ${p.name}`, 15, 45);
+    doc.text(`EDAD: ${p.age} años | SEXO: ${p.sex} | FECHA: ${new Date().toLocaleDateString()}`, 15, 50);
 
-    doc.setTextColor(0,0,0); doc.setFontSize(12); doc.text("DATOS DEL PACIENTE", 15, 40);
-    doc.autoTable({
-        startY: 45,
-        head: [['Campo', 'Información']],
-        body: [['Nombre', p.name], ['Edad', p.age], ['Sexo', p.sex], ['Alergias', p.allergies||'Ninguna']],
-        theme: 'grid'
+    // Secciones principales
+    let y = 60;
+    const sections = [
+        { title: "MOTIVO DE CONSULTA", content: document.getElementById('med-motivo').value },
+        { title: "PADECIMIENTO ACTUAL", content: document.getElementById('med-padecimiento').value },
+        { title: "EXPLORACIÓN FÍSICA", content: document.getElementById('med-exploracion').value }
+    ];
+
+    sections.forEach(s => {
+        doc.setFont(undefined, 'bold'); doc.text(s.title, 15, y);
+        doc.setFont(undefined, 'normal');
+        const splitText = doc.splitTextToSize(s.content || "Sin registro", 180);
+        doc.text(splitText, 15, y + 5);
+        y += (splitText.length * 5) + 15;
     });
 
-    doc.text("NOTA MÉDICA", 15, doc.lastAutoTable.finalY + 10);
+    // Signos Vitales Table
     doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 15,
-        head: [['Sección', 'Contenido']],
-        body: [
-            ['Padecimiento', c.padecimiento || '—'],
-            ['Exploración', c.exploracion || '—'],
-            ['Diagnóstico', c.diagnostico || '—'],
-            ['Tratamiento', c.tratamiento || '—']
-        ],
+        startY: y,
+        head: [['Peso', 'Talla', 'T/A', 'FC', 'FR', 'Temp', 'SpO2']],
+        body: [[
+            document.getElementById('v-peso').value + 'kg',
+            document.getElementById('v-talla').value + 'cm',
+            document.getElementById('v-ta').value,
+            document.getElementById('v-fc').value + ' lpm',
+            document.getElementById('v-fr').value + ' rpm',
+            document.getElementById('v-temp').value + '°C',
+            document.getElementById('v-spo2').value + '%'
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: primaryColor }
+    });
+
+    // --- PÁGINA 2: DIAGNÓSTICOS Y TRATAMIENTO ---
+    doc.addPage();
+    drawHeader(doc, "DIAGNÓSTICOS Y TRATAMIENTO");
+    
+    doc.text("DIAGNÓSTICOS (CIE-10)", 15, 40);
+    doc.autoTable({
+        startY: 45,
+        head: [['Código', 'Descripción']],
+        body: selectedDiagnosticos.map(d => [d.codigo, d.descripcion]),
         theme: 'striped'
     });
 
-    const pages = doc.internal.getNumberOfPages();
-    for(let i=1; i<=pages; i++) {
-        doc.setPage(i); doc.setFontSize(8); doc.text(`Página ${i} de ${pages}`, 105, 285, {align:'center'});
-    }
-    doc.save(`ClinData_${p.name.replace(/\s/g,'_')}.pdf`);
+    doc.text("RECETA MÉDICA / PLAN", 15, doc.lastAutoTable.finalY + 10);
+    const meds = Array.from(document.querySelectorAll('#med-tbl-cuerpo tr')).map(tr => [
+        tr.querySelector('.med-nombre').value,
+        tr.querySelector('.med-dosis').value,
+        tr.querySelector('.med-frec').value,
+        tr.querySelector('.med-dur').value
+    ]);
+
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 15,
+        head: [['Medicamento', 'Dosis', 'Frecuencia', 'Duración']],
+        body: meds,
+        theme: 'grid'
+    });
+
+    // --- PÁGINA 3: PRONÓSTICO Y FIRMAS ---
+    doc.addPage();
+    drawHeader(doc, "PRONÓSTICO Y VALIDACIÓN");
+    
+    doc.text("PRONÓSTICO MÉDICO:", 15, 40);
+    doc.setFontSize(14); doc.text(document.getElementById('med-pronostico').value, 15, 50);
+
+    // Espacio para firmas
+    doc.setDrawColor(200);
+    doc.line(30, 250, 90, 250); doc.text("Firma del Médico", 45, 255);
+    doc.line(120, 250, 180, 250); doc.text("Huella/Firma Paciente", 135, 255);
+
+    doc.save(`NOM004_${p.name.replace(/\s/g,'_')}.pdf`);
+}
+
+function drawHeader(doc, title) {
+    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16); doc.text("STREAMS MEDICAL CENTER", 15, 15);
+    doc.setFontSize(10); doc.text(title, 15, 25);
 }
 
 // =============================================

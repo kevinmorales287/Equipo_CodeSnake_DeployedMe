@@ -348,243 +348,171 @@
                             </div>
                         </div>
 
-                        <!-- PADECIMIENTO ACTUAL -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('pad')">
-                                <span class="rec-sec-title"><span class="record-icon">🩺</span> Padecimiento
-                                    actual</span>
-                                <span class="rec-chev rc-open" id="rchev-pad">▼</span>
+                        <div class="tabs-container">
+                            <div class="tabs-header">
+                                <button class="tab-btn active" onclick="switchTab('nota-medica')">📁 NOTA MÉDICA</button>
+                                <button class="tab-btn" onclick="switchTab('nota-enfermeria')">📋 NOTA DE ENFERMERÍA</button>
                             </div>
-                            <div id="rbody-pad">
-                                <div class="rec-subsec">
-                                    <div class="rec-sub-header" onclick="recTog('mot')">▸ Interrogatorio / Motivo de
-                                        consulta <span class="rec-chev rc-open" id="rchev-mot">▼</span></div>
-                                    <div class="rec-sub-body" id="rbody-mot">
-                                        <div class="rec-field"><label>Descripcion cronologica</label><textarea
-                                                id="interrogatorio" style="min-height:90px"
-                                                placeholder="P DE X ANOS CON SX DE..."></textarea></div>
-                                        <div class="rec-grid2">
-                                            <div class="rec-field"><label>Tiempo de evolucion</label><input type="text"
-                                                    id="padecimiento" placeholder="No refiere"></div>
-                                            <div class="rec-field"><label>Factores que modifican</label><input
-                                                    type="text" id="pad-fac" placeholder="No refiere"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rec-subsec">
-                                    <div class="rec-sub-header" onclick="recTog('sis')">▸ Interrogatorio por aparatos y
-                                        sistemas <span class="rec-chev rc-open" id="rchev-sis">▼</span></div>
-                                    <div class="rec-aparatos" id="rbody-sis">
-                                        <div class="rec-field"><label>Digestivo</label><textarea id="sis-dig"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Respiratorio</label><textarea id="sis-res"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Cardiovascular</label><textarea id="sis-car"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Genitourinario</label><textarea id="sis-gen"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Sistema endocrino</label><textarea id="sis-end"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Hematopoyetico</label><textarea id="sis-hem"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Sistema nervioso</label><textarea id="sis-ner"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Musculoesqueletico</label><textarea id="sis-mus"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                        <div class="rec-field"><label>Tegumentario</label><textarea id="sis-teg"
-                                                placeholder="Preguntados y negados"></textarea></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- EXPLORACION FISICA -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('exp')">
-                                <span class="rec-sec-title"><span class="record-icon">🔬</span> Exploracion
-                                    fisica</span>
-                                <span class="rec-chev rc-open" id="rchev-exp">▼</span>
-                            </div>
-                            <div id="rbody-exp">
-                                <div class="rec-subsec">
-                                    <div class="rec-sub-header">▸ Signos vitales y somatometria</div>
+                            <!-- TAB: NOTA MÉDICA (NOM-004) -->
+                            <div id="tab-nota-medica" class="tab-content active">
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Secciones Obligatorias NOM-004</div>
+                                    <div class="rec-sub-body">
+                                        <div class="form-group"><label>Motivo de consulta</label>
+                                            <textarea id="med-motivo" placeholder="Ej: Dolor abdominal de 24h..."></textarea></div>
+                                        <div class="form-group"><label>Padecimiento Actual</label>
+                                            <textarea id="med-padecimiento" placeholder="Descripción cronológica..."></textarea></div>
+                                        <div class="form-group"><label>Interrogatorio por aparatos y sistemas</label>
+                                            <textarea id="med-interrogatorio" placeholder="Hallazgos relevantes..."></textarea></div>
+                                    </div>
+                                </div>
+
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Exploración Física y Signos Vitales</div>
                                     <div class="rec-sub-body">
                                         <div class="rec-vitales">
-                                            <div class="rec-vital"><span>FC (lpm)</span><input type="number" id="v-fc"
-                                                    placeholder="--"></div>
-                                            <div class="rec-vital"><span>FR (rpm)</span><input type="number" id="v-fr"
-                                                    placeholder="--"></div>
-                                            <div class="rec-vital"><span>TA (mmHg)</span><input type="text" id="v-ta"
-                                                    placeholder="--/--"></div>
-                                            <div class="rec-vital"><span>Temp (C)</span><input type="number" id="v-temp"
-                                                    step="0.1" placeholder="--"></div>
-                                            <div class="rec-vital"><span>SpO2 (%)</span><input type="number" id="v-spo2"
-                                                    placeholder="--"></div>
-                                            <div class="rec-vital"><span>Peso (kg)</span><input type="number"
-                                                    id="v-peso" placeholder="--" oninput="recCalcIMC()"></div>
-                                            <div class="rec-vital"><span>Talla (m)</span><input type="number"
-                                                    id="v-talla" step="0.01" placeholder="--" oninput="recCalcIMC()">
-                                            </div>
-                                            <div class="rec-vital"><span>IMC</span><input type="text" id="v-imc"
-                                                    placeholder="--" readonly></div>
+                                            <div class="rec-vital"><span>Peso (kg)</span><input type="number" id="v-peso" placeholder="--"></div>
+                                            <div class="rec-vital"><span>Talla (cm)</span><input type="number" id="v-talla" placeholder="--"></div>
+                                            <div class="rec-vital"><span>T/A (sist/diast)</span><input type="text" id="v-ta" placeholder="120/80"></div>
+                                            <div class="rec-vital"><span>FC (lpm)</span><input type="number" id="v-fc" placeholder="--"></div>
+                                            <div class="rec-vital"><span>FR (rpm)</span><input type="number" id="v-fr" placeholder="--"></div>
+                                            <div class="rec-vital"><span>Temp (°C)</span><input type="number" id="v-temp" step="0.1" placeholder="--"></div>
+                                            <div class="rec-vital"><span>SpO2 (%)</span><input type="number" id="v-spo2" placeholder="--"></div>
+                                            <div class="rec-vital"><span>Glucosa (mg/dL)</span><input type="number" id="v-glucosa" placeholder="--"></div>
                                         </div>
-                                        <div class="rec-grid2">
-                                            <div class="rec-field"><label>Habitus exterior / Complexion</label><input
-                                                    type="text" id="v-hab" placeholder="No refiere"></div>
-                                            <div class="rec-field"><label>Escala de Glasgow</label><input type="text"
-                                                    id="v-glas" placeholder="No refiere"></div>
+                                        <div class="form-group" style="margin-top:10px;"><label>Exploración Física (Hallazgos)</label>
+                                            <textarea id="med-exploracion" placeholder="Detalles de la exploración..."></textarea></div>
+                                    </div>
+                                </div>
+
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Diagnósticos (CIE-10)</div>
+                                    <div class="rec-sub-body">
+                                        <div class="form-group" style="position:relative;">
+                                            <label>Búsqueda de Abreviaturas o CIE-10</label>
+                                            <input type="text" id="diagnostico" placeholder="Escribe 'DM', 'HTA' o nombre de enfermedad..." autocomplete="off">
+                                            <div id="suggestionsBox" class="suggestions-box"></div>
+                                        </div>
+                                        <div id="diagnosticosSeleccionados" class="pfc-row" style="margin-top:10px;"></div>
+                                        <div class="form-group" style="margin-top:10px;">
+                                            <label>Tipo de Diagnóstico</label>
+                                            <select id="med-tipo-diag">
+                                                <option value="Definitivo">Definitivo</option>
+                                                <option value="Presuntivo">Presuntivo</option>
+                                                <option value="Por descartar">Por descartar</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="rec-subsec">
-                                    <div class="rec-sub-header" onclick="recTog('eap')">▸ Por aparatos y regiones <span
-                                            class="rec-chev rc-open" id="rchev-eap">▼</span></div>
-                                    <div class="rec-aparatos" id="rbody-eap">
-                                        <div class="rec-field"><label>Cabeza y cuello</label><textarea id="eap-cab"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Torax</label><textarea id="eap-tor"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Abdomen</label><textarea id="eap-abd"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Genitourinario</label><textarea id="eap-gen"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Extremidades</label><textarea id="eap-ext"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Neurologico</label><textarea id="eap-neu"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Piel y tegumentos</label><textarea id="eap-piel"
-                                                placeholder="No refiere"></textarea></div>
-                                        <div class="rec-field"><label>Columna vertebral</label><textarea id="eap-col"
-                                                placeholder="No refiere"></textarea></div>
-                                    </div>
-                                </div>
-                                <div class="rec-subsec">
-                                    <div class="rec-sub-body">
-                                        <div class="rec-field"><label>Nota de exploracion libre</label><textarea
-                                                id="exploracion" style="min-height:80px"
-                                                placeholder="Observaciones adicionales..."></textarea></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- DIAGNOSTICO -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('diag')">
-                                <span class="rec-sec-title"><span class="record-icon">🧾</span> Diagnostico <span
-                                        class="tag-cie" style="margin-left:8px">CIE-10</span></span>
-                                <span class="rec-chev rc-open" id="rchev-diag">▼</span>
-                            </div>
-                            <div id="rbody-diag">
-                                <div class="rec-subsec">
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Plan de Tratamiento y Pronóstico</div>
                                     <div class="rec-sub-body">
-                                        <textarea id="diagnostico" style="min-height:80px"
-                                            placeholder="DIAGNOSTICO PRINCIPAL Y DIFERENCIALES..."></textarea>
-                                        <div id="suggestionsBox" class="suggestions-box"></div>
-                                        <div id="diagnosticoPreview" class="preview-box" style="display:none;"></div>
+                                        <div class="form-group"><label>Plan de tratamiento</label>
+                                            <textarea id="med-plan" placeholder="Indicaciones médicas..."></textarea></div>
+                                        <div class="form-group"><label>Pronóstico</label>
+                                            <select id="med-pronostico">
+                                                <option value="Bueno">Bueno</option>
+                                                <option value="Regular">Regular</option>
+                                                <option value="Malo">Malo</option>
+                                                <option value="Reservado">Reservado</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- LABORATORIOS -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('lab')">
-                                <span class="rec-sec-title"><span class="record-icon">🧪</span> Laboratorios y
-                                    estudios</span>
-                                <span class="rec-chev" id="rchev-lab">▼</span>
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Medicamentos Prescritos</div>
+                                    <div class="rec-sub-body">
+                                        <button class="btn-add-row" onclick="addMedRow('med-tbl-cuerpo')">+ Agregar Medicamento</button>
+                                        <div class="dynamic-table-wrap">
+                                            <table class="dynamic-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medicamento</th>
+                                                        <th>Dosis</th>
+                                                        <th>Vía</th>
+                                                        <th>Frecuencia</th>
+                                                        <th>Duración</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="med-tbl-cuerpo"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="record-form-actions">
+                                    <button class="btn-primary" onclick="saveMedicalNote()">📦 Guardar Nota Médica</button>
+                                    <button class="btn-secondary" onclick="generarPDF_NOM004()">📄 Generar PDF NOM-004</button>
+                                </div>
                             </div>
-                            <div id="rbody-lab" style="display:none">
-                                <div class="rec-subsec">
+
+                            <!-- TAB: NOTA DE ENFERMERÍA -->
+                            <div id="tab-nota-enfermeria" class="tab-content">
+                                <div class="rec-seccion">
                                     <div class="rec-sub-body">
                                         <div class="rec-grid2">
-                                            <div class="rec-field"><label>Interpretacion radiografica</label><textarea
-                                                    id="lab-rx" placeholder="No refiere"></textarea></div>
-                                            <div class="rec-field"><label>Laboratorio / Gabinete /
-                                                    Histopatologico</label><textarea id="lab-gb"
-                                                    placeholder="No refiere"></textarea></div>
+                                            <div class="form-group"><label>Fecha y Hora</label><input type="datetime-local" id="enf-fecha"></div>
+                                            <div class="form-group"><label>Enfermero/a</label><input type="text" id="enf-nombre" placeholder="Nombre completo"></div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- TRATAMIENTO -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('trat')">
-                                <span class="rec-sec-title"><span class="record-icon">💊</span> Tratamiento</span>
-                                <span class="rec-chev rc-open" id="rchev-trat">▼</span>
-                            </div>
-                            <div id="rbody-trat">
-                                <div class="rec-subsec">
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Signos Vitales al Ingreso</div>
                                     <div class="rec-sub-body">
-                                        <div class="rec-field"><label>Medicamentos (farmaco, dosis, via, frecuencia,
-                                                duracion)</label><textarea id="tratamiento" style="min-height:80px"
-                                                placeholder="PARACETAMOL 500MG VO C/8H X 5 DIAS..."></textarea></div>
-                                        <div class="rec-grid2">
-                                            <div class="rec-field"><label>Indicaciones no
-                                                    farmacologicas</label><textarea id="trat-nf"
-                                                    placeholder="No refiere"></textarea></div>
-                                            <div class="rec-field"><label>Seguimiento / Proxima cita</label><textarea
-                                                    id="trat-sig" placeholder="No refiere"></textarea></div>
-                                        </div>
+                                        <div id="enf-vitales-container"></div> <!-- Rellenado por JS -->
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- NOTAS DE EVOLUCION -->
-                        <div class="rec-seccion">
-                            <div class="rec-sec-header" onclick="recTog('evol')">
-                                <span class="rec-sec-title"><span class="record-icon">📝</span> Notas de
-                                    evolucion</span>
-                                <span class="rec-chev rc-open" id="rchev-evol">▼</span>
-                            </div>
-                            <div id="rbody-evol">
-                                <div class="rec-subsec">
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Actividades Realizadas y Observaciones</div>
+                                    <div class="rec-tab-body" style="padding:20px;">
+                                        <div class="form-group"><label>Actividades realizadas</label>
+                                            <textarea id="enf-actividades" placeholder="Ej: Canalización, curación..."></textarea></div>
+                                        <div class="form-group"><label>Estado del paciente</label>
+                                            <textarea id="enf-estado" placeholder="Observaciones generales..."></textarea></div>
+                                    </div>
+                                </div>
+
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Medicamentos Administrados</div>
                                     <div class="rec-sub-body">
-                                        <div class="rec-field">
-                                            <label>Nota de evolucion <span class="field-hint">(actualizar si el paciente
-                                                    continua tratamiento)</span></label>
-                                            <textarea id="notaEvolucion" style="min-height:100px"
-                                                placeholder="EVOLUCION DEL PACIENTE, CAMBIOS EN TRATAMIENTO..."></textarea>
-                                        </div>
-                                        <div class="rec-field">
-                                            <label>Nota importante <span class="field-hint">(visible en la proxima
-                                                    consulta)</span></label>
-                                            <textarea id="notaImportante"
-                                                placeholder="ALERTAS, SEGUIMIENTO CRITICO..."></textarea>
+                                        <button class="btn-add-row" onclick="addMedRow('enf-tbl-cuerpo')">+ Agregar Fila</button>
+                                        <div class="dynamic-table-wrap">
+                                            <table class="dynamic-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Medicamento</th>
+                                                        <th>Dosis</th>
+                                                        <th>Hora</th>
+                                                        <th>Vía</th>
+                                                        <th>Enfermera</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="enf-tbl-cuerpo"></tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- ARCHIVOS ADJUNTOS -->
-                        <div class="record-section-card">
-                            <div class="record-section-title">
-                                <span class="record-icon">📎</span>Archivos adjuntos
-                                <span class="tag-cie tag-green">Resultados / Imagenes</span>
-                            </div>
-                            <div class="attachments-wrap">
-                                <div id="attachmentsList" class="attachments-list"></div>
-                                <div id="attachDropZone" class="attach-drop-zone">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.5">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    <p>Arrastra archivos aqui o <label class="attach-browse-label"
-                                            for="attachInput">selecciona archivos</label></p>
-                                    <p class="attach-hint">PDF, imagenes, DICOM -- max. 20 MB por archivo</p>
-                                    <input type="file" id="attachInput" multiple
-                                        accept=".pdf,.jpg,.jpeg,.png,.dcm,.tiff,.bmp,.gif" style="display:none">
+                                <div class="rec-seccion">
+                                    <div class="rec-sub-header">Plan de Cuidados</div>
+                                    <div class="rec-sub-body">
+                                        <div class="form-group"><label>Plan de cuidados</label>
+                                            <textarea id="enf-plan" placeholder="Cuidados específicos..."></textarea></div>
+                                    </div>
+                                </div>
+
+                                <div class="record-form-actions">
+                                    <button class="btn-primary" onclick="saveNursingNote()">📦 Guardar Nota de Enfermería</button>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="record-form-actions" id="recordFormActions"></div>
                     </div>
                 </section>
 

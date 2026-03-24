@@ -28,7 +28,10 @@ const auditoriaMiddleware = async (req, res, next) => {
 
 router.get('/', async (req, res) => {
   try {
-    const logs = await db.query('auditoria', req.query);
+    const allowed = ['usuario', 'accion', 'entidad', 'id'];
+    const filters = {};
+    Object.keys(req.query).forEach(k => { if(allowed.includes(k)) filters[k] = req.query[k]; });
+    const logs = await db.query('auditoria', filters);
     res.json(logs.reverse());
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

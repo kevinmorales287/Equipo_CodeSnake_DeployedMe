@@ -25,3 +25,32 @@ INSERT IGNORE INTO `usuarios` (`id`, `username`, `password`, `displayName`, `rol
 (1, 'dr.garcia', 'Medico#2026', 'Dr. García', 'medico'),
 (2, 'enf.lopez', 'Enfermero#2026', 'Enf. López', 'enfermero'),
 (3, 'admin.sys', 'Admin#2026', 'Administrador', 'admin');
+
+CREATE TABLE IF NOT EXISTS notas_medicas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  paciente_id INT NOT NULL,
+  medico VARCHAR(100),
+  fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+  motivo_consulta TEXT,
+  padecimiento_actual TEXT,
+  interrogatorio TEXT,
+  exploracion_fisica JSON,
+  diagnosticos JSON,
+  plan_tratamiento TEXT,
+  pronostico VARCHAR(50),
+  medicamentos JSON,
+  INDEX (paciente_id)
+);
+
+CREATE TABLE IF NOT EXISTS notas_enfermeria (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  paciente_id INT NOT NULL,
+  enfermera VARCHAR(100),
+  fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+  signos_vitales JSON,
+  actividades TEXT,
+  estado_paciente TEXT,
+  medicamentos_administrados JSON,
+  plan_cuidados TEXT,
+  INDEX (paciente_id)
+);
