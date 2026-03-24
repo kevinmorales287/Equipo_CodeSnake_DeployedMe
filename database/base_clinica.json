@@ -1,0 +1,1770 @@
+[
+  {
+    "id": 1,
+    "termino": "salmonella",
+    "similares_json": [
+      "intoxicación alimentaria",
+      "gastroenteritis bacteriana",
+      "toxiinfección",
+      "huevo crudo",
+      "fiebre tifoidea"
+    ]
+  },
+  {
+    "id": 2,
+    "termino": "toxiinfección alimentaria",
+    "similares_json": [
+      "salmonella",
+      "brote alimentario",
+      "intoxicación por alimentos",
+      "vómitos",
+      "diarrea aguda"
+    ]
+  },
+  {
+    "id": 3,
+    "termino": "meningococo",
+    "similares_json": [
+      "meningitis bacteriana",
+      "enfermedad meningocócica",
+      "Neisseria meningitidis",
+      "sepsis meningocócica",
+      "púrpura fulminante"
+    ]
+  },
+  {
+    "id": 4,
+    "termino": "enfermedad meningocócica",
+    "similares_json": [
+      "meningococo",
+      "meningitis",
+      "serogrupo C",
+      "bacteriemia",
+      "vacuna meningocócica"
+    ]
+  },
+  {
+    "id": 5,
+    "termino": "cáncer de pulmón",
+    "similares_json": [
+      "carcinoma pulmonar",
+      "carcinoma epidermoide",
+      "adenocarcinoma",
+      "células pequeñas",
+      "tabaquismo",
+      "radón"
+    ]
+  },
+  {
+    "id": 6,
+    "termino": "radón",
+    "similares_json": [
+      "gas radón",
+      "cáncer de pulmón",
+      "exposición doméstica",
+      "carcinógeno ambiental",
+      "pCi/L"
+    ]
+  },
+  {
+    "id": 7,
+    "termino": "carcinoma epidermoide",
+    "similares_json": [
+      "cáncer de pulmón",
+      "tabaco",
+      "radón",
+      "carcinoma escamocelular"
+    ]
+  },
+  {
+    "id": 8,
+    "termino": "adenocarcinoma",
+    "similares_json": [
+      "cáncer de pulmón",
+      "cáncer de páncreas",
+      "cáncer gástrico",
+      "tumor maligno glandular"
+    ]
+  },
+  {
+    "id": 9,
+    "termino": "cáncer oral",
+    "similares_json": [
+      "cáncer de boca",
+      "carcinoma oral",
+      "orofaringe",
+      "tabaco",
+      "alcohol",
+      "VPH",
+      "lengua"
+    ]
+  },
+  {
+    "id": 10,
+    "termino": "orofaringe",
+    "similares_json": [
+      "faringe",
+      "amígdalas",
+      "cáncer orofaríngeo",
+      "VPH",
+      "deglución"
+    ]
+  },
+  {
+    "id": 11,
+    "termino": "VPH",
+    "similares_json": [
+      "virus del papiloma humano",
+      "cáncer cervical",
+      "cáncer oral",
+      "condiloma",
+      "HPV"
+    ]
+  },
+  {
+    "id": 12,
+    "termino": "cáncer de vejiga",
+    "similares_json": [
+      "carcinoma urotelial",
+      "hematuria",
+      "café",
+      "tabaco",
+      "ocupación laboral"
+    ]
+  },
+  {
+    "id": 13,
+    "termino": "cáncer de páncreas",
+    "similares_json": [
+      "adenocarcinoma pancreático",
+      "pesticidas",
+      "tabaco",
+      "dolor abdominal",
+      "ictericia"
+    ]
+  },
+  {
+    "id": 14,
+    "termino": "pesticidas",
+    "similares_json": [
+      "organoclorados",
+      "exposición laboral",
+      "cáncer de páncreas",
+      "cáncer de encéfalo",
+      "fitosanitarios"
+    ]
+  },
+  {
+    "id": 15,
+    "termino": "mieloma múltiple",
+    "similares_json": [
+      "neoplasia de células plasmáticas",
+      "proteína de Bence-Jones",
+      "hipercalcemia",
+      "dolor óseo",
+      "ocupación agrícola"
+    ]
+  },
+  {
+    "id": 16,
+    "termino": "cáncer de encéfalo",
+    "similares_json": [
+      "tumor cerebral",
+      "glioma",
+      "fitosanitarios",
+      "usos del suelo",
+      "Navarra"
+    ]
+  },
+  {
+    "id": 17,
+    "termino": "hepatitis B",
+    "similares_json": [
+      "VHB",
+      "HBsAg",
+      "cirrosis",
+      "cáncer hepático",
+      "portador crónico",
+      "vacunación"
+    ]
+  },
+  {
+    "id": 18,
+    "termino": "cirrosis",
+    "similares_json": [
+      "hepatopatía crónica",
+      "hepatitis B",
+      "hepatitis C",
+      "alcohol",
+      "hipertensión portal"
+    ]
+  },
+  {
+    "id": 19,
+    "termino": "catarata",
+    "similares_json": [
+      "opacidad del cristalino",
+      "agudeza visual reducida",
+      "cirugía de catarata",
+      "facoemulsificación",
+      "presbicia"
+    ]
+  },
+  {
+    "id": 20,
+    "termino": "agudeza visual",
+    "similares_json": [
+      "catarata",
+      "miopía",
+      "glaucoma",
+      "retinopatía",
+      "campo visual"
+    ]
+  },
+  {
+    "id": 21,
+    "termino": "cáncer gástrico",
+    "similares_json": [
+      "adenocarcinoma gástrico",
+      "Helicobacter pylori",
+      "dolor epigástrico",
+      "hemorragia digestiva",
+      "demora diagnóstica"
+    ]
+  },
+  {
+    "id": 22,
+    "termino": "osteoartrosis",
+    "similares_json": [
+      "artrosis",
+      "AINEs",
+      "dolor articular",
+      "degeneración articular",
+      "rodilla",
+      "cadera"
+    ]
+  },
+  {
+    "id": 23,
+    "termino": "AINEs",
+    "similares_json": [
+      "antiinflamatorios",
+      "ibuprofeno",
+      "naproxeno",
+      "osteoartrosis",
+      "úlcera gástrica por fármacos"
+    ]
+  },
+  {
+    "id": 24,
+    "termino": "anorexia nerviosa",
+    "similares_json": [
+      "trastorno alimentario",
+      "restricción alimentaria",
+      "bajo peso",
+      "imagen corporal",
+      "amenorrea"
+    ]
+  },
+  {
+    "id": 25,
+    "termino": "bulimia nerviosa",
+    "similares_json": [
+      "trastorno alimentario",
+      "atracones",
+      "purgas",
+      "vómitos autoinducidos",
+      "imagen corporal"
+    ]
+  },
+  {
+    "id": 26,
+    "termino": "trastorno alimentario",
+    "similares_json": [
+      "anorexia nerviosa",
+      "bulimia nerviosa",
+      "EDI",
+      "insatisfacción corporal",
+      "adolescentes"
+    ]
+  },
+  {
+    "id": 27,
+    "termino": "depresión",
+    "similares_json": [
+      "trastorno depresivo mayor",
+      "tristeza persistente",
+      "anhedonia",
+      "CES-D",
+      "antidepresivos",
+      "ideación suicida"
+    ]
+  },
+  {
+    "id": 28,
+    "termino": "ansiedad",
+    "similares_json": [
+      "trastorno de ansiedad",
+      "estrés",
+      "ataques de pánico",
+      "depresión",
+      "insomnio"
+    ]
+  },
+  {
+    "id": 29,
+    "termino": "infarto agudo de miocardio",
+    "similares_json": [
+      "IAM",
+      "cardiopatía isquémica",
+      "dolor torácico",
+      "troponina",
+      "electrocardiograma"
+    ]
+  },
+  {
+    "id": 30,
+    "termino": "cardiopatía isquémica",
+    "similares_json": [
+      "infarto de miocardio",
+      "angina de pecho",
+      "arterioesclerosis coronaria",
+      "factores de riesgo cardiovascular"
+    ]
+  },
+  {
+    "id": 31,
+    "termino": "ictus",
+    "similares_json": [
+      "accidente cerebrovascular",
+      "ACV",
+      "infarto cerebral",
+      "hemiplejía",
+      "homocisteína",
+      "fibrilación auricular"
+    ]
+  },
+  {
+    "id": 32,
+    "termino": "homocisteína",
+    "similares_json": [
+      "ictus",
+      "riesgo cardiovascular",
+      "ácido fólico",
+      "vitamina B12",
+      "hiperhomocisteinemia"
+    ]
+  },
+  {
+    "id": 33,
+    "termino": "enfermedad cerebrovascular",
+    "similares_json": [
+      "ictus",
+      "ACV",
+      "accidente isquémico transitorio",
+      "mortalidad cardiovascular"
+    ]
+  },
+  {
+    "id": 34,
+    "termino": "tuberculosis",
+    "similares_json": [
+      "Mycobacterium tuberculosis",
+      "TBC",
+      "baciloscopia",
+      "Mantoux",
+      "isoniazida",
+      "rifampicina",
+      "TB pulmonar"
+    ]
+  },
+  {
+    "id": 35,
+    "termino": "tuberculosis multirresistente",
+    "similares_json": [
+      "TB-MR",
+      "Mycobacterium bovis",
+      "resistencia a isoniazida",
+      "resistencia a rifampicina",
+      "brote nosocomial"
+    ]
+  },
+  {
+    "id": 36,
+    "termino": "coinfección TB/VIH",
+    "similares_json": [
+      "tuberculosis",
+      "SIDA",
+      "inmunodepresión",
+      "formas diseminadas",
+      "tratamiento directamente observado"
+    ]
+  },
+  {
+    "id": 37,
+    "termino": "Streptococcus pneumoniae",
+    "similares_json": [
+      "neumococo",
+      "neumonía",
+      "meningitis bacteriana",
+      "resistencia a penicilina",
+      "vacuna neumocócica"
+    ]
+  },
+  {
+    "id": 38,
+    "termino": "neumonía",
+    "similares_json": [
+      "Streptococcus pneumoniae",
+      "neumonía neumocócica",
+      "infección respiratoria baja",
+      "fiebre",
+      "tos productiva"
+    ]
+  },
+  {
+    "id": 39,
+    "termino": "polineuropatía",
+    "similares_json": [
+      "neuropatía periférica",
+      "n-hexano",
+      "debilidad muscular",
+      "parestesias",
+      "parálisis"
+    ]
+  },
+  {
+    "id": 40,
+    "termino": "n-hexano",
+    "similares_json": [
+      "solvente industrial",
+      "polineuropatía tóxica",
+      "intoxicación laboral",
+      "calzado",
+      "cemen"
+    ]
+  },
+  {
+    "id": 41,
+    "termino": "organoclorados",
+    "similares_json": [
+      "DDT",
+      "PCBs",
+      "hexaclorobenceno",
+      "HCB",
+      "xenoestrógenos",
+      "disruptores endocrinos"
+    ]
+  },
+  {
+    "id": 42,
+    "termino": "xenoestrógenos",
+    "similares_json": [
+      "organoclorados",
+      "cáncer de mama",
+      "disruptores hormonales",
+      "tejido adiposo",
+      "estrógenos"
+    ]
+  },
+  {
+    "id": 43,
+    "termino": "cáncer de mama",
+    "similares_json": [
+      "carcinoma mamario",
+      "xenoestrógenos",
+      "organoclorados",
+      "mamografía",
+      "BRCA"
+    ]
+  },
+  {
+    "id": 44,
+    "termino": "sedentarismo",
+    "similares_json": [
+      "inactividad física",
+      "obesidad",
+      "riesgo cardiovascular",
+      "diabetes tipo 2",
+      "tiempo libre"
+    ]
+  },
+  {
+    "id": 45,
+    "termino": "dieta mediterránea",
+    "similares_json": [
+      "aceite de oliva",
+      "legumbres",
+      "frutas",
+      "verduras",
+      "prevención cardiovascular",
+      "patrón dietético"
+    ]
+  },
+  {
+    "id": 46,
+    "termino": "obesidad",
+    "similares_json": [
+      "IMC elevado",
+      "índice de masa corporal",
+      "sobrepeso",
+      "diabetes tipo 2",
+      "síndrome metabólico"
+    ]
+  },
+  {
+    "id": 47,
+    "termino": "tabaquismo",
+    "similares_json": [
+      "tabaco",
+      "fumador",
+      "cáncer de pulmón",
+      "EPOC",
+      "deshabituación tabáquica"
+    ]
+  },
+  {
+    "id": 48,
+    "termino": "alcoholismo",
+    "similares_json": [
+      "dependencia alcohólica",
+      "cirrosis",
+      "hepatopatía alcohólica",
+      "síndrome de abstinencia",
+      "bebida de riesgo"
+    ]
+  },
+  {
+    "id": 49,
+    "termino": "VIH",
+    "similares_json": [
+      "SIDA",
+      "inmunodeficiencia",
+      "antirretrovirales",
+      "CD4",
+      "carga viral",
+      "tuberculosis"
+    ]
+  },
+  {
+    "id": 50,
+    "termino": "SIDA",
+    "similares_json": [
+      "VIH avanzado",
+      "inmunosupresión severa",
+      "infecciones oportunistas",
+      "tuberculosis",
+      "CD4 <200"
+    ]
+  },
+  {
+    "id": 51,
+    "termino": "drogas intravenosas",
+    "similares_json": [
+      "UDIV",
+      "heroína",
+      "jeringa compartida",
+      "VIH",
+      "hepatitis C",
+      "endocarditis"
+    ]
+  },
+  {
+    "id": 52,
+    "termino": "contaminación atmosférica",
+    "similares_json": [
+      "partículas PM10",
+      "humos negros",
+      "mortalidad respiratoria",
+      "polución urbana",
+      "calidad del aire"
+    ]
+  },
+  {
+    "id": 53,
+    "termino": "campos electromagnéticos",
+    "similares_json": [
+      "radiación no ionizante",
+      "líneas de alta tensión",
+      "exposición laboral",
+      "cáncer de mama masculino"
+    ]
+  },
+  {
+    "id": 54,
+    "termino": "exposición ocupacional",
+    "similares_json": [
+      "riesgo laboral",
+      "pesticidas",
+      "organoclorados",
+      "higiene industrial",
+      "matriz de exposición"
+    ]
+  },
+  {
+    "id": 55,
+    "termino": "demora diagnóstica",
+    "similares_json": [
+      "retraso diagnóstico",
+      "tiempo síntoma-diagnóstico",
+      "acceso al sistema sanitario",
+      "estadio avanzado"
+    ]
+  },
+  {
+    "id": 56,
+    "termino": "calidad de vida",
+    "similares_json": [
+      "percepción de salud",
+      "funcionalidad",
+      "dependencia",
+      "bienestar",
+      "SF-36",
+      "CVRS"
+    ]
+  },
+  {
+    "id": 57,
+    "termino": "persona mayor",
+    "similares_json": [
+      "anciano",
+      "geriatría",
+      "dependencia",
+      "fragilidad",
+      "caídas",
+      "deterioro cognitivo"
+    ]
+  },
+  {
+    "id": 58,
+    "termino": "deterioro cognitivo",
+    "similares_json": [
+      "demencia",
+      "Alzheimer",
+      "mini-mental",
+      "desorientación",
+      "pérdida de memoria"
+    ]
+  },
+  {
+    "id": 59,
+    "termino": "vacunación",
+    "similares_json": [
+      "inmunización",
+      "vacuna neumocócica",
+      "vacuna antigripal",
+      "hepatitis B",
+      "meningococo",
+      "cobertura vacunal"
+    ]
+  },
+  {
+    "id": 60,
+    "termino": "resistencia antibiótica",
+    "similares_json": [
+      "multirresistencia",
+      "betalactamasas",
+      "MRSA",
+      "penicilina",
+      "rifampicina",
+      "isoniazida"
+    ]
+  },
+  {
+    "id": 61,
+    "termino": "cribado",
+    "similares_json": [
+      "tamizaje",
+      "screening",
+      "detección precoz",
+      "sensibilidad",
+      "especificidad",
+      "valor predictivo"
+    ]
+  },
+  {
+    "id": 62,
+    "termino": "factores de riesgo cardiovascular",
+    "similares_json": [
+      "hipertensión",
+      "diabetes",
+      "dislipidemia",
+      "tabaquismo",
+      "obesidad",
+      "sedentarismo"
+    ]
+  },
+  {
+    "id": 63,
+    "termino": "hipertensión arterial",
+    "similares_json": [
+      "tensión alta",
+      "hipertensión",
+      "riesgo cardiovascular",
+      "enfermedad renal",
+      "ictus"
+    ]
+  },
+  {
+    "id": 64,
+    "termino": "diabetes mellitus",
+    "similares_json": [
+      "diabetes tipo 2",
+      "hiperglucemia",
+      "insulinorresistencia",
+      "complicaciones microvasculares",
+      "HbA1c"
+    ]
+  },
+  {
+    "id": 65,
+    "termino": "dislipidemia",
+    "similares_json": [
+      "colesterol elevado",
+      "triglicéridos",
+      "LDL",
+      "HDL",
+      "riesgo cardiovascular",
+      "estatinas"
+    ]
+  },
+  {
+    "id": 66,
+    "termino": "diabetes mellitus tipo 2",
+    "similares_json": [
+      "hiperglucemia",
+      "insulinorresistencia",
+      "HbA1c",
+      "glucosa en ayuno",
+      "complicaciones diabéticas",
+      "metformina"
+    ]
+  },
+  {
+    "id": 67,
+    "termino": "HbA1c",
+    "similares_json": [
+      "hemoglobina glucosilada",
+      "control glucémico",
+      "diabetes",
+      "seguimiento diabético",
+      "meta <7%"
+    ]
+  },
+  {
+    "id": 68,
+    "termino": "glucosa en ayuno",
+    "similares_json": [
+      "glicemia basal",
+      "hiperglucemia",
+      "diabetes",
+      "prediabetes",
+      "tolerancia a la glucosa"
+    ]
+  },
+  {
+    "id": 69,
+    "termino": "hipoglucemia",
+    "similares_json": [
+      "glucosa baja",
+      "sudoración",
+      "temblor",
+      "pérdida de conciencia",
+      "insulina",
+      "antidiabéticos orales"
+    ]
+  },
+  {
+    "id": 70,
+    "termino": "insulina",
+    "similares_json": [
+      "insulinoterapia",
+      "hipoglucemia",
+      "diabetes tipo 1",
+      "diabetes tipo 2",
+      "análogos de insulina"
+    ]
+  },
+  {
+    "id": 71,
+    "termino": "resistencia a la insulina",
+    "similares_json": [
+      "síndrome metabólico",
+      "obesidad abdominal",
+      "diabetes tipo 2",
+      "prediabetes",
+      "hiperinsulinemia"
+    ]
+  },
+  {
+    "id": 72,
+    "termino": "complicaciones diabéticas",
+    "similares_json": [
+      "retinopatía diabética",
+      "nefropatía diabética",
+      "neuropatía diabética",
+      "pie diabético",
+      "infarto de miocardio"
+    ]
+  },
+  {
+    "id": 73,
+    "termino": "retinopatía diabética",
+    "similares_json": [
+      "complicación microvascular",
+      "pérdida visual",
+      "fondo de ojo",
+      "diabetes",
+      "láser retiniano"
+    ]
+  },
+  {
+    "id": 74,
+    "termino": "nefropatía diabética",
+    "similares_json": [
+      "proteinuria",
+      "microalbuminuria",
+      "enfermedad renal crónica",
+      "diabetes",
+      "filtrado glomerular"
+    ]
+  },
+  {
+    "id": 75,
+    "termino": "neuropatía diabética",
+    "similares_json": [
+      "parestesias",
+      "dolor neuropático",
+      "pie diabético",
+      "complicación microvascular",
+      "diabetes"
+    ]
+  },
+  {
+    "id": 76,
+    "termino": "pie diabético",
+    "similares_json": [
+      "úlcera plantar",
+      "neuropatía diabética",
+      "isquemia periférica",
+      "amputación",
+      "infección de pie"
+    ]
+  },
+  {
+    "id": 77,
+    "termino": "síndrome metabólico",
+    "similares_json": [
+      "obesidad abdominal",
+      "hipertrigliceridemia",
+      "HDL bajo",
+      "hipertensión",
+      "glucosa alterada"
+    ]
+  },
+  {
+    "id": 78,
+    "termino": "obesidad abdominal",
+    "similares_json": [
+      "circunferencia de cintura",
+      "grasa visceral",
+      "síndrome metabólico",
+      "resistencia a insulina"
+    ]
+  },
+  {
+    "id": 79,
+    "termino": "sobrepeso",
+    "similares_json": [
+      "IMC 25-30",
+      "obesidad",
+      "riesgo cardiovascular",
+      "diabetes tipo 2",
+      "dieta hipocalórica"
+    ]
+  },
+  {
+    "id": 80,
+    "termino": "índice de masa corporal",
+    "similares_json": [
+      "IMC",
+      "obesidad",
+      "sobrepeso",
+      "bajo peso",
+      "kg/m²"
+    ]
+  },
+  {
+    "id": 81,
+    "termino": "circunferencia de cintura",
+    "similares_json": [
+      "obesidad abdominal",
+      "grasa visceral",
+      "síndrome metabólico",
+      "riesgo cardiovascular"
+    ]
+  },
+  {
+    "id": 82,
+    "termino": "hipertensión arterial sistémica",
+    "similares_json": [
+      "presión arterial elevada",
+      "hipertensión",
+      "riesgo cardiovascular",
+      "antihipertensivos",
+      "daño a órgano blanco"
+    ]
+  },
+  {
+    "id": 83,
+    "termino": "presión arterial sistólica",
+    "similares_json": [
+      "PAS",
+      "hipertensión sistólica",
+      "tensión arterial",
+      "riesgo cardiovascular",
+      "mmHg"
+    ]
+  },
+  {
+    "id": 84,
+    "termino": "presión arterial diastólica",
+    "similares_json": [
+      "PAD",
+      "hipertensión diastólica",
+      "tensión arterial",
+      "mmHg"
+    ]
+  },
+  {
+    "id": 85,
+    "termino": "daño a órgano blanco",
+    "similares_json": [
+      "hipertrofia ventricular izquierda",
+      "retinopatía hipertensiva",
+      "nefropatía hipertensiva",
+      "hipertensión no controlada"
+    ]
+  },
+  {
+    "id": 86,
+    "termino": "enfermedad renal crónica",
+    "similares_json": [
+      "insuficiencia renal",
+      "filtrado glomerular reducido",
+      "proteinuria",
+      "diálisis",
+      "trasplante renal"
+    ]
+  },
+  {
+    "id": 87,
+    "termino": "filtrado glomerular",
+    "similares_json": [
+      "TFG",
+      "función renal",
+      "creatinina",
+      "estadio renal",
+      "nefropatía"
+    ]
+  },
+  {
+    "id": 88,
+    "termino": "microalbuminuria",
+    "similares_json": [
+      "proteinuria incipiente",
+      "nefropatía diabética",
+      "daño renal temprano",
+      "albúmina en orina"
+    ]
+  },
+  {
+    "id": 89,
+    "termino": "COVID-19",
+    "similares_json": [
+      "SARS-CoV-2",
+      "coronavirus",
+      "neumonía viral",
+      "insuficiencia respiratoria",
+      "comorbilidades"
+    ]
+  },
+  {
+    "id": 90,
+    "termino": "SARS-CoV-2",
+    "similares_json": [
+      "COVID-19",
+      "coronavirus 2019",
+      "pandemia",
+      "neumonía atípica",
+      "PCR SARS-CoV-2"
+    ]
+  },
+  {
+    "id": 91,
+    "termino": "EPOC",
+    "similares_json": [
+      "enfermedad pulmonar obstructiva crónica",
+      "tabaquismo",
+      "bronquitis crónica",
+      "enfisema",
+      "espirometría",
+      "broncodilatadores"
+    ]
+  },
+  {
+    "id": 92,
+    "termino": "asma",
+    "similares_json": [
+      "broncoespasmo",
+      "sibilancias",
+      "disnea episódica",
+      "broncodilatadores",
+      "corticosteroides inhalados"
+    ]
+  },
+  {
+    "id": 93,
+    "termino": "inmunosupresión",
+    "similares_json": [
+      "inmunodepresión",
+      "trasplante",
+      "VIH",
+      "corticosteroides crónicos",
+      "infecciones oportunistas"
+    ]
+  },
+  {
+    "id": 94,
+    "termino": "insuficiencia respiratoria",
+    "similares_json": [
+      "disnea severa",
+      "saturación baja de oxígeno",
+      "ventilación mecánica",
+      "UCI",
+      "COVID-19"
+    ]
+  },
+  {
+    "id": 95,
+    "termino": "intubación endotraqueal",
+    "similares_json": [
+      "ventilación mecánica invasiva",
+      "insuficiencia respiratoria",
+      "UCI",
+      "anestesia general"
+    ]
+  },
+  {
+    "id": 96,
+    "termino": "unidad de cuidados intensivos",
+    "similares_json": [
+      "UCI",
+      "terapia intensiva",
+      "paciente crítico",
+      "ventilación mecánica",
+      "monitoreo continuo"
+    ]
+  },
+  {
+    "id": 97,
+    "termino": "comorbilidad",
+    "similares_json": [
+      "enfermedad crónica asociada",
+      "multimorbilidad",
+      "diabetes",
+      "hipertensión",
+      "obesidad",
+      "riesgo aumentado"
+    ]
+  },
+  {
+    "id": 98,
+    "termino": "factores de riesgo para mortalidad",
+    "similares_json": [
+      "comorbilidades",
+      "edad avanzada",
+      "sexo masculino",
+      "diabetes",
+      "obesidad",
+      "hipertensión"
+    ]
+  },
+  {
+    "id": 99,
+    "termino": "expediente médico electrónico",
+    "similares_json": [
+      "EMR",
+      "historia clínica electrónica",
+      "EHR",
+      "IMSS",
+      "ISSSTE",
+      "registro digital del paciente"
+    ]
+  },
+  {
+    "id": 100,
+    "termino": "sistema de información clínica",
+    "similares_json": [
+      "CIS",
+      "HIS",
+      "expediente electrónico",
+      "RIS",
+      "PACS",
+      "interoperabilidad"
+    ]
+  },
+  {
+    "id": 101,
+    "termino": "RIS",
+    "similares_json": [
+      "radiology information system",
+      "sistema de radiología",
+      "PACS",
+      "imagen diagnóstica",
+      "turnaround radiológico"
+    ]
+  },
+  {
+    "id": 102,
+    "termino": "PACS",
+    "similares_json": [
+      "picture archiving and communication system",
+      "almacenamiento de imágenes",
+      "RIS",
+      "DICOM",
+      "teleradiología"
+    ]
+  },
+  {
+    "id": 103,
+    "termino": "DICOM",
+    "similares_json": [
+      "estándar de imagen médica",
+      "PACS",
+      "radiografía digital",
+      "tomografía digital",
+      "interoperabilidad de imágenes"
+    ]
+  },
+  {
+    "id": 104,
+    "termino": "HL7",
+    "similares_json": [
+      "estándar de interoperabilidad clínica",
+      "mensajería de salud",
+      "expediente electrónico",
+      "integración de sistemas hospitalarios"
+    ]
+  },
+  {
+    "id": 105,
+    "termino": "imagen diagnóstica",
+    "similares_json": [
+      "radiografía",
+      "tomografía computada",
+      "resonancia magnética",
+      "ultrasonido",
+      "PACS",
+      "endoscopia"
+    ]
+  },
+  {
+    "id": 106,
+    "termino": "radiografía",
+    "similares_json": [
+      "rayos X",
+      "imagen diagnóstica",
+      "PACS",
+      "DICOM",
+      "tórax",
+      "fractura"
+    ]
+  },
+  {
+    "id": 107,
+    "termino": "tomografía computada",
+    "similares_json": [
+      "TC",
+      "CT scan",
+      "imagen seccional",
+      "PACS",
+      "contraste",
+      "diagnóstico por imagen"
+    ]
+  },
+  {
+    "id": 108,
+    "termino": "resonancia magnética",
+    "similares_json": [
+      "RM",
+      "MRI",
+      "imagen por resonancia",
+      "PACS",
+      "tejidos blandos",
+      "neuroimagen"
+    ]
+  },
+  {
+    "id": 109,
+    "termino": "endoscopia",
+    "similares_json": [
+      "endoscopía",
+      "gastroscopia",
+      "colonoscopia",
+      "imagen endoscópica",
+      "diagnóstico endoscópico"
+    ]
+  },
+  {
+    "id": 110,
+    "termino": "ultrasonido",
+    "similares_json": [
+      "ecografía",
+      "US",
+      "imagen diagnóstica",
+      "hígado",
+      "riñón",
+      "obstetricia"
+    ]
+  },
+  {
+    "id": 111,
+    "termino": "patología",
+    "similares_json": [
+      "biopsia",
+      "histopatología",
+      "diagnóstico anatomopatológico",
+      "citología",
+      "inmunohistoquímica"
+    ]
+  },
+  {
+    "id": 112,
+    "termino": "prediabetes",
+    "similares_json": [
+      "glucosa en ayuno alterada",
+      "tolerancia a la glucosa disminuida",
+      "HbA1c 5.7-6.4%",
+      "riesgo de diabetes",
+      "prevención primaria"
+    ]
+  },
+  {
+    "id": 113,
+    "termino": "control metabólico",
+    "similares_json": [
+      "HbA1c en meta",
+      "glucosa controlada",
+      "presión arterial controlada",
+      "LDL en meta",
+      "manejo integral"
+    ]
+  },
+  {
+    "id": 114,
+    "termino": "adherencia al tratamiento",
+    "similares_json": [
+      "cumplimiento terapéutico",
+      "apego al tratamiento",
+      "abandono de medicación",
+      "educación del paciente"
+    ]
+  },
+  {
+    "id": 115,
+    "termino": "autocuidado",
+    "similares_json": [
+      "dieta",
+      "ejercicio",
+      "monitoreo de glucosa",
+      "adherencia",
+      "educación diabética"
+    ]
+  },
+  {
+    "id": 116,
+    "termino": "acidosis metabólica",
+    "similares_json": [
+      "cetoacidosis diabética",
+      "acidosis láctica",
+      "bicarbonato bajo",
+      "pH ácido",
+      "insuficiencia renal"
+    ]
+  },
+  {
+    "id": 117,
+    "termino": "cetoacidosis diabética",
+    "similares_json": [
+      "CAD",
+      "diabetes descompensada",
+      "hiperglucemia severa",
+      "cuerpos cetónicos",
+      "acidosis metabólica"
+    ]
+  },
+  {
+    "id": 118,
+    "termino": "estado hiperosmolar hiperglucémico",
+    "similares_json": [
+      "EHH",
+      "coma diabético",
+      "hiperglucemia extrema",
+      "deshidratación severa",
+      "diabetes tipo 2"
+    ]
+  },
+  {
+    "id": 119,
+    "termino": "triglicéridos",
+    "similares_json": [
+      "hipertrigliceridemia",
+      "dislipidemia",
+      "síndrome metabólico",
+      "riesgo cardiovascular",
+      "fibratos"
+    ]
+  },
+  {
+    "id": 120,
+    "termino": "colesterol LDL",
+    "similares_json": [
+      "colesterol malo",
+      "riesgo cardiovascular",
+      "estatinas",
+      "dislipidemia",
+      "aterosclerosis"
+    ]
+  },
+  {
+    "id": 121,
+    "termino": "colesterol HDL",
+    "similares_json": [
+      "colesterol bueno",
+      "cardioprotector",
+      "dislipidemia",
+      "ejercicio físico",
+      "síndrome metabólico"
+    ]
+  },
+  {
+    "id": 122,
+    "termino": "aterosclerosis",
+    "similares_json": [
+      "arterioesclerosis",
+      "placa de ateroma",
+      "enfermedad coronaria",
+      "infarto",
+      "ictus",
+      "isquemia periférica"
+    ]
+  },
+  {
+    "id": 123,
+    "termino": "enfermedad arterial periférica",
+    "similares_json": [
+      "isquemia de miembros inferiores",
+      "claudicación intermitente",
+      "pie diabético",
+      "aterosclerosis"
+    ]
+  },
+  {
+    "id": 124,
+    "termino": "tabaquismo activo",
+    "similares_json": [
+      "fumador activo",
+      "cigarrillo",
+      "nicotina",
+      "EPOC",
+      "cáncer de pulmón",
+      "riesgo cardiovascular"
+    ]
+  },
+  {
+    "id": 125,
+    "termino": "actividad física",
+    "similares_json": [
+      "ejercicio",
+      "IPAQ",
+      "METs",
+      "sedentarismo",
+      "control glucémico",
+      "control de peso"
+    ]
+  },
+  {
+    "id": 126,
+    "termino": "hábitos dietéticos",
+    "similares_json": [
+      "alimentación",
+      "dieta saludable",
+      "consumo calórico",
+      "patrón alimentario",
+      "obesidad",
+      "diabetes"
+    ]
+  },
+  {
+    "id": 127,
+    "termino": "e-salud",
+    "similares_json": [
+      "e-Health",
+      "salud digital",
+      "telemedicina",
+      "mHealth",
+      "expediente electrónico",
+      "interoperabilidad"
+    ]
+  },
+  {
+    "id": 128,
+    "termino": "telemedicina",
+    "similares_json": [
+      "teleconsulta",
+      "atención remota",
+      "e-salud",
+      "videoconferencia médica",
+      "monitoreo remoto"
+    ]
+  },
+  {
+    "id": 129,
+    "termino": "interoperabilidad",
+    "similares_json": [
+      "HL7",
+      "DICOM",
+      "integración de sistemas",
+      "intercambio de datos clínicos",
+      "estándares de salud"
+    ]
+  },
+  {
+    "id": 130,
+    "termino": "bodega de datos clínicos",
+    "similares_json": [
+      "CDW",
+      "clinical data warehouse",
+      "big data en salud",
+      "análisis de datos hospitalarios"
+    ]
+  },
+  {
+    "id": 131,
+    "termino": "caso confirmado COVID-19",
+    "similares_json": [
+      "SARS-CoV-2 positivo",
+      "PCR positivo COVID",
+      "clasificación final COVID",
+      "resultado antigeno positivo"
+    ]
+  },
+  {
+    "id": 132,
+    "termino": "caso sospechoso COVID-19",
+    "similares_json": [
+      "síntomas respiratorios",
+      "pendiente de resultado",
+      "caso probable",
+      "criterio epidemiológico"
+    ]
+  },
+  {
+    "id": 133,
+    "termino": "caso negativo COVID-19",
+    "similares_json": [
+      "PCR negativo",
+      "descartado COVID",
+      "diagnóstico diferencial respiratorio"
+    ]
+  },
+  {
+    "id": 134,
+    "termino": "influenza",
+    "similares_json": [
+      "virus influenza A",
+      "virus influenza B",
+      "gripe",
+      "PCR influenza positivo",
+      "síndrome gripal"
+    ]
+  },
+  {
+    "id": 135,
+    "termino": "coinfección COVID-influenza",
+    "similares_json": [
+      "COVID-19 e influenza simultáneos",
+      "doble infección respiratoria",
+      "SARS-CoV-2 e influenza"
+    ]
+  },
+  {
+    "id": 136,
+    "termino": "resultado PCR",
+    "similares_json": [
+      "reacción en cadena de la polimerasa",
+      "diagnóstico molecular",
+      "SARS-CoV-2",
+      "influenza",
+      "positivo",
+      "negativo"
+    ]
+  },
+  {
+    "id": 137,
+    "termino": "prueba de antígeno",
+    "similares_json": [
+      "antígeno rápido COVID",
+      "prueba rápida",
+      "detección antigénica",
+      "resultado antigeno"
+    ]
+  },
+  {
+    "id": 138,
+    "termino": "toma de muestra",
+    "similares_json": [
+      "hisopado nasofaríngeo",
+      "muestra respiratoria",
+      "PCR",
+      "prueba antigénica",
+      "laboratorio"
+    ]
+  },
+  {
+    "id": 139,
+    "termino": "paciente ambulatorio",
+    "similares_json": [
+      "tipo paciente 1",
+      "manejo ambulatorio",
+      "no hospitalizado",
+      "seguimiento en casa",
+      "COVID leve"
+    ]
+  },
+  {
+    "id": 140,
+    "termino": "paciente hospitalizado",
+    "similares_json": [
+      "tipo paciente 2",
+      "ingreso hospitalario",
+      "internamiento",
+      "COVID grave",
+      "neumonía"
+    ]
+  },
+  {
+    "id": 141,
+    "termino": "neumonía por COVID-19",
+    "similares_json": [
+      "neumonía viral",
+      "infiltrados bilaterales",
+      "consolidación pulmonar",
+      "insuficiencia respiratoria",
+      "COVID grave"
+    ]
+  },
+  {
+    "id": 142,
+    "termino": "diabetes",
+    "similares_json": [
+      "diabetes mellitus",
+      "hiperglucemia",
+      "HbA1c elevada",
+      "comorbilidad COVID",
+      "factor de riesgo mortalidad"
+    ]
+  },
+  {
+    "id": 143,
+    "termino": "hipertensión",
+    "similares_json": [
+      "presión arterial elevada",
+      "hipertensión arterial",
+      "comorbilidad COVID",
+      "riesgo cardiovascular",
+      "antihipertensivos"
+    ]
+  },
+  {
+    "id": 144,
+    "termino": "enfermedad cardiovascular",
+    "similares_json": [
+      "cardiopatía",
+      "insuficiencia cardíaca",
+      "cardiopatía isquémica",
+      "comorbilidad COVID",
+      "riesgo de muerte"
+    ]
+  },
+  {
+    "id": 145,
+    "termino": "otra comorbilidad",
+    "similares_json": [
+      "comorbilidad no especificada",
+      "enfermedad crónica asociada",
+      "multimorbilidad"
+    ]
+  },
+  {
+    "id": 146,
+    "termino": "embarazo",
+    "similares_json": [
+      "gestante",
+      "mujer embarazada",
+      "COVID en embarazo",
+      "riesgo obstétrico",
+      "vigilancia perinatal"
+    ]
+  },
+  {
+    "id": 147,
+    "termino": "población indígena",
+    "similares_json": [
+      "comunidad indígena",
+      "habla lengua indígena",
+      "vulnerabilidad",
+      "acceso a salud"
+    ]
+  },
+  {
+    "id": 148,
+    "termino": "migrante",
+    "similares_json": [
+      "población migrante",
+      "extranjero",
+      "sin acceso a servicios",
+      "vulnerabilidad social"
+    ]
+  },
+  {
+    "id": 149,
+    "termino": "sector salud",
+    "similares_json": [
+      "IMSS",
+      "ISSSTE",
+      "SSA",
+      "PEMEX",
+      "SEDENA",
+      "sector privado",
+      "unidad médica"
+    ]
+  },
+  {
+    "id": 150,
+    "termino": "IMSS",
+    "similares_json": [
+      "Instituto Mexicano del Seguro Social",
+      "derechohabiente",
+      "clínica IMSS",
+      "hospitalizacion IMSS"
+    ]
+  },
+  {
+    "id": 151,
+    "termino": "ISSSTE",
+    "similares_json": [
+      "Instituto de Seguridad y Servicios Sociales de los Trabajadores del Estado",
+      "trabajador federal"
+    ]
+  },
+  {
+    "id": 152,
+    "termino": "SSA",
+    "similares_json": [
+      "Secretaría de Salud",
+      "INSABI",
+      "atención pública",
+      "población abierta"
+    ]
+  },
+  {
+    "id": 153,
+    "termino": "fecha de ingreso",
+    "similares_json": [
+      "fecha hospitalización",
+      "fecha consulta",
+      "fecha inicio atención",
+      "registro de ingreso"
+    ]
+  },
+  {
+    "id": 154,
+    "termino": "fecha de inicio de síntomas",
+    "similares_json": [
+      "inicio del cuadro clínico",
+      "día cero",
+      "período de incubación",
+      "fecha síntomas"
+    ]
+  },
+  {
+    "id": 155,
+    "termino": "fecha de defunción",
+    "similares_json": [
+      "fallecimiento",
+      "muerte",
+      "defunción",
+      "mortalidad COVID",
+      "desenlace fatal"
+    ]
+  },
+  {
+    "id": 156,
+    "termino": "clasificación final",
+    "similares_json": [
+      "diagnóstico definitivo",
+      "confirmado",
+      "negativo",
+      "sospechoso",
+      "resultado final",
+      "clasificacion final COVID"
+    ]
+  },
+  {
+    "id": 157,
+    "termino": "vigilancia epidemiológica",
+    "similares_json": [
+      "sistema de notificación",
+      "datos abiertos",
+      "registro de casos",
+      "SINAVE",
+      "monitoreo epidémico"
+    ]
+  },
+  {
+    "id": 158,
+    "termino": "datos abiertos COVID-19",
+    "similares_json": [
+      "base de datos COVID México",
+      "SISVER",
+      "registro epidemiológico",
+      "DGE",
+      "Secretaría de Salud México"
+    ]
+  },
+  {
+    "id": 159,
+    "termino": "entidad federativa",
+    "similares_json": [
+      "estado",
+      "CDMX",
+      "Jalisco",
+      "Nuevo León",
+      "municipio",
+      "unidad médica",
+      "entidad de residencia"
+    ]
+  },
+  {
+    "id": 160,
+    "termino": "municipio de residencia",
+    "similares_json": [
+      "lugar de residencia",
+      "origen del paciente",
+      "dirección",
+      "localidad"
+    ]
+  }
+]

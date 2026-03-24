@@ -1,6 +1,12 @@
 {
+  "scripts": {
+    "start": "node Server.js",
+    "test-connection": "node test_connection.js",
+    "export-db": "node export_db.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "mysql2": "^3.20.0"
   }
