@@ -165,11 +165,11 @@
                 </div>
             </section>
 
-            <!-- COLA DE CONSULTA -->
+            <!-- FILA DE CONSULTA -->
             <section id="consultQueueSection" class="section">
                 <div class="section-header">
                     <div>
-                        <h2>Cola de Consulta</h2>
+                        <h2>Fila de Consulta</h2>
                         <p class="section-subtitle">Pacientes en espera de atención médica</p>
                     </div>
                     <div class="header-actions" id="consultQueueActions"></div>
@@ -798,6 +798,54 @@
                         </div>
                     </div>
 
+                    <!-- FIRMA DEL MÉDICO -->
+                    <div class="record-block">
+                        <div class="record-block-header">
+                            <span class="record-block-icon">✍️</span>
+                            <div>
+                                <div class="record-block-title">Autoría y Firma</div>
+                                <div class="record-block-subtitle">Información de firma electrónica del médico</div>
+                            </div>
+                        </div>
+                        <div class="record-block-body">
+                            <div class="record-section-card">
+                                <div class="record-section-title">
+                                    <span class="record-icon">✍️</span>Datos de Firma
+                                </div>
+                                <div style="padding:14px 18px;display:flex;flex-direction:column;gap:12px;">
+                                    <div class="form-group">
+                                        <label>Médico responsable</label>
+                                        <input type="text" id="firma_medico" placeholder="Nombre del médico" readonly style="background-color:var(--bg-surface-2);cursor:not-allowed;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cédula Profesional (opcional)</label>
+                                        <input type="text" id="firma_cedula" placeholder="Número de cédula profesional">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tipo de firma</label>
+                                        <select id="firma_tipo">
+                                            <option value="electronica">Electrónica</option>
+                                            <option value="digital">Digital</option>
+                                            <option value="autografa">Autógrafa (fotografiada)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha y hora de firma</label>
+                                        <input type="text" id="firma_fecha" placeholder="Se actualiza al firmar" readonly style="background-color:var(--bg-surface-2);cursor:not-allowed;">
+                                    </div>
+                                    <div style="display:flex;gap:10px;margin-top:8px;">
+                                        <button class="btn-primary" onclick="firmarExpediente()" style="flex:1;">Firmar Expediente</button>
+                                        <button class="btn-secondary" onclick="limpiarFirma()" style="flex:1;display:none;" id="btnLimpiarFirma">Remover Firma</button>
+                                    </div>
+                                    <div id="firmaInfo" class="firma-info" style="display:none;padding:10px;background:var(--bg-surface-2);border-radius:var(--radius);border-left:4px solid var(--accent);font-size:12px;color:var(--text-secondary);">
+                                        <strong>✓ Expediente Firmado</strong>
+                                        <div id="firmaInfoText" style="margin-top:4px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- ACCIONES DEL FORMULARIO -->
                     <div class="record-form-actions" id="recordFormActions"></div>
 
@@ -875,7 +923,7 @@
             <!-- COLA URGENCIAS -->
             <section id="triageListSection" class="section">
                 <div class="section-header">
-                    <div><h2>Cola de Urgencias</h2><p class="section-subtitle">Pacientes en espera — ordenados por nivel de prioridad</p></div>
+                    <div><h2>Fila de Urgencias</h2><p class="section-subtitle">Pacientes en espera — ordenados por nivel de prioridad</p></div>
                     <button class="btn-primary" onclick="navigate('triage')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Nuevo triage
@@ -934,7 +982,7 @@
 <div id="addToQueueModal" class="modal-overlay hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Agregar a cola de consulta</h3>
+            <h3>Agregar a fila de consulta</h3>
             <button class="modal-close" onclick="closeModal('addToQueueModal')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>

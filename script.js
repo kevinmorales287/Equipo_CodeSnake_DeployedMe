@@ -189,11 +189,11 @@ function renderSidebar() {
         items.push({ id: "nav-newPatient", section: "newPatient", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`, label: "Nuevo Paciente" });
     }
     if (can("canViewQueue")) {
-        items.push({ id: "nav-consultQueue", section: "consultQueue", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`, label: "Cola de Consulta" });
+        items.push({ id: "nav-consultQueue", section: "consultQueue", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`, label: "Fila de Consulta" });
     }
     if (can("canUseTriage")) {
         items.push({ id: "nav-triage", section: "triage", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, label: "Triage" });
-        items.push({ id: "nav-triageList", section: "triageList", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, label: "Cola de Urgencias" });
+        items.push({ id: "nav-triageList", section: "triageList", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, label: "Fila de Urgencias" });
     }
     if (can("canManageUsers")) {
         items.push({ id: "nav-admin", section: "admin", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`, label: "Gestión de Usuarios" });
@@ -239,11 +239,11 @@ const HASH_TO_SECTION = {
 const ROUTE_TITLE = {
     patients:            "Pacientes · ClinData",
     newPatient:          "Nuevo Paciente · ClinData",
-    consultQueue:        "Cola de Consulta · ClinData",
+    consultQueue:        "Fila de Consulta · ClinData",
     consultationHistory: "Expediente · ClinData",
     medicalRecord:       "Consulta · ClinData",
     triage:              "Triage · ClinData",
-    triageList:          "Cola de Urgencias · ClinData",
+    triageList:          "Fila de Urgencias · ClinData",
     admin:               "Administración · ClinData",
 };
 
@@ -368,7 +368,7 @@ function submitPatient() {
     savePatients();
 
     addPatientToQueue(patient.id, reason, true);
-    showToast("Paciente registrado y agregado a la cola de consulta.", "success");
+    showToast("Paciente registrado y agregado a la fila de consulta.", "success");
 
     ["name","age","sex","address","phone","dob","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = "";
@@ -425,7 +425,7 @@ function searchPatients(query) {
 }
 
 // =============================================
-//  COLA DE CONSULTA
+//  FILA DE CONSULTA
 // =============================================
 function addPatientToQueue(patientId, reason, isNew = false) {
     consultQueue.push({ id: Date.now(), patientId, reason, isNewPatient: isNew, addedAt: new Date().toISOString(), addedBy: currentUser?.displayName, status: "waiting" });
@@ -446,7 +446,7 @@ function confirmAddToQueue() {
     if (!reason) { showToast("Ingresa el motivo de consulta.", "error"); return; }
     addPatientToQueue(addToQueuePatientId, reason, false);
     closeModal("addToQueueModal");
-    showToast("Paciente agregado a la cola de consulta.", "success");
+    showToast("Paciente agregado a la fila de consulta.", "success");
 }
 
 function renderConsultQueue() {
@@ -465,7 +465,7 @@ function renderConsultQueue() {
     if (waiting.length === 0) {
         container.innerHTML = `<div class="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <p>No hay pacientes en la cola de consulta</p>
+            <p>No hay pacientes en la fila de consulta</p>
         </div>`; return;
     }
 
@@ -712,6 +712,30 @@ function createNewConsultation() {
         notaImportante: "", evolucion_nota: "",
         triageLevel: null, triageData: null, status: "active", attachments: []
     };
+
+    // Autocargar antecedentes de la consulta anterior
+    const prevConsults = consultations.filter(c => c.patientId === currentPatient.id).sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (prevConsults.length > 0) {
+        const prev = prevConsults[0];
+        // Copiar secciones de antecedentes
+        consult.ahf = prev.ahf || "";
+        consult.apnp_otros = prev.apnp_otros || "";
+        consult.radio_tabaquismo = prev.radio_tabaquismo || "Negativo";
+        consult.radio_alcoholismo = prev.radio_alcoholismo || "Negativo";
+        consult.radio_toxicomanias = prev.radio_toxicomanias || "Negativo";
+        consult.radio_actfisica = prev.radio_actfisica || "Sedentario";
+        consult.tabaquismo_detalle = prev.tabaquismo_detalle || "";
+        consult.alcoholismo_detalle = prev.alcoholismo_detalle || "";
+        consult.toxicomanias_detalle = prev.toxicomanias_detalle || "";
+        consult.actfisica_detalle = prev.actfisica_detalle || "";
+        consult.app_enfermedades = prev.app_enfermedades || "";
+        consult.app_cirugias = prev.app_cirugias || "";
+        consult.app_traumatismos = prev.app_traumatismos || "";
+        consult.app_alergias = prev.app_alergias || "";
+        consult.app_transfusiones = prev.app_transfusiones || "";
+        consult.app_medicamentos = prev.app_medicamentos || "";
+    }
+
     consultations.push(consult);
     saveConsultations();
     currentConsultation = consult;
@@ -851,6 +875,38 @@ function fillRecordFields() {
     });
     // IMC
     calcIMC();
+    
+    // Cargar información de firma
+    const medEl = document.getElementById("firma_medico");
+    if (medEl) medEl.value = currentConsultation.firma_medico || "";
+    const cedulaEl = document.getElementById("firma_cedula");
+    if (cedulaEl) cedulaEl.value = currentConsultation.firma_cedula || "";
+    const tipoEl = document.getElementById("firma_tipo");
+    if (tipoEl) tipoEl.value = currentConsultation.firma_tipo || "electronica";
+    const fechaEl = document.getElementById("firma_fecha");
+    if (fechaEl) fechaEl.value = currentConsultation.firma_fecha || "";
+    
+    // Mostrar/ocultar info de firma
+    const firmaInfo = document.getElementById("firmaInfo");
+    const btnFirmar = document.querySelector("button[onclick='firmarExpediente()']");
+    const btnLimpiar = document.getElementById("btnLimpiarFirma");
+    if (currentConsultation.firma_medico && currentConsultation.firma_fecha) {
+        if (firmaInfo) {
+            firmaInfo.style.display = "block";
+            const infoText = document.getElementById("firmaInfoText");
+            if (infoText) {
+                infoText.innerHTML = `<div>Médico: ${currentConsultation.firma_medico}</div>
+                <div>Firma: ${currentConsultation.firma_tipo || "electrónica"}</div>
+                <div>Fecha: ${currentConsultation.firma_fecha}</div>`;
+            }
+        }
+        if (btnFirmar) btnFirmar.style.display = "none";
+        if (btnLimpiar) btnLimpiar.style.display = "block";
+    } else {
+        if (firmaInfo) firmaInfo.style.display = "none";
+        if (btnFirmar) btnFirmar.style.display = "block";
+        if (btnLimpiar) btnLimpiar.style.display = "none";
+    }
 }
 
 function setRecordReadOnly(isReadOnly) {
@@ -1005,6 +1061,13 @@ function collectRecordFields() {
     if (destino) currentConsultation.destino_urg = destino.value;
     const dd = document.getElementById("urg_destino_detalle");
     if (dd) currentConsultation.urg_destino_detalle = dd.value;
+    
+    // Guardar datos de firma
+    const cedulaEl = document.getElementById("firma_cedula");
+    if (cedulaEl) currentConsultation.firma_cedula = cedulaEl.value;
+    const tipoEl = document.getElementById("firma_tipo");
+    if (tipoEl) currentConsultation.firma_tipo = tipoEl.value;
+    
     currentConsultation.tipoNota = currentTab;
 }
 
@@ -1026,6 +1089,42 @@ function closeConsultation() {
     saveConsultations();
     showToast("Consulta cerrada — paciente marcado como atendido.", "success");
     navigate("consultationHistory");
+}
+
+// ===== AUTORÍA Y FIRMA =====
+function firmarExpediente() {
+    if (!currentConsultation || !currentUser) return;
+    if (!currentConsultation.tratamiento && !currentConsultation.diagnostico) {
+        showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
+        return;
+    }
+    
+    const tipo = document.getElementById("firma_tipo")?.value || "electronica";
+    const cedula = document.getElementById("firma_cedula")?.value || "";
+    const ahora = new Date().toLocaleString("es-MX", { weekday: "short", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    
+    currentConsultation.firma_medico = currentUser.displayName;
+    currentConsultation.firma_cedula = cedula;
+    currentConsultation.firma_tipo = tipo;
+    currentConsultation.firma_fecha = ahora;
+    
+    collectRecordFields();
+    saveConsultations();
+    fillRecordFields();
+    showToast("Expediente firmado correctamente.", "success");
+}
+
+function limpiarFirma() {
+    if (!currentConsultation) return;
+    if (confirm("¿Estás seguro de que deseas remover la firma del expediente?")) {
+        delete currentConsultation.firma_medico;
+        delete currentConsultation.firma_cedula;
+        delete currentConsultation.firma_tipo;
+        delete currentConsultation.firma_fecha;
+        saveConsultations();
+        fillRecordFields();
+        showToast("Firma removida del expediente.", "success");
+    }
 }
 
 // ===== AUTOGUARDADO =====
@@ -1250,7 +1349,7 @@ function calcularTriage() {
         </div>
         <div class="triage-result-actions">
             <button class="btn-secondary" onclick="clearTriageForm()">Nuevo triage</button>
-            <button class="btn-primary" onclick="navigate('triageList')">Ver cola de urgencias</button>
+            <button class="btn-primary" onclick="navigate('triageList')">Ver fila de urgencias</button>
         </div>`;
     resultDiv.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1266,7 +1365,7 @@ function renderTriageList() {
     const container = document.getElementById("triageQueue");
     if (!container) return;
     const active = triageQueue.filter(t=>t.active).sort((a,b)=>a.level-b.level||new Date(a.timestamp)-new Date(b.timestamp));
-    if (active.length===0){container.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>No hay pacientes en cola de urgencias</p></div>`;return;}
+    if (active.length===0){container.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>No hay pacientes en fila de urgencias</p></div>`;return;}
     container.innerHTML = active.map(t=>`
         <div class="triage-queue-card triage-queue-${t.levelColor}">
             <div class="triage-queue-left"><div class="triage-level-circle triage-circle-${t.levelColor}">${t.level}</div></div>
@@ -1556,6 +1655,34 @@ function exportPDF(type) {
         addSection("Tratamiento y Pronóstico",c.urg_tratamiento);
     }
 
+    // Agregar información de firma si existe
+    if (c.firma_medico && c.firma_fecha) {
+        y += 8; // Espacio adicional
+        if (y > 255) { doc.addPage(); y = 15; }
+        
+        doc.setFontSize(10.5); doc.setFont(undefined, "bold"); doc.setTextColor(14, 165, 233);
+        doc.text("AUTORÍA Y FIRMA ELECTRÓNICA", margin, y); y += 5.5;
+        
+        doc.setTextColor(0, 0, 0); doc.setFont(undefined, "normal"); doc.setFontSize(9.5);
+        
+        const firmaInfo = [
+            `Médico responsable: ${c.firma_medico}`,
+            `Tipo de firma: ${c.firma_tipo || "electrónica"}`,
+            `Fecha y hora: ${c.firma_fecha}`
+        ];
+        
+        if (c.firma_cedula) {
+            firmaInfo.push(`Cédula profesional: ${c.firma_cedula}`);
+        }
+        
+        firmaInfo.forEach(line => {
+            if (y > 270) { doc.addPage(); y = 15; }
+            doc.text(line, margin, y); y += 5;
+        });
+        
+        y += 3; // Espacio después de la firma
+    }
+
     const pages=doc.internal.getNumberOfPages();
     for(let i=1;i<=pages;i++){
         doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(150);
@@ -1571,3 +1698,59 @@ function formatDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLo
 function formatDateFull(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{weekday:"short",day:"2-digit",month:"long",year:"numeric"});}
 function formatTime(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
 function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
+
+// =============================================
+//  COLLAPSIBLE SECTIONS
+// =============================================
+function initializeCollapsibleSections() {
+    const collapsedStates = JSON.parse(localStorage.getItem("cd_collapsed_sections") || "{}");
+    const sections = document.querySelectorAll(".record-section-card");
+    let sectionIndex = 0;
+    
+    sections.forEach((section) => {
+        const sectionId = `sec_${sectionIndex++}`;
+        const title = section.querySelector(".record-section-title");
+        if (!title || title.querySelector(".record-section-collapse-btn")) return; // Ya inicializado
+        
+        // Crear botón de collapse
+        const btn = document.createElement("button");
+        btn.className = "record-section-collapse-btn";
+        btn.type = "button";
+        btn.setAttribute("data-section-id", sectionId);
+        btn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            section.classList.toggle("collapsed");
+            collapsedStates[sectionId] = section.classList.contains("collapsed");
+            localStorage.setItem("cd_collapsed_sections", JSON.stringify(collapsedStates));
+        };
+        
+        title.appendChild(btn);
+        
+        // Envolver contenido después del título en una clase record-section-body
+        if (!section.querySelector(".record-section-body")) {
+            const body = document.createElement("div");
+            body.className = "record-section-body";
+            const children = Array.from(section.children);
+            children.forEach(child => {
+                if (child !== title) {
+                    body.appendChild(child);
+                }
+            });
+            section.appendChild(body);
+        }
+        
+        // Restaurar estado guardado
+        if (collapsedStates[sectionId]) {
+            section.classList.add("collapsed");
+        }
+    });
+}
+
+// Inicializar cuando se renderiza el expediente
+const _origRenderMedicalRecord = window.renderMedicalRecord || function() {};
+window.renderMedicalRecord = function() {
+    const result = _origRenderMedicalRecord.apply(this, arguments);
+    setTimeout(() => initializeCollapsibleSections(), 50);
+    return result;
+};
