@@ -1,4 +1,4 @@
-# EQUIPO-_DeployedMe
+# EQUIPO CODE SNAKES 🐍
 
 🏥 ClinData — Sistema Inteligente de Expedientes Clínicos
 🚀 Visión del proyecto
