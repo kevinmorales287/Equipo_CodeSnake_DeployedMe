@@ -225,8 +225,8 @@ Prototipo funcional (MVP):
 
 Equipo CodeSnake — DeployMe 2026
 
-- Gonzales Cardeña Azul Anneliese  
-- López Sansores Lander  
+- González Cardeña Azul Anneliese  
+- López Sansores Lander Antonio
 - Morales Bautista Kevin Enrique 
 - Pacheco Cervantes Felipe de Jesús  
 
