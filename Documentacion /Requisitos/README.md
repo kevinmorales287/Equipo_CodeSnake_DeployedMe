@@ -1,4 +1,4 @@
-## 📁 Contenido de la capeta REQUISITOX
+## 📁 Contenido de la capeta REQUISITOS
 
 Este documento contiene la definición de los requerimientos del sistema **ClinData**, incluyendo tanto los aspectos funcionales como no funcionales necesarios para su desarrollo.
 
