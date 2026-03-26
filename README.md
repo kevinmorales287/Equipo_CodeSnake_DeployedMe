@@ -1,6 +1,7 @@
 # 🏥 ClinData — Sistema de Expediente Clínico Electrónico
 
-> **Versión 1.0** · Equipo CodeSnake · DeployMe 2026  
+> **Versión 1.0** · Equipo CodeSnake · DeployMe 2026
+> ---Link a Github pages para probar el prototipo del programa; https://kevinmorales287.github.io/Equipo_CodeSnake_DeployedMe/ 
 > Sistema de autocompletado predictivo para notas clínicas basado en CIE-10, SNOMED CT y NOM-004-SSA3-2012
 
 ---
