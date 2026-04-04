@@ -432,6 +432,14 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 .record-block-title{font-size:14px;font-weight:700;color:var(--text-primary);}
 .record-block-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--mono);}
 .record-block-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.diagnostico-block,
+.diagnostico-block .record-block-body,
+.diagnostico-card,
+.diagnostico-card .diagnostico-tipos,
+.diagnostico-card .form-group{
+    overflow: visible;
+}
+.diagnostico-card{position:relative;z-index:3;}
 
 /* ===== SECCIONES DENTRO DE BLOQUES ===== */
 .record-section-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
@@ -664,7 +672,7 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
     border: 1px solid var(--border-medium);
     border-radius: var(--radius);
     box-shadow: var(--shadow-md);
-    z-index: 100;
+    z-index: 1000;
     max-height: 280px;
     overflow-y: auto;
 }

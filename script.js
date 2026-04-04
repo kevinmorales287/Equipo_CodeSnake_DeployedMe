@@ -59,6 +59,15 @@ let addToQueuePatientId = null;
 let currentTab          = "historia";
 let selectedDiagnosticos = [];  // Array para diagnósticos CIE-10 seleccionados
 
+const CONSULT_ANTECEDENT_FIELDS = [
+    "ahf","hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+    "pnp-ocu","pnp-esc","pnp-ec","pnp-emb","pnp-mac","pnp-vac","apnp_otros",
+    "tabaquismo_detalle","alcoholismo_detalle","toxicomanias_detalle","actfisica_detalle",
+    "app_enfermedades","app_cirugias","app_traumatismos","app_alergias","app_transfusiones","app_medicamentos",
+    "pp-deg","pp-neo","pp-ets"
+];
+const CONSULT_ANTECEDENT_RADIOS = ["tabaquismo","alcoholismo","toxicomanias","actfisica"];
+
 // ===== DATOS PERSISTENTES =====
 
 let patients      = JSON.parse(localStorage.getItem("cd_patients"))  || [];
@@ -72,6 +81,47 @@ function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringi
 function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
 function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
 function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
+
+function formatMedicationSummary(med = {}, format = "html") {
+    const parts = [
+        med.nombre || "",
+        med.concentracion ? `(${med.concentracion})` : "",
+        med.dosis || "",
+        med.via || "",
+        med.frecuencia || "",
+        med.duracion ? `por ${med.duracion}` : ""
+    ].filter(Boolean);
+    const text = parts.join(" - ");
+    return format === "html" ? escapeHtml(text) : text;
+}
+
+function getMedicationSummary(medicamentos = [], format = "html") {
+    if (!Array.isArray(medicamentos) || medicamentos.length === 0) return "";
+    const items = medicamentos
+        .map(med => formatMedicationSummary(med, format))
+        .filter(Boolean);
+
+    if (!items.length) return "";
+    if (format === "html") return items.map(item => `<div>${item}</div>`).join("");
+    return items.join("\n");
+}
+
+function copyAntecedentsFromPreviousConsultation(consult) {
+    if (!consult || !currentPatient) return;
+    const prev = consultations
+        .filter(c => c.patientId === currentPatient.id && c.id !== consult.id)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+    if (!prev) return;
+
+    CONSULT_ANTECEDENT_FIELDS.forEach(field => {
+        consult[field] = prev[field] || "";
+    });
+
+    CONSULT_ANTECEDENT_RADIOS.forEach(name => {
+        consult["radio_" + name] = prev["radio_" + name] || (name === "actfisica" ? "Sedentario" : "Negativo");
+    });
+}
 
 // =============================================
 //  AUTH
@@ -568,6 +618,7 @@ function attendFromQueue(queueId) {
         status: "active",
         attachments: []
     };
+    copyAntecedentsFromPreviousConsultation(consult);
     consultations.push(consult);
     saveConsultations();
     currentConsultation = consult;
@@ -669,9 +720,7 @@ function renderPatientFullCard() {
     const currentTx = p.currentTreatment || lastConsult?.tratamiento || "Sin tratamiento registrado";
     const notaImp = lastConsult?.notaImportante || lastConsult?.evolucion_nota || null;
     const alertas = p.alerts || null;
-    const medsHtml = lastConsult?.medicamentos && lastConsult.medicamentos.length > 0 
-        ? lastConsult.medicamentos.map(m => `<div>${m.nombre} ${m.concentracion?"("+m.concentracion+")":""} - ${m.dosis} - ${m.via}${m.frecuencia?" "+m.frecuencia:""}</div>`).join("") 
-        : "Sin medicamentos registrados";
+    const medsHtml = getMedicationSummary(lastConsult?.medicamentos, "html") || "Sin medicamentos registrados";
 
     document.getElementById("patientFullCard").innerHTML = `
         <div class="pfc-header">
@@ -744,29 +793,7 @@ function createNewConsultation() {
         notaImportante: "", evolucion_nota: "",
         triageLevel: null, triageData: null, status: "active", attachments: []
     };
-
-    // Autocargar antecedentes de la consulta anterior
-    const prevConsults = consultations.filter(c => c.patientId === currentPatient.id).sort((a, b) => new Date(b.date) - new Date(a.date));
-    if (prevConsults.length > 0) {
-        const prev = prevConsults[0];
-        // Copiar secciones de antecedentes
-        consult.ahf = prev.ahf || "";
-        consult.apnp_otros = prev.apnp_otros || "";
-        consult.radio_tabaquismo = prev.radio_tabaquismo || "Negativo";
-        consult.radio_alcoholismo = prev.radio_alcoholismo || "Negativo";
-        consult.radio_toxicomanias = prev.radio_toxicomanias || "Negativo";
-        consult.radio_actfisica = prev.radio_actfisica || "Sedentario";
-        consult.tabaquismo_detalle = prev.tabaquismo_detalle || "";
-        consult.alcoholismo_detalle = prev.alcoholismo_detalle || "";
-        consult.toxicomanias_detalle = prev.toxicomanias_detalle || "";
-        consult.actfisica_detalle = prev.actfisica_detalle || "";
-        consult.app_enfermedades = prev.app_enfermedades || "";
-        consult.app_cirugias = prev.app_cirugias || "";
-        consult.app_traumatismos = prev.app_traumatismos || "";
-        consult.app_alergias = prev.app_alergias || "";
-        consult.app_transfusiones = prev.app_transfusiones || "";
-        consult.app_medicamentos = prev.app_medicamentos || "";
-    }
+    copyAntecedentsFromPreviousConsultation(consult);
 
     consultations.push(consult);
     saveConsultations();
@@ -824,6 +851,7 @@ function renderMedicalRecord() {
     if (allConsults.length > 0) {
         const prev = allConsults[0];
         const p = currentPatient;
+        const prevMedsHtml = getMedicationSummary(prev.medicamentos, "html");
         summaryBar.classList.remove("hidden");
         summaryBar.innerHTML = `
             <div class="rsb-label">Resumen del paciente</div>
@@ -833,6 +861,7 @@ function renderMedicalRecord() {
                 ${p.alerts ? `<div class="rsb-item rsb-warn"><span>🚨</span><div><b>Alertas:</b> ${p.alerts}</div></div>` : ""}
                 ${prev.diagnostico ? `<div class="rsb-item"><span>🧾</span><div><b>Último Dx:</b> ${prev.diagnostico.substring(0,80)}</div></div>` : ""}
                 ${prev.tratamiento ? `<div class="rsb-item"><span>💊</span><div><b>Tratamiento previo:</b> ${prev.tratamiento.substring(0,80)}</div></div>` : ""}
+                ${prevMedsHtml ? `<div class="rsb-item"><span>💉</span><div><b>Medicamentos previos:</b> ${prevMedsHtml}</div></div>` : ""}
                 ${(prev.notaImportante||prev.evolucion_nota) ? `<div class="rsb-item rsb-nota"><span>📌</span><div><b>Nota anterior:</b> ${(prev.notaImportante||prev.evolucion_nota)}</div></div>` : ""}
             </div>`;
     } else {
