@@ -228,7 +228,7 @@
                     </button>
                     <button class="record-tab" data-tab="evolucion" onclick="switchRecordTab('evolucion', this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Nota de Evolución
+                        Nota Médica
                     </button>
                     <button class="record-tab" data-tab="urgencias" onclick="switchRecordTab('urgencias', this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
@@ -243,24 +243,36 @@
                          ═══════════════════════════════════════ -->
                     <div id="tab-historia" class="record-tab-content active">
 
-                        <!-- BLOQUE 1: INTERROGATORIO -->
+                        <!-- BLOQUE 1: ANTECEDENTES -->
                         <div class="record-block">
                             <div class="record-block-header">
-                                <span class="record-block-icon">📋</span>
+                                <span class="record-block-icon">🏥</span>
                                 <div>
-                                    <div class="record-block-title">Interrogatorio</div>
+                                    <div class="record-block-title">Antecedentes</div>
                                     <div class="record-block-subtitle">Numeral 6.1.1 · NOM-004-SSA3-2012</div>
                                 </div>
                             </div>
-
                             <div class="record-block-body">
-                                <!-- Antecedentes Heredo-Familiares -->
+
+                                <!-- Antecedentes Heredofamiliares -->
                                 <div class="record-section-card">
                                     <div class="record-section-title">
                                         <span class="record-icon">🧬</span>Antecedentes Heredofamiliares
                                         <span class="nom-tag">AHF</span>
                                     </div>
-                                    <textarea id="ahf" placeholder="Enfermedades familiares relevantes: DM, HTA, cardiopatías, cáncer, enfermedades genéticas, causas de mortalidad en padres/abuelos..."></textarea>
+                                    <div class="rec-sub-body" style="padding:14px 18px 16px;">
+                                        <div class="rec-grid2">
+                                            <div class="rec-field"><label>Madre</label><input type="text" id="hf-madre" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Padre</label><input type="text" id="hf-padre" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuelo paterno</label><input type="text" id="hf-abp" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuela paterna</label><input type="text" id="hf-abpa" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuelo materno</label><input type="text" id="hf-abm" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuela materna</label><input type="text" id="hf-abma" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Hijos/as</label><input type="text" id="hf-hijos" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Hermanos/as</label><input type="text" id="hf-herm" placeholder="No refiere"></div>
+                                        </div>
+                                        <div class="rec-field" style="margin-top:8px;"><label>Otros (tíos, pareja, etc.)</label><input type="text" id="hf-otros" placeholder="No refiere"></div>
+                                    </div>
                                 </div>
 
                                 <!-- Antecedentes Personales No Patológicos -->
@@ -269,7 +281,7 @@
                                         <span class="record-icon">🏃</span>Antecedentes Personales No Patológicos
                                         <span class="nom-tag">APNP</span>
                                     </div>
-                                    <div class="apnp-grid">
+                                    <div class="apnp-grid" style="padding:14px 18px 8px;">
                                         <div class="apnp-item">
                                             <label class="apnp-label">Tabaquismo</label>
                                             <div class="apnp-radios">
@@ -306,11 +318,20 @@
                                             <input type="text" id="actfisica_detalle" class="apnp-detail" placeholder="Tipo, frecuencia semanal...">
                                         </div>
                                     </div>
-                                    <div class="record-section-card" style="margin:0;border:none;box-shadow:none;">
-                                        <div class="record-section-title" style="background:transparent;padding:10px 18px 6px;">
-                                            <span style="font-size:12px;color:var(--text-muted);">Otros (alimentación, inmunizaciones, higiene, ocupacional):</span>
+                                    <div class="rec-sub-body" style="padding:4px 18px 14px;">
+                                        <div class="rec-grid3">
+                                            <div class="rec-field"><label>Ocupación</label><input type="text" id="pnp-ocu" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Escolaridad</label><input type="text" id="pnp-esc" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Estado civil</label><input type="text" id="pnp-ec" placeholder="No refiere"></div>
                                         </div>
-                                        <textarea id="apnp_otros" style="min-height:60px;" placeholder="Tipo de dieta, esquema de vacunación, riesgos laborales, condiciones de vivienda..."></textarea>
+                                        <div class="rec-grid3" style="margin-top:8px;">
+                                            <div class="rec-field"><label>Embarazos (G P C A)</label><input type="text" id="pnp-emb" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Anticonceptivo</label><input type="text" id="pnp-mac" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Vacunación</label><input type="text" id="pnp-vac" placeholder="Esquema completo"></div>
+                                        </div>
+                                        <div class="rec-field" style="margin-top:8px;"><label>Otros (alimentación, higiene, vivienda)</label>
+                                            <textarea id="apnp_otros" style="min-height:60px;" placeholder="Tipo de dieta, condiciones de vivienda, riesgos laborales..."></textarea>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -322,28 +343,40 @@
                                     </div>
                                     <div class="app-grid">
                                         <div class="form-group">
-                                            <label class="apnp-label">Enfermedades previas</label>
-                                            <textarea id="app_enfermedades" style="min-height:60px;" placeholder="DM, HTA, asma, epilepsia, cardiopatías..."></textarea>
+                                            <label class="apnp-label">Enf. inflamatorias / infecciosas</label>
+                                            <textarea id="app_enfermedades" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. degenerativas (DM, HTA...)</label>
+                                            <textarea id="pp-deg" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. neoplásicas</label>
+                                            <textarea id="pp-neo" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label class="apnp-label">Cirugías / Hospitalizaciones</label>
-                                            <textarea id="app_cirugias" style="min-height:60px;" placeholder="Tipo, fecha aproximada, complicaciones..."></textarea>
+                                            <textarea id="app_cirugias" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label class="apnp-label">Traumatismos</label>
-                                            <textarea id="app_traumatismos" style="min-height:60px;" placeholder="Tipo y fecha..."></textarea>
+                                            <textarea id="app_traumatismos" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label class="apnp-label">Alergias y reacciones adversas</label>
-                                            <textarea id="app_alergias" style="min-height:60px;" placeholder="Medicamentos, alimentos, sustancias, tipo de reacción..."></textarea>
+                                            <textarea id="app_alergias" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label class="apnp-label">Transfusiones</label>
-                                            <textarea id="app_transfusiones" style="min-height:60px;" placeholder="Fecha, tipo, reacciones..."></textarea>
+                                            <textarea id="app_transfusiones" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. de transmisión sexual</label>
+                                            <textarea id="pp-ets" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                         <div class="form-group">
                                             <label class="apnp-label">Medicamentos actuales</label>
-                                            <textarea id="app_medicamentos" style="min-height:60px;" placeholder="Nombre, dosis, vía, frecuencia..."></textarea>
+                                            <textarea id="app_medicamentos" style="min-height:60px;" placeholder="No refiere"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -565,12 +598,13 @@
                                         <span class="tag-cie">CIE-10</span>
                                     </div>
                                     <div class="diagnostico-tipos">
-                                        <div class="form-group">
+                                        <div class="form-group" style="position: relative;">
                                             <label class="apnp-label">Diagnóstico principal (definitivo o presuntivo)</label>
                                             <textarea id="diagnostico" placeholder="Diagnóstico principal con código CIE-10 si se conoce..."></textarea>
-                                            <div id="suggestionsBox" class="suggestions-box"></div>
+                                            <div id="diagnosticoSugerencias" class="diagnostico-suggestions" style="display:none;"></div>
                                             <div id="diagnosticoPreview" class="preview-box" style="display:none;"></div>
                                         </div>
+                                        <div id="diagnosticosSeleccionados" class="diagnosticos-badges"></div>
                                         <div class="form-group">
                                             <label class="apnp-label">Diagnósticos secundarios / diferenciales</label>
                                             <textarea id="diagnostico_secundario" style="min-height:60px;" placeholder="Diagnósticos diferenciales o condicionantes secundarios..."></textarea>
@@ -657,19 +691,28 @@
                                     </div>
                                     <textarea id="notaImportante" placeholder="Alertas, seguimiento crítico, datos que el médico debe conocer en la siguiente consulta..."></textarea>
                                 </div>
+
+                                <!-- Nota de Evolución -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📝</span>Nota de Evolución
+                                        <span class="field-hint">(actualizar si el paciente continúa tratamiento)</span>
+                                    </div>
+                                    <textarea id="evolucion_nota" style="min-height:80px;" placeholder="Evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div><!-- /tab-historia -->
 
                     <!-- ═══════════════════════════════════════
-                         TAB: NOTA DE EVOLUCIÓN
+                         TAB: NOTA MÉDICA
                          ═══════════════════════════════════════ -->
                     <div id="tab-evolucion" class="record-tab-content">
                         <div class="record-block">
                             <div class="record-block-header">
                                 <span class="record-block-icon">📝</span>
                                 <div>
-                                    <div class="record-block-title">Nota de Evolución</div>
+                                    <div class="record-block-title">Nota Médica</div>
                                     <div class="record-block-subtitle">Numerales 6.2.1–6.2.6 · NOM-004-SSA3-2012</div>
                                 </div>
                             </div>
@@ -703,7 +746,11 @@
                                 </div>
                                 <div class="record-section-card">
                                     <div class="record-section-title"><span class="record-icon">🚨</span>Nota Importante <span class="field-hint">(visible en la próxima consulta)</span></div>
-                                    <textarea id="evolucion_nota" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
+                                    <textarea id="evolucion_nota_imp" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">📝</span>Nota de Evolución <span class="field-hint">(actualizar si el paciente continúa tratamiento)</span></div>
+                                    <textarea id="evolucion_clinica" style="min-height:100px;" placeholder="Evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1032,7 +1079,9 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 <script src="Principal_abr.js"></script>
+<script src="database/conceptos-index.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
