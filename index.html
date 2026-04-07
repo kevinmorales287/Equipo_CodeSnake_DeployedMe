@@ -46,6 +46,7 @@
                 <div class="demo-title">Usuarios para demo:</div>
                 <div class="demo-row"><span class="demo-role role-medico-pill">Médico</span><code>dr.garcia / Medico#2026</code></div>
                 <div class="demo-row"><span class="demo-role role-enfermero-pill">Enfermero/a</span><code>enf.lopez / Enfermero#2026</code></div>
+                <div class="demo-row"><span class="demo-role role-recepcion-pill">Recepción</span><code>recep.ruiz / Recepcion#2026</code></div>
                 <div class="demo-row"><span class="demo-role role-admin-pill">Admin</span><code>admin.sys / Admin#2026</code></div>
             </div>
         </div>
@@ -153,6 +154,11 @@
                             <div class="form-group full"><label>Alergias conocidas</label><input type="text" id="allergies" placeholder="Ej: Penicilina, AINEs, Látex... o 'Ninguna conocida'"></div>
                             <div class="form-group full"><label>Padecimientos crónicos conocidos</label><input type="text" id="chronicConditions" placeholder="Ej: Diabetes tipo 2, HTA, Hipotiroidismo..."></div>
                             <div class="form-group full"><label>Motivo de consulta de hoy <span class="required">*</span></label><input type="text" id="consultReason" placeholder="¿Por qué acude hoy?"></div>
+                            <div class="form-group"><label>Asignar consultorio</label>
+                                <select id="newPatientConsultorio">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-card-footer">
@@ -227,8 +233,8 @@
                         Historia Clínica
                     </button>
                     <button class="record-tab" data-tab="evolucion" onclick="switchRecordTab('evolucion', this)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Nota Médica
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        Nota de Enfermería
                     </button>
                     <button class="record-tab" data-tab="urgencias" onclick="switchRecordTab('urgencias', this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
@@ -705,52 +711,126 @@
                     </div><!-- /tab-historia -->
 
                     <!-- ═══════════════════════════════════════
-                         TAB: NOTA MÉDICA
+                         TAB: NOTA DE ENFERMERÍA
                          ═══════════════════════════════════════ -->
                     <div id="tab-evolucion" class="record-tab-content">
                         <div class="record-block">
                             <div class="record-block-header">
-                                <span class="record-block-icon">📝</span>
+                                <span class="record-block-icon">🩺</span>
                                 <div>
-                                    <div class="record-block-title">Nota Médica</div>
-                                    <div class="record-block-subtitle">Numerales 6.2.1–6.2.6 · NOM-004-SSA3-2012</div>
+                                    <div class="record-block-title">Nota de Enfermería</div>
+                                    <div class="record-block-subtitle">Valoración y seguimiento por enfermería</div>
                                 </div>
                             </div>
                             <div class="record-block-body">
+
+                                <!-- Signos vitales completos -->
                                 <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">📋</span>Evolución del cuadro clínico</div>
-                                    <textarea id="evolucion_clinica" style="min-height:100px;" placeholder="Descripción de los cambios en el padecimiento actual desde la última consulta: mejoría, empeoramiento, nuevos síntomas, respuesta al tratamiento..."></textarea>
-                                </div>
-                                <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">📊</span>Signos vitales (si aplica)</div>
-                                    <div class="vitales-grid compact">
-                                        <div class="vital-item"><label>T.A. <span class="vital-unit">mmHg</span></label><input type="text" id="evol_ta" placeholder="120/80"></div>
-                                        <div class="vital-item"><label>FC <span class="vital-unit">lpm</span></label><input type="number" id="evol_fc" placeholder="70"></div>
-                                        <div class="vital-item"><label>FR <span class="vital-unit">rpm</span></label><input type="number" id="evol_fr" placeholder="16"></div>
-                                        <div class="vital-item"><label>Temp <span class="vital-unit">°C</span></label><input type="number" id="evol_temp" placeholder="36.5" step="0.1"></div>
-                                        <div class="vital-item"><label>SpO₂ <span class="vital-unit">%</span></label><input type="number" id="evol_spo2" placeholder="97"></div>
-                                        <div class="vital-item"><label>Peso <span class="vital-unit">kg</span></label><input type="number" id="evol_peso" placeholder="70" step="0.1"></div>
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📊</span>Signos Vitales y Somatometría
+                                        <span class="nom-tag">ENF</span>
+                                    </div>
+                                    <div class="vitales-grid">
+                                        <div class="vital-item">
+                                            <label>T.A. sistólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tas" placeholder="120">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>T.A. diastólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tad" placeholder="80">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Cardiaca <span class="vital-unit">lpm</span></label>
+                                            <input type="number" id="enf_sv_fc" placeholder="60–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Respiratoria <span class="vital-unit">rpm</span></label>
+                                            <input type="number" id="enf_sv_fr" placeholder="12–20">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Temperatura <span class="vital-unit">°C</span></label>
+                                            <input type="number" id="enf_sv_temp" placeholder="36.5" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>SpO₂ <span class="vital-unit">%</span></label>
+                                            <input type="number" id="enf_sv_spo2" placeholder="95–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Glucemia <span class="vital-unit">mg/dL</span></label>
+                                            <input type="number" id="enf_sv_glucemia" placeholder="70–110">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Peso <span class="vital-unit">kg</span></label>
+                                            <input type="number" id="enf_sv_peso" placeholder="70.0" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Talla <span class="vital-unit">cm</span></label>
+                                            <input type="number" id="enf_sv_talla" placeholder="170">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>IMC <span class="vital-unit">kg/m²</span></label>
+                                            <input type="text" id="enf_sv_imc" placeholder="Auto-calculado" readonly class="imc-field">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Dolor <span class="vital-unit">0–10</span></label>
+                                            <input type="number" id="enf_sv_dolor" min="0" max="10" placeholder="EVA">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Habitus exterior</label>
+                                            <input type="text" id="enf_sv_habitus" placeholder="BAEG, cooperador...">
+                                        </div>
                                     </div>
                                 </div>
+
+                                <!-- Exploración por segmentos (enfermería) -->
                                 <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">🧪</span>Nuevos resultados de estudios</div>
-                                    <textarea id="evolucion_resultados" style="min-height:70px;" placeholder="Resultados de laboratorios, imágenes o gabinete solicitados previamente que ya estén disponibles..."></textarea>
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧑‍⚕️</span>Valoración por Segmentos
+                                    </div>
+                                    <div class="exploracion-segmentos">
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Cabeza y cuello</label>
+                                            <textarea id="enf_exp_cabeza" style="min-height:60px;" placeholder="Observaciones de cabeza y cuello..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Tórax y cardiopulmonar</label>
+                                            <textarea id="enf_exp_torax" style="min-height:60px;" placeholder="Observaciones torácicas..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Abdomen</label>
+                                            <textarea id="enf_exp_abdomen" style="min-height:60px;" placeholder="Observaciones abdominales..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Extremidades</label>
+                                            <textarea id="enf_exp_extremidades" style="min-height:60px;" placeholder="Observaciones de extremidades, accesos venosos..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Neurológico</label>
+                                            <textarea id="enf_exp_neurologico" style="min-height:60px;" placeholder="Estado neurológico, nivel de consciencia..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Genitourinario</label>
+                                            <textarea id="enf_exp_genitourinario" style="min-height:60px;" placeholder="Diuresis, sonda, otros..."></textarea>
+                                        </div>
+                                        <div class="segmento-item full-col">
+                                            <label class="segmento-label">Piel y tegumentos / Otros hallazgos</label>
+                                            <textarea id="enf_exp_otros" style="min-height:60px;" placeholder="Coloración, úlceras, heridas, drenajes, otros hallazgos..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Evolución y observaciones -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">📋</span>Evolución y Observaciones de Enfermería</div>
+                                    <textarea id="enf_evolucion_clinica" style="min-height:100px;" placeholder="Descripción de la evolución del paciente, cambios observados, respuesta al tratamiento desde la perspectiva de enfermería..."></textarea>
                                 </div>
                                 <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">🧾</span>Diagnóstico actualizado</div>
-                                    <textarea id="evolucion_diagnostico" style="min-height:60px;" placeholder="Confirmación o modificación del diagnóstico previo, o indicar que permanece sin cambios..."></textarea>
-                                </div>
-                                <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">💊</span>Tratamiento e indicaciones actualizadas</div>
-                                    <textarea id="evolucion_tratamiento" style="min-height:80px;" placeholder="Modificaciones al plan de tratamiento: ajuste de dosis, cambio de medicamentos, nuevas indicaciones, suspensiones..."></textarea>
+                                    <div class="record-section-title"><span class="record-icon">💉</span>Procedimientos y Cuidados Realizados</div>
+                                    <textarea id="enf_procedimientos" style="min-height:80px;" placeholder="Medicamentos administrados, procedimientos de enfermería, curación de heridas, instalación de accesos, nebulizaciones..."></textarea>
                                 </div>
                                 <div class="record-section-card">
                                     <div class="record-section-title"><span class="record-icon">🚨</span>Nota Importante <span class="field-hint">(visible en la próxima consulta)</span></div>
-                                    <textarea id="evolucion_nota_imp" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
-                                </div>
-                                <div class="record-section-card">
-                                    <div class="record-section-title"><span class="record-icon">📝</span>Nota de Evolución <span class="field-hint">(actualizar si el paciente continúa tratamiento)</span></div>
-                                    <textarea id="evolucion_clinica" style="min-height:100px;" placeholder="Evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
+                                    <textarea id="enf_nota_imp" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -991,6 +1071,11 @@
                 <div id="userTable" class="user-table-wrap"></div>
             </section>
 
+            <!-- CONSULTORIOS -->
+            <section id="consultoriosSection" class="section">
+                <!-- Content rendered dynamically by renderConsultorios() -->
+            </section>
+
         </main>
     </div>
 </div>
@@ -1014,7 +1099,13 @@
                     <option value="">Seleccionar...</option>
                     <option value="medico">Médico/a</option>
                     <option value="enfermero">Enfermero/a</option>
+                    <option value="recepcion">Recepción</option>
                     <option value="admin">Administrador técnico</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Consultorio asignado</label>
+                <select id="modalConsultorio">
+                    <option value="">Sin asignar</option>
                 </select>
             </div>
         </div>

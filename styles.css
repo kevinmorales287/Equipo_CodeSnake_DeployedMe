@@ -750,7 +750,37 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
     opacity: 1;
 }
 
-/* ===== RESPONSIVE RECORD ===== */
+/* ===== RECEPCIÓN ROLE PILL ===== */
+.role-recepcion-pill{background:#0891b2;}
+
+/* ===== CONSULTORIO TAG ===== */
+.consultorio-tag{background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;}
+
+/* ===== CONSULTORIOS SECTION ===== */
+.consultorios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;margin-top:0;}
+.consultorio-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;}
+.consultorio-card-header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);}
+.consultorio-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--brand),var(--accent));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.consultorio-info{flex:1;}
+.consultorio-nombre{font-size:14px;font-weight:700;color:var(--text-primary);}
+.consultorio-desc{font-size:12px;color:var(--text-muted);}
+.consultorio-section-label{display:flex;align-items:center;gap:7px;padding:10px 16px 6px;font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--border);}
+.consultorio-assign-area{padding:8px 16px 12px;display:flex;flex-direction:column;gap:6px;}
+.consultorio-empty{font-size:12px;color:var(--text-muted);font-style:italic;padding:4px 0;}
+.consultorio-assignee{display:flex;align-items:center;gap:8px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:12.5px;color:var(--text-primary);}
+.consultorio-assignee-avatar{width:24px;height:24px;background:linear-gradient(135deg,var(--brand),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.consultorio-assignee-avatar.pat-av{background:linear-gradient(135deg,#6d28d9,#7c3aed);}
+.consultorio-assignee span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.assignee-remove{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1;transition:color .12s;flex-shrink:0;}
+.assignee-remove:hover{color:var(--error);}
+.consultorio-select{width:100%;border:1px dashed var(--border-medium);border-radius:var(--radius);padding:6px 10px;font-size:12.5px;font-family:var(--font);color:var(--text-secondary);background:var(--bg-surface);outline:none;cursor:pointer;transition:border-color .15s;}
+.consultorio-select:focus{border-color:var(--brand);border-style:solid;color:var(--text-primary);}
+
+/* ===== NURSING NOTE ENF_ FIELDS ===== */
+#enf_sv_habitus{width:calc(100% - 20px);margin:0 10px 0 0;border:1px solid var(--border-medium);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);outline:none;}
+#enf_sv_habitus:focus{border-color:var(--brand);}
+
+@media(max-width:900px){.consultorios-grid{grid-template-columns:1fr;}}
 @media(max-width:1100px){
     .vitales-grid{grid-template-columns:repeat(3,1fr);}
     .vitales-grid.compact{grid-template-columns:repeat(4,1fr);}

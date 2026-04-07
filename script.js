@@ -8,32 +8,50 @@
 const ROLE_PERMISSIONS = {
     medico: {
         canViewPatients: true,
-        canRegisterPatients: true,
+        canRegisterPatients: false,
         canWriteMedicalNotes: true,
+        canWriteNursingNotes: false,
         canUseTriage: true,
         canViewQueue: true,
         canAddToQueue: false,
         canManageUsers: false,
+        canManageConsultorios: false,
         sidebarLabel: "Médico/a"
     },
     enfermero: {
         canViewPatients: true,
+        canRegisterPatients: false,
+        canWriteMedicalNotes: false,
+        canWriteNursingNotes: true,
+        canUseTriage: true,
+        canViewQueue: true,
+        canAddToQueue: false,
+        canManageUsers: false,
+        canManageConsultorios: false,
+        sidebarLabel: "Enfermero/a"
+    },
+    recepcion: {
+        canViewPatients: true,
         canRegisterPatients: true,
         canWriteMedicalNotes: false,
-        canUseTriage: true,
+        canWriteNursingNotes: false,
+        canUseTriage: false,
         canViewQueue: true,
         canAddToQueue: true,
         canManageUsers: false,
-        sidebarLabel: "Enfermero/a"
+        canManageConsultorios: false,
+        sidebarLabel: "Recepción"
     },
     admin: {
         canViewPatients: false,
         canRegisterPatients: false,
         canWriteMedicalNotes: false,
+        canWriteNursingNotes: false,
         canUseTriage: false,
         canViewQueue: false,
         canAddToQueue: false,
         canManageUsers: true,
+        canManageConsultorios: true,
         sidebarLabel: "Administrador"
     }
 };
@@ -45,9 +63,10 @@ function can(permission) {
 
 // ===== USUARIOS POR DEFECTO =====
 const DEFAULT_USERS = [
-    { id: 1, username: "dr.garcia",  password: "Medico#2026",     role: "medico",    displayName: "Dr. García" },
-    { id: 2, username: "enf.lopez",  password: "Enfermero#2026",  role: "enfermero", displayName: "Enf. López" },
-    { id: 3, username: "admin.sys",  password: "Admin#2026",      role: "admin",     displayName: "Administrador" }
+    { id: 1, username: "dr.garcia",  password: "Medico#2026",     role: "medico",    displayName: "Dr. García",    consultorio: "Consultorio 1" },
+    { id: 2, username: "enf.lopez",  password: "Enfermero#2026",  role: "enfermero", displayName: "Enf. López",    consultorio: "" },
+    { id: 3, username: "recep.ruiz", password: "Recepcion#2026",  role: "recepcion", displayName: "Recep. Ruiz",   consultorio: "" },
+    { id: 4, username: "admin.sys",  password: "Admin#2026",      role: "admin",     displayName: "Administrador", consultorio: "" }
 ];
 
 // ===== ESTADO GLOBAL =====
@@ -150,9 +169,10 @@ function bootApp() {
     renderSidebar();
 
     // Determinar la sección inicial según el rol
-    const homeSection = currentUser.role === "admin"  ? "admin"
-                      : currentUser.role === "medico" ? "consultQueue"
-                      : "patients";
+    const homeSection = currentUser.role === "admin"      ? "admin"
+                      : currentUser.role === "medico"     ? "consultQueue"
+                      : currentUser.role === "recepcion"  ? "patients"
+                      : "triage"; // enfermero → triage
 
     // Navegar con hash (funciona en file:// y http://)
     navigate(homeSection);
@@ -233,9 +253,10 @@ window.addEventListener("hashchange", () => {
 
     if (!section) {
         // Hash desconocido → home del rol
-        const homeSection = currentUser.role === "admin"  ? "admin"
-                          : currentUser.role === "medico" ? "consultQueue"
-                          : "patients";
+        const homeSection = currentUser.role === "admin"      ? "admin"
+                          : currentUser.role === "medico"     ? "consultQueue"
+                          : currentUser.role === "recepcion"  ? "patients"
+                          : "triage";
         _activateSection(homeSection);
         return;
     }
@@ -272,6 +293,9 @@ function renderSidebar() {
     if (can("canManageUsers")) {
         items.push({ id: "nav-admin", section: "admin", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`, label: "Gestión de Usuarios" });
     }
+    if (can("canManageConsultorios")) {
+        items.push({ id: "nav-consultorios", section: "consultorios", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg>`, label: "Consultorios" });
+    }
     nav.innerHTML = items.map(item => `
         <button class="nav-item" onclick="navigate('${item.section}')" id="${item.id}" data-section="${item.section}">
             ${item.icon}
@@ -297,6 +321,7 @@ const HASH_MAP = {
     triage:              "#/triage",
     triageList:          "#/triage/queue",
     admin:               "#/admin",
+    consultorios:        "#/consultorios",
 };
 
 const HASH_TO_SECTION = {
@@ -308,6 +333,7 @@ const HASH_TO_SECTION = {
     "#/triage":          "triage",
     "#/triage/queue":    "triageList",
     "#/admin":           "admin",
+    "#/consultorios":    "consultorios",
 };
 
 const ROUTE_TITLE = {
@@ -319,6 +345,7 @@ const ROUTE_TITLE = {
     triage:              "Triage · ClinData",
     triageList:          "Fila de Urgencias · ClinData",
     admin:               "Administración · ClinData",
+    consultorios:        "Consultorios · ClinData",
 };
 
 // navigate() — punto de entrada público.
@@ -344,8 +371,6 @@ function navigate(section) {
     _activateSection(section);
 }
 
-// _activateSection() — lógica visual pura, sin tocar el hash.
-// La llaman navigate() y el listener hashchange.
 function _activateSection(section) {
     const map = {
         patients:            "patientsSection",
@@ -355,7 +380,8 @@ function _activateSection(section) {
         medicalRecord:       "medicalRecordSection",
         triage:              "triageSection",
         triageList:          "triageListSection",
-        admin:               "adminSection"
+        admin:               "adminSection",
+        consultorios:        "consultoriosSection"
     };
     const navMap = {
         patients:            "nav-patients",
@@ -365,7 +391,8 @@ function _activateSection(section) {
         medicalRecord:       "nav-patients",
         triage:              "nav-triage",
         triageList:          "nav-triageList",
-        admin:               "nav-admin"
+        admin:               "nav-admin",
+        consultorios:        "nav-consultorios"
     };
 
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
@@ -380,10 +407,12 @@ function _activateSection(section) {
     window.scrollTo({ top: 0, behavior: "instant" });
 
     if (section === "patients")            renderPatients();
+    if (section === "newPatient")          renderNewPatientConsultorioSelect();
     if (section === "consultQueue")        renderConsultQueue();
     if (section === "consultationHistory") renderConsultationHistory();
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
+    if (section === "consultorios")        renderConsultorios();
     if (section === "medicalRecord")       renderMedicalRecord();
     if (section === "triage" && typeof abrevInit === "function") abrevInit();
 }
@@ -427,6 +456,7 @@ function submitPatient() {
     const allergies = document.getElementById("allergies").value.trim();
     const chronicConditions = document.getElementById("chronicConditions")?.value.trim() || "";
     const reason = document.getElementById("consultReason").value.trim();
+    const consultorioAsignado = document.getElementById("newPatientConsultorio")?.value || "";
 
     if (!name || !age || !sex || !address || !reason) {
         showToast("Completa los campos obligatorios (nombre, edad, sexo, domicilio, motivo).", "error"); return;
@@ -436,6 +466,7 @@ function submitPatient() {
         id: Date.now(), name, age, sex, address, phone, dob, email, occupation,
         emergencyContact, ethnicGroup, allergies, chronicConditions,
         alerts: "", currentTreatment: "",
+        consultorio: consultorioAsignado,
         createdAt: new Date().toISOString(), createdBy: currentUser?.username
     };
     patients.push(patient);
@@ -447,6 +478,8 @@ function submitPatient() {
     ["name","age","sex","address","phone","dob","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = "";
     });
+    const cpEl = document.getElementById("newPatientConsultorio");
+    if (cpEl) cpEl.value = "";
     navigate("consultQueue");
 }
 
@@ -482,6 +515,7 @@ function renderPatients(customList = null) {
                 <div class="patient-name">${p.name}</div>
                 <div class="patient-meta"><span>${p.age} años</span><span class="dot">·</span><span>${p.sex}</span><span class="dot">·</span><span>${p.address}</span></div>
                 ${p.allergies ? `<div class="patient-allergy-tag">⚠ ${p.allergies}</div>` : ""}
+                ${p.consultorio ? `<div style="display:inline-block;margin-top:3px;"><span class="consultorio-tag">🏥 ${p.consultorio}</span></div>` : ""}
             </div>
             <div class="patient-stats">
                 <div class="stat-item"><span class="stat-value">${consults}</span><span class="stat-label">consultas</span></div>
@@ -547,6 +581,7 @@ function renderConsultQueue() {
         const p = patients.find(x => x.id === q.patientId) || { name: "Paciente", age: "—", sex: "—" };
         const initials = p.name.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
         const isNew = q.isNewPatient ? `<span class="new-badge">Primera visita</span>` : `<span class="return-badge">Seguimiento</span>`;
+        const consultorioBadge = p.consultorio ? `<span class="consultorio-tag">🏥 ${p.consultorio}</span>` : "";
         const attendBtn = can("canWriteMedicalNotes") ? `<button class="btn-attend" onclick="attendFromQueue(${q.id})">Atender</button>` : `<span class="waiting-tag">En espera</span>`;
         const dismissBtn = can("canAddToQueue") || can("canWriteMedicalNotes") ? `<button class="btn-dismiss" onclick="dismissFromConsultQueue(${q.id})">Retirar</button>` : "";
         return `<div class="consult-queue-card">
@@ -554,7 +589,7 @@ function renderConsultQueue() {
             <div class="queue-patient-avatar">${initials}</div>
             <div class="queue-body">
                 <div class="queue-name">${p.name}</div>
-                <div class="queue-meta">${p.age} años · ${p.sex} · ${isNew}</div>
+                <div class="queue-meta">${p.age} años · ${p.sex} · ${isNew} ${consultorioBadge}</div>
                 <div class="queue-reason">${q.reason}</div>
             </div>
             <div class="queue-right">
@@ -889,6 +924,7 @@ function renderMedicalRecord() {
 
     // IMC auto-calc
     setupIMCCalc();
+    setupNursingIMCCalc();
     setupRecordActions();
     renderAttachments();
     setupAttachments();
@@ -966,6 +1002,43 @@ function fillRecordFields() {
     // IMC
     calcIMC();
     
+    // Fill nursing fields
+    const nursingFields = [
+        "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+        "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+        "enf_sv_dolor","enf_sv_habitus",
+        "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+        "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+        "enf_observaciones","enf_procedimientos","enf_nota_imp"
+    ];
+    nursingFields.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.value = currentConsultation[f] || "";
+    });
+    const enfImcEl = document.getElementById("enf_sv_imc");
+    if (enfImcEl) enfImcEl.value = currentConsultation.enf_sv_imc || "";
+
+    // Show/hide tabs based on role
+    const tabHistoria = document.querySelector('.record-tab[data-tab="historia"]');
+    const tabEvolucion = document.querySelector('.record-tab[data-tab="evolucion"]');
+    const tabUrgencias = document.querySelector('.record-tab[data-tab="urgencias"]');
+    if (tabEvolucion) {
+        // Nursing tab always visible, but only enfermero navigates there by default
+        tabEvolucion.style.display = "";
+    }
+    if (tabHistoria && tabUrgencias) {
+        // Enfermero can still VIEW other tabs (read-only), but starts on enfermería
+        if (can("canWriteNursingNotes") && !can("canWriteMedicalNotes")) {
+            // Switch to nursing tab by default
+            document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
+            const tab = document.getElementById("tab-evolucion");
+            if (tab) tab.classList.add("active");
+            if (tabEvolucion) tabEvolucion.classList.add("active");
+            currentTab = "evolucion";
+        }
+    }
+    
     // Cargar diagnósticos CIE-10 seleccionados
     selectedDiagnosticos = (currentConsultation.diagnosticos_cie10 || []).map(d => ({...d}));
     renderDiagBadges();
@@ -1012,6 +1085,22 @@ function setRecordReadOnly(isReadOnly) {
     document.querySelectorAll(".apnp-detail").forEach(el => el.disabled = isReadOnly);
     const addMedBtn = document.getElementById("btnAgregarMed");
     if (addMedBtn) addMedBtn.style.display = isReadOnly ? "none" : "";
+
+    // Si es enfermero, habilitar sólo la pestaña de Nota de Enfermería
+    if (can("canWriteNursingNotes") && !can("canWriteMedicalNotes")) {
+        const nursingFields = [
+            "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+            "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+            "enf_sv_dolor","enf_sv_habitus","enf_sv_imc",
+            "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+            "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+            "enf_observaciones","enf_procedimientos","enf_nota_imp"
+        ];
+        nursingFields.forEach(f => {
+            const el = document.getElementById(f);
+            if (el) el.disabled = false;
+        });
+    }
 }
 
 function setupIMCCalc() {
@@ -1023,6 +1112,30 @@ function setupIMCCalc() {
     talla.removeEventListener("input", talla._imcHandler);
     peso._imcHandler = handler;
     talla._imcHandler = handler;
+    peso.addEventListener("input", handler);
+    talla.addEventListener("input", handler);
+}
+
+function setupNursingIMCCalc() {
+    const peso = document.getElementById("enf_sv_peso");
+    const talla = document.getElementById("enf_sv_talla");
+    if (!peso || !talla) return;
+    const handler = () => {
+        const p = parseFloat(peso.value);
+        const t = parseFloat(talla.value);
+        const imcEl = document.getElementById("enf_sv_imc");
+        if (!imcEl) return;
+        if (p && t) {
+            const tm = t / 100;
+            const imc = (p / (tm * tm)).toFixed(1);
+            let cat = imc < 18.5 ? "Bajo peso" : imc < 25 ? "Normal" : imc < 30 ? "Sobrepeso" : "Obesidad";
+            imcEl.value = `${imc} (${cat})`;
+        } else { imcEl.value = ""; }
+    };
+    peso.removeEventListener("input", peso._enfImcHandler);
+    talla.removeEventListener("input", talla._enfImcHandler);
+    peso._enfImcHandler = handler;
+    talla._enfImcHandler = handler;
     peso.addEventListener("input", handler);
     talla.addEventListener("input", handler);
 }
@@ -1129,6 +1242,12 @@ function setupRecordActions() {
             <button class="btn-primary" onclick="closeConsultation()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 Marcar como Atendido</button>`;
+    } else if (can("canWriteNursingNotes")) {
+        el.innerHTML = `
+            <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+            <button class="btn-primary" onclick="saveNursingNote()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                Guardar Nota de Enfermería</button>`;
     } else {
         el.innerHTML = `
             <button class="btn-secondary" onclick="abrevIniciarExport('patient')">
@@ -1191,6 +1310,34 @@ function closeConsultation() {
     saveConsultations();
     showToast("Consulta cerrada — paciente marcado como atendido.", "success");
     navigate("consultationHistory");
+}
+
+function saveNursingNote() {
+    if (!currentConsultation) return;
+    const nursingFields = [
+        "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+        "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+        "enf_sv_dolor","enf_sv_habitus",
+        "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+        "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+        "enf_observaciones","enf_procedimientos","enf_nota_imp"
+    ];
+    nursingFields.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) currentConsultation[f] = el.value;
+    });
+    // Calcular IMC de enfermería
+    const peso = parseFloat(document.getElementById("enf_sv_peso")?.value);
+    const talla = parseFloat(document.getElementById("enf_sv_talla")?.value);
+    if (peso && talla) {
+        const tallaM = talla / 100;
+        currentConsultation.enf_sv_imc = (peso / (tallaM * tallaM)).toFixed(1);
+    }
+    currentConsultation.nursingUpdatedBy = currentUser?.displayName;
+    currentConsultation.nursingUpdatedAt = new Date().toISOString();
+    saveConsultations();
+    showToast("Nota de enfermería guardada correctamente.", "success");
+    showAutoSave();
 }
 
 // ===== AUTORÍA Y FIRMA =====
@@ -1542,16 +1689,17 @@ function dismissTriage(triageId) {
 function renderUserTable() {
     const container = document.getElementById("userTable");
     if (!container) return;
-    const roleLabels = { medico:"Médico/a", enfermero:"Enfermero/a", admin:"Administrador" };
-    const roleClasses = { medico:"role-medico-pill", enfermero:"role-enfermero-pill", admin:"role-admin-pill" };
+    const roleLabels = { medico:"Médico/a", enfermero:"Enfermero/a", recepcion:"Recepción", admin:"Administrador" };
+    const roleClasses = { medico:"role-medico-pill", enfermero:"role-enfermero-pill", recepcion:"role-recepcion-pill", admin:"role-admin-pill" };
     container.innerHTML = `
         <table class="user-table">
-            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Consultorio</th><th>Acciones</th></tr></thead>
             <tbody>${systemUsers.map(u=>`
                 <tr>
                     <td><code class="username-code">${u.username}</code></td>
                     <td>${u.displayName}</td>
                     <td><span class="role-pill ${roleClasses[u.role]||''}">${roleLabels[u.role]||u.role}</span></td>
+                    <td>${u.consultorio ? `<span class="consultorio-tag">${u.consultorio}</span>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}</td>
                     <td class="table-actions">
                         <button class="btn-table-edit" onclick="openEditUserModal(${u.id})">Editar</button>
                         ${u.id!==currentUser?.id?`<button class="btn-table-delete" onclick="deleteUser(${u.id})">Eliminar</button>`:"<span class='self-label'>Tú</span>"}
@@ -1568,6 +1716,12 @@ function openAddUserModal() {
     document.getElementById("modalUsername").value = "";
     document.getElementById("modalPassword").value = "";
     document.getElementById("modalRole").value = "";
+    const consultorioEl = document.getElementById("modalConsultorio");
+    if (consultorioEl) {
+        const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join("");
+        consultorioEl.innerHTML = `<option value="">Sin asignar</option>${opts}`;
+        consultorioEl.value = "";
+    }
     document.getElementById("userModal").classList.remove("hidden");
 }
 
@@ -1580,6 +1734,13 @@ function openEditUserModal(userId) {
     document.getElementById("modalUsername").value = u.username;
     document.getElementById("modalPassword").value = "";
     document.getElementById("modalRole").value = u.role;
+    const consultorioEl = document.getElementById("modalConsultorio");
+    if (consultorioEl) {
+        // Populate options
+        const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}" ${u.consultorio === c.nombre ? 'selected' : ''}>${c.nombre}</option>`).join("");
+        consultorioEl.innerHTML = `<option value="">Sin asignar</option>${opts}`;
+        consultorioEl.value = u.consultorio || "";
+    }
     document.getElementById("userModal").classList.remove("hidden");
 }
 
@@ -1589,6 +1750,7 @@ function saveUserFromModal() {
     const username    = document.getElementById("modalUsername").value.trim();
     const password    = document.getElementById("modalPassword").value;
     const role        = document.getElementById("modalRole").value;
+    const consultorio = document.getElementById("modalConsultorio")?.value || "";
 
     if (!displayName||!username||!role) { showToast("Completa todos los campos obligatorios.", "error"); return; }
     if (!id && !password) { showToast("La contraseña es obligatoria para un usuario nuevo.", "error"); return; }
@@ -1599,9 +1761,9 @@ function saveUserFromModal() {
 
     if (id) {
         const u = systemUsers.find(x=>x.id==id);
-        if (u) { u.displayName=displayName; u.username=username; u.role=role; if(password) u.password=password; }
+        if (u) { u.displayName=displayName; u.username=username; u.role=role; u.consultorio=consultorio; if(password) u.password=password; }
     } else {
-        systemUsers.push({ id: Date.now(), username, password, role, displayName });
+        systemUsers.push({ id: Date.now(), username, password, role, displayName, consultorio });
     }
     saveSystemUsers();
     closeModal("userModal");
@@ -2250,6 +2412,166 @@ function openPrintableRecord(type = "patient", extras = {}, replacements = {}) {
     setTimeout(() => {
         try { win.focus(); win.print(); } catch (err) { /* noop */ }
     }, 350);
+}
+
+// =============================================
+//  CONSULTORIOS
+// =============================================
+let consultorios = JSON.parse(localStorage.getItem("cd_consultorios")) || [
+    { id: 1, nombre: "Consultorio 1", descripcion: "Medicina General", activo: true },
+    { id: 2, nombre: "Consultorio 2", descripcion: "Pediatría", activo: true },
+    { id: 3, nombre: "Consultorio 3", descripcion: "Ginecología", activo: true },
+];
+function saveConsultorios() { localStorage.setItem("cd_consultorios", JSON.stringify(consultorios)); }
+
+function renderNewPatientConsultorioSelect() {
+    const sel = document.getElementById("newPatientConsultorio");
+    if (!sel) return;
+    const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}">${c.nombre} — ${c.descripcion}</option>`).join("");
+    sel.innerHTML = `<option value="">Sin asignar</option>${opts}`;
+}
+
+function renderConsultorios() {
+    const container = document.getElementById("consultoriosSection");
+    if (!container) return;
+
+    const medicos = systemUsers.filter(u => u.role === "medico");
+    const allPatients = patients;
+
+    container.querySelector(".consultorios-content") && container.querySelector(".consultorios-content").remove();
+
+    const div = document.createElement("div");
+    div.className = "consultorios-content";
+    div.innerHTML = `
+        <div class="section-header">
+            <div>
+                <h2>Gestión de Consultorios</h2>
+                <p class="section-subtitle">Asigna médicos y pacientes a cada consultorio</p>
+            </div>
+            <button class="btn-primary" onclick="openAddConsultorioModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuevo consultorio
+            </button>
+        </div>
+        <div class="consultorios-grid">
+            ${consultorios.filter(c => c.activo).map(c => {
+                const assignedMedicos = medicos.filter(m => m.consultorio === c.nombre);
+                const assignedPatients = allPatients.filter(p => p.consultorio === c.nombre);
+                return `
+                <div class="consultorio-card">
+                    <div class="consultorio-card-header">
+                        <div class="consultorio-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg>
+                        </div>
+                        <div class="consultorio-info">
+                            <div class="consultorio-nombre">${c.nombre}</div>
+                            <div class="consultorio-desc">${c.descripcion}</div>
+                        </div>
+                        <button class="btn-table-delete" onclick="eliminarConsultorio(${c.id})" title="Eliminar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                        </button>
+                    </div>
+                    <div class="consultorio-section-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                        Médico(s) asignado(s)
+                    </div>
+                    <div class="consultorio-assign-area">
+                        ${assignedMedicos.length === 0 ? `<p class="consultorio-empty">Sin médico asignado</p>` : ""}
+                        ${assignedMedicos.map(m => `
+                            <div class="consultorio-assignee">
+                                <span class="consultorio-assignee-avatar">${m.displayName.charAt(0)}</span>
+                                <span>${m.displayName}</span>
+                                <button class="assignee-remove" onclick="desasignarMedicoConsultorio(${m.id})" title="Remover">×</button>
+                            </div>`).join("")}
+                        <select class="consultorio-select" onchange="asignarMedicoConsultorio(${c.id}, this.value); this.value=''">
+                            <option value="">+ Asignar médico...</option>
+                            ${medicos.filter(m => m.consultorio !== c.nombre).map(m => `<option value="${m.id}">${m.displayName}</option>`).join("")}
+                        </select>
+                    </div>
+                    <div class="consultorio-section-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        Pacientes asignados <span class="consult-count">${assignedPatients.length}</span>
+                    </div>
+                    <div class="consultorio-assign-area">
+                        ${assignedPatients.length === 0 ? `<p class="consultorio-empty">Sin pacientes asignados</p>` : ""}
+                        ${assignedPatients.slice(0,5).map(p => `
+                            <div class="consultorio-assignee">
+                                <span class="consultorio-assignee-avatar pat-av">${p.name.charAt(0)}</span>
+                                <span>${p.name}</span>
+                                <button class="assignee-remove" onclick="desasignarPacienteConsultorio(${p.id})" title="Remover">×</button>
+                            </div>`).join("")}
+                        ${assignedPatients.length > 5 ? `<p class="consultorio-empty">... y ${assignedPatients.length - 5} más</p>` : ""}
+                        <select class="consultorio-select" onchange="asignarPacienteConsultorio(${c.id}, this.value); this.value=''">
+                            <option value="">+ Asignar paciente...</option>
+                            ${allPatients.filter(p => p.consultorio !== c.nombre).map(p => `<option value="${p.id}">${p.name}</option>`).join("")}
+                        </select>
+                    </div>
+                </div>`;
+            }).join("")}
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function asignarMedicoConsultorio(consultorioId, userId) {
+    if (!userId) return;
+    const c = consultorios.find(x => x.id === consultorioId);
+    const u = systemUsers.find(x => x.id == userId);
+    if (!c || !u) return;
+    u.consultorio = c.nombre;
+    saveSystemUsers();
+    renderConsultorios();
+    showToast(`${u.displayName} asignado a ${c.nombre}`, "success");
+}
+
+function desasignarMedicoConsultorio(userId) {
+    const u = systemUsers.find(x => x.id == userId);
+    if (!u) return;
+    u.consultorio = "";
+    saveSystemUsers();
+    renderConsultorios();
+}
+
+function asignarPacienteConsultorio(consultorioId, patientId) {
+    if (!patientId) return;
+    const c = consultorios.find(x => x.id === consultorioId);
+    const p = patients.find(x => x.id == patientId);
+    if (!c || !p) return;
+    p.consultorio = c.nombre;
+    savePatients();
+    renderConsultorios();
+    showToast(`${p.name} asignado a ${c.nombre}`, "success");
+}
+
+function desasignarPacienteConsultorio(patientId) {
+    const p = patients.find(x => x.id == patientId);
+    if (!p) return;
+    p.consultorio = "";
+    savePatients();
+    renderConsultorios();
+}
+
+function openAddConsultorioModal() {
+    const nombre = prompt("Nombre del consultorio (ej: Consultorio 4):");
+    if (!nombre || !nombre.trim()) return;
+    const desc = prompt("Especialidad o descripción:") || "";
+    consultorios.push({ id: Date.now(), nombre: nombre.trim(), descripcion: desc.trim(), activo: true });
+    saveConsultorios();
+    renderConsultorios();
+    showToast("Consultorio agregado.", "success");
+}
+
+function eliminarConsultorio(id) {
+    const c = consultorios.find(x => x.id === id);
+    if (!c) return;
+    if (!confirm(`¿Eliminar ${c.nombre}? Se desasignarán médicos y pacientes.`)) return;
+    c.activo = false;
+    // Desasignar
+    systemUsers.filter(u => u.consultorio === c.nombre).forEach(u => u.consultorio = "");
+    patients.filter(p => p.consultorio === c.nombre).forEach(p => p.consultorio = "");
+    saveConsultorios(); saveSystemUsers(); savePatients();
+    renderConsultorios();
+    showToast("Consultorio eliminado.", "success");
 }
 
 // =============================================
