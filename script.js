@@ -56,10 +56,7 @@ const ROLE_PERMISSIONS = {
     }
 };
 
-function can(permission) {
-    if (!currentUser) return false;
-    return ROLE_PERMISSIONS[currentUser.role]?.[permission] === true;
-}
+function can(permission) { return requireClinDataModule("auth").can(permission); }
 
 // ===== USUARIOS POR DEFECTO =====
 const DEFAULT_USERS = [
@@ -77,6 +74,25 @@ let autoSaveTimer       = null;
 let addToQueuePatientId = null;
 let currentTab          = "historia";
 let selectedDiagnosticos = [];  // Array para diagnósticos CIE-10 seleccionados
+
+window.ClinDataApp = window.ClinDataApp || {};
+Object.defineProperties(window.ClinDataApp, {
+    patients: { get: () => patients },
+    consultations: { get: () => consultations },
+    triageQueue: { get: () => triageQueue },
+    consultQueue: { get: () => consultQueue },
+    systemUsers: { get: () => systemUsers },
+    rolePermissions: { get: () => ROLE_PERMISSIONS },
+    defaultUsers: { get: () => DEFAULT_USERS },
+    currentUser: { get: () => currentUser, set: (value) => { currentUser = value; } },
+    currentPatient: { get: () => currentPatient, set: (value) => { currentPatient = value; } },
+    currentConsultation: { get: () => currentConsultation, set: (value) => { currentConsultation = value; } },
+    autoSaveTimer: { get: () => autoSaveTimer, set: (value) => { autoSaveTimer = value; } },
+    addToQueuePatientId: { get: () => addToQueuePatientId, set: (value) => { addToQueuePatientId = value; } },
+    currentTab: { get: () => currentTab, set: (value) => { currentTab = value; } },
+    consultorios: { get: () => consultorios },
+    selectedDiagnosticos: { get: () => selectedDiagnosticos, set: (value) => { selectedDiagnosticos = value; } }
+});
 
 const CONSULT_ANTECEDENT_FIELDS = [
     "ahf","hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
@@ -96,36 +112,22 @@ let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
 let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
 const HOSPITAL_CODE = "HGR";
 
+function requireClinDataModule(name) {
+    const module = window.ClinDataModules?.[name];
+    if (!module) throw new Error(`Módulo ClinData no disponible: ${name}`);
+    return module;
+}
+
 function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
 function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
 function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
 function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
 function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
 
-function getRecordYear(date = new Date()) {
-    return new Date(date).getFullYear();
-}
-
-function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) {
-    const prefix = `${hospitalCode}-${year}-`;
-    return patients.reduce((max, patient) => {
-        if (!patient?.expediente || !String(patient.expediente).startsWith(prefix)) return max;
-        const sequence = parseInt(String(patient.expediente).slice(prefix.length), 10);
-        return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
-    }, 0);
-}
-
-function generatePatientExpediente(hospitalCode = HOSPITAL_CODE, date = new Date()) {
-    const year = getRecordYear(date);
-    const nextSequence = getLastExpedienteSequence(hospitalCode, year) + 1;
-    return `${hospitalCode}-${year}-${String(nextSequence).padStart(6, "0")}`;
-}
-
-function updateNewPatientExpedientePreview() {
-    const preview = document.getElementById("patientFileNumberPreview");
-    if (!preview) return;
-    preview.value = generatePatientExpediente();
-}
+function getRecordYear(date = new Date()) { return requireClinDataModule("patients").getRecordYear(date); }
+function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) { return requireClinDataModule("patients").getLastExpedienteSequence(hospitalCode, year); }
+function generatePatientExpediente(hospitalCode = HOSPITAL_CODE, date = new Date()) { return requireClinDataModule("patients").generatePatientExpediente(hospitalCode, date); }
+function updateNewPatientExpedientePreview() { return requireClinDataModule("patients").updateNewPatientExpedientePreview(); }
 
 function formatMedicationSummary(med = {}, format = "html") {
     const parts = [
@@ -171,57 +173,10 @@ function copyAntecedentsFromPreviousConsultation(consult) {
 // =============================================
 //  AUTH
 // =============================================
-function handleLogin() {
-    const u = document.getElementById("loginUser").value.trim();
-    const p = document.getElementById("loginPass").value;
-    const user = systemUsers.find(x => x.username === u && x.password === p);
-    if (!user) {
-        document.getElementById("loginError").classList.remove("hidden");
-        document.getElementById("loginPass").value = "";
-        return;
-    }
-    currentUser = user;
-    sessionStorage.setItem("cd_session", JSON.stringify(user));
-    bootApp();
-}
-
-function bootApp() {
-    document.getElementById("loginScreen").classList.add("hidden");
-    document.getElementById("appShell").classList.remove("hidden");
-    document.getElementById("userDisplayName").textContent = currentUser.displayName;
-    const labels = { medico: "Médico/a", enfermero: "Enfermero/a", admin: "Administrador" };
-    document.getElementById("userRoleBadge").textContent = labels[currentUser.role] || currentUser.role;
-    document.getElementById("userAvatar").textContent = currentUser.displayName.charAt(0).toUpperCase();
-    renderSidebar();
-
-    // Determinar la sección inicial según el rol
-    const homeSection = currentUser.role === "admin"      ? "admin"
-                      : currentUser.role === "medico"     ? "consultQueue"
-                      : currentUser.role === "recepcion"  ? "patients"
-                      : "triage"; // enfermero → triage
-
-    // Navegar con hash (funciona en file:// y http://)
-    navigate(homeSection);
-}
-
-function handleLogout() {
-    sessionStorage.removeItem("cd_session");
-    currentUser = null; currentPatient = null; currentConsultation = null;
-    stopAutoSave();
-    document.getElementById("appShell").classList.add("hidden");
-    document.getElementById("loginScreen").classList.remove("hidden");
-    document.getElementById("loginUser").value = "";
-    document.getElementById("loginPass").value = "";
-    document.getElementById("loginError").classList.add("hidden");
-    // Limpiar el hash para que el historial no mantenga rutas autenticadas
-    window.location.hash = "";
-    document.title = "ClinData — Sistema de Expediente Clínico";
-}
-
-function togglePassword() {
-    const i = document.getElementById("loginPass");
-    i.type = i.type === "password" ? "text" : "password";
-}
+function handleLogin() { return requireClinDataModule("auth").handleLogin(); }
+function bootApp() { return requireClinDataModule("auth").bootApp(); }
+function handleLogout() { return requireClinDataModule("auth").handleLogout(); }
+function togglePassword() { return requireClinDataModule("auth").togglePassword(); }
 
 function setupSelectableRadioCards() {
     const radioCards = document.querySelectorAll(".pronostico-opt");
@@ -300,35 +255,7 @@ window.addEventListener("hashchange", () => {
 // =============================================
 //  SIDEBAR DINÁMICA
 // =============================================
-function renderSidebar() {
-    const nav = document.getElementById("sidebarNav");
-    if (!nav) return;
-    const items = [];
-    if (can("canViewPatients")) {
-        items.push({ id: "nav-patients", section: "patients", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, label: "Pacientes" });
-    }
-    if (can("canRegisterPatients")) {
-        items.push({ id: "nav-newPatient", section: "newPatient", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`, label: "Nuevo Paciente" });
-    }
-    if (can("canViewQueue")) {
-        items.push({ id: "nav-consultQueue", section: "consultQueue", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`, label: "Fila de Consulta" });
-    }
-    if (can("canUseTriage")) {
-        items.push({ id: "nav-triage", section: "triage", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`, label: "Triage" });
-        items.push({ id: "nav-triageList", section: "triageList", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`, label: "Fila de Urgencias" });
-    }
-    if (can("canManageUsers")) {
-        items.push({ id: "nav-admin", section: "admin", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`, label: "Gestión de Usuarios" });
-    }
-    if (can("canManageConsultorios")) {
-        items.push({ id: "nav-consultorios", section: "consultorios", icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg>`, label: "Consultorios" });
-    }
-    nav.innerHTML = items.map(item => `
-        <button class="nav-item" onclick="navigate('${item.section}')" id="${item.id}" data-section="${item.section}">
-            ${item.icon}
-            ${item.label}
-        </button>`).join("");
-}
+function renderSidebar() { return requireClinDataModule("auth").renderSidebar(); }
 
 // =============================================
 //  NAVEGACIÓN
@@ -469,252 +396,19 @@ function switchRecordTab(tabName, btn) {
 // =============================================
 //  PACIENTES
 // =============================================
-function submitPatient() {
-    const name   = document.getElementById("name").value.trim();
-    const age    = document.getElementById("age").value;
-    const sex    = document.getElementById("sex").value;
-    const address = document.getElementById("address").value.trim();
-    const phone  = document.getElementById("phone").value.trim();
-    const dob    = document.getElementById("dob").value;
-    const birthPlace = document.getElementById("birthPlace")?.value.trim() || "";
-    const nationality = document.getElementById("nationality")?.value.trim() || "";
-    const curp = (document.getElementById("curp")?.value || "").trim().toUpperCase();
-    const rfc = (document.getElementById("rfc")?.value || "").trim().toUpperCase();
-    const nss = (document.getElementById("nss")?.value || "").trim();
-    const email  = document.getElementById("email")?.value.trim() || "";
-    const occupation = document.getElementById("occupation")?.value.trim() || "";
-    const emergencyContact = document.getElementById("emergencyContact")?.value.trim() || "";
-    const ethnicGroup = document.getElementById("ethnicGroup")?.value.trim() || "";
-    const allergies = document.getElementById("allergies").value.trim();
-    const chronicConditions = document.getElementById("chronicConditions")?.value.trim() || "";
-    const reason = document.getElementById("consultReason").value.trim();
-    const consultorioAsignado = document.getElementById("newPatientConsultorio")?.value || "";
-
-    if (!name || !age || !sex || !address || !reason) {
-        showToast("Completa los campos obligatorios (nombre, edad, sexo, domicilio, motivo).", "error"); return;
-    }
-
-    const expediente = generatePatientExpediente();
-    const patient = {
-        id: Date.now(), expediente, name, age, sex, address, phone, dob, birthPlace, nationality,
-        curp, rfc, nss, email, occupation, emergencyContact, ethnicGroup, allergies, chronicConditions,
-        alerts: "", currentTreatment: "",
-        consultorio: consultorioAsignado,
-        createdAt: new Date().toISOString(), createdBy: currentUser?.username
-    };
-    patients.push(patient);
-    savePatients();
-
-    addPatientToQueue(patient.id, reason, true);
-    showToast(`Paciente registrado con expediente ${expediente} y agregado a la fila de consulta.`, "success");
-
-    ["name","age","sex","address","phone","dob","birthPlace","nationality","curp","rfc","nss","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = "";
-    });
-    updateNewPatientExpedientePreview();
-    const cpEl = document.getElementById("newPatientConsultorio");
-    if (cpEl) cpEl.value = "";
-    navigate("consultQueue");
-}
-
-function renderPatients(customList = null) {
-    const container = document.getElementById("patientList");
-    if (!container) return;
-    const list = customList !== null ? customList : patients;
-
-    const ha = document.getElementById("patientsHeaderActions");
-    if (ha) {
-        ha.innerHTML = can("canRegisterPatients") ? `<button class="btn-primary" onclick="navigate('newPatient')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nuevo paciente</button>` : "";
-    }
-
-    if (list.length === 0) {
-        container.innerHTML = `<div class="empty-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            <p>${customList !== null ? "No se encontraron resultados" : "No hay pacientes registrados"}</p>
-            ${customList === null && can("canRegisterPatients") ? `<button class="btn-primary" onclick="navigate('newPatient')">Registrar primer paciente</button>` : ""}
-        </div>`; return;
-    }
-
-    container.innerHTML = list.map(p => {
-        const initials = p.name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
-        const consults = consultations.filter(c => c.patientId === p.id).length;
-        const last = consultations.filter(c => c.patientId === p.id).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-        const lastDate = last ? formatDate(last.date) : "Sin consultas";
-        const addQueueBtn = can("canAddToQueue") ? `<button class="btn-add-queue" onclick="event.stopPropagation();openAddToQueueModal(${p.id})">+ Cola</button>` : "";
-        return `<div class="patient-card" onclick="openPatientRecord(${p.id})">
-            <div class="patient-avatar">${initials}</div>
-            <div class="patient-info">
-                <div class="patient-name">${p.name}</div>
-                <div class="patient-meta">
-                    ${p.expediente ? `<span>${p.expediente}</span><span class="dot">·</span>` : ""}
-                    <span>${p.age} años</span><span class="dot">·</span><span>${p.sex}</span><span class="dot">·</span><span>${p.address}</span>
-                </div>
-                ${p.allergies ? `<div class="patient-allergy-tag">⚠ ${p.allergies}</div>` : ""}
-                ${p.consultorio ? `<div style="display:inline-block;margin-top:3px;"><span class="consultorio-tag">🏥 ${p.consultorio}</span></div>` : ""}
-            </div>
-            <div class="patient-stats">
-                <div class="stat-item"><span class="stat-value">${consults}</span><span class="stat-label">consultas</span></div>
-                <div class="stat-item"><span class="stat-value last-date">${lastDate}</span><span class="stat-label">última visita</span></div>
-            </div>
-            ${addQueueBtn}
-            <div class="patient-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-        </div>`;
-    }).join("");
-}
-
-function searchPatients(query) {
-    if (!query) { renderPatients(); return; }
-    renderPatients(patients.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.age.toString().includes(query) ||
-        p.sex.toLowerCase().includes(query) ||
-        (p.expediente || "").toLowerCase().includes(query) ||
-        (p.curp || "").toLowerCase().includes(query) ||
-        (p.rfc || "").toLowerCase().includes(query) ||
-        (p.nss || "").toLowerCase().includes(query)
-    ));
-}
+function submitPatient() { return requireClinDataModule("patients").submitPatient(); }
+function renderPatients(customList = null) { return requireClinDataModule("patients").renderPatients(customList); }
+function searchPatients(query) { return requireClinDataModule("patients").searchPatients(query); }
 
 // =============================================
 //  FILA DE CONSULTA
 // =============================================
-function addPatientToQueue(patientId, reason, isNew = false) {
-    consultQueue.push({ id: Date.now(), patientId, reason, isNewPatient: isNew, addedAt: new Date().toISOString(), addedBy: currentUser?.displayName, status: "waiting" });
-    saveConsultQueue();
-}
-
-function openAddToQueueModal(patientId) {
-    const p = patients.find(x => x.id === patientId);
-    if (!p) return;
-    addToQueuePatientId = patientId;
-    document.getElementById("queueModalPatientName").textContent = p.name;
-    document.getElementById("queueModalReason").value = "";
-    document.getElementById("addToQueueModal").classList.remove("hidden");
-}
-
-function confirmAddToQueue() {
-    const reason = document.getElementById("queueModalReason").value.trim();
-    if (!reason) { showToast("Ingresa el motivo de consulta.", "error"); return; }
-    addPatientToQueue(addToQueuePatientId, reason, false);
-    closeModal("addToQueueModal");
-    showToast("Paciente agregado a la fila de consulta.", "success");
-}
-
-function renderConsultQueue() {
-    const container = document.getElementById("consultQueue");
-    if (!container) return;
-
-    const actEl = document.getElementById("consultQueueActions");
-    if (actEl && can("canAddToQueue")) {
-        actEl.innerHTML = `<button class="btn-secondary" onclick="navigate('patients')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Agregar paciente existente</button>`;
-    }
-
-    const waiting = consultQueue.filter(q => q.status === "waiting").sort((a,b)=>new Date(a.addedAt)-new Date(b.addedAt));
-
-    if (waiting.length === 0) {
-        container.innerHTML = `<div class="empty-state">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <p>No hay pacientes en la fila de consulta</p>
-        </div>`; return;
-    }
-
-    container.innerHTML = waiting.map((q, idx) => {
-        const p = patients.find(x => x.id === q.patientId) || { name: "Paciente", age: "—", sex: "—" };
-        const initials = p.name.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
-        const isNew = q.isNewPatient ? `<span class="new-badge">Primera visita</span>` : `<span class="return-badge">Seguimiento</span>`;
-        const consultorioBadge = p.consultorio ? `<span class="consultorio-tag">🏥 ${p.consultorio}</span>` : "";
-        const attendBtn = can("canWriteMedicalNotes") ? `<button class="btn-attend" onclick="attendFromQueue(${q.id})">Atender</button>` : `<span class="waiting-tag">En espera</span>`;
-        const dismissBtn = can("canAddToQueue") || can("canWriteMedicalNotes") ? `<button class="btn-dismiss" onclick="dismissFromConsultQueue(${q.id})">Retirar</button>` : "";
-        return `<div class="consult-queue-card">
-            <div class="queue-number">${idx + 1}</div>
-            <div class="queue-patient-avatar">${initials}</div>
-            <div class="queue-body">
-                <div class="queue-name">${p.name}</div>
-                <div class="queue-meta">${p.age} años · ${p.sex} · ${isNew} ${consultorioBadge}</div>
-                <div class="queue-reason">${q.reason}</div>
-            </div>
-            <div class="queue-right">
-                <div class="queue-time">${formatTime(q.addedAt)}</div>
-                ${attendBtn}
-                ${dismissBtn}
-            </div>
-        </div>`;
-    }).join("");
-}
-
-function attendFromQueue(queueId) {
-    const qEntry = consultQueue.find(q => q.id === queueId);
-    if (!qEntry) return;
-    const p = patients.find(x => x.id === qEntry.patientId);
-    if (!p) return;
-
-    currentPatient = p;
-
-    const consult = {
-        id: Date.now(), patientId: p.id,
-        date: new Date().toISOString(),
-        createdBy: currentUser?.displayName || "Sistema",
-        queueReason: qEntry.reason,
-        isNewPatient: qEntry.isNewPatient,
-        tipoNota: "historia",
-        // Campos NOM-004 — Historia Clínica
-        ahf: "", apnp_otros: "",
-        app_enfermedades: "", app_cirugias: "", app_traumatismos: "",
-        app_alergias: "", app_transfusiones: "", app_medicamentos: "",
-        padecimiento_inicio: "", padecimiento_sintomas: "",
-        sis_cardiovascular: "", sis_respiratorio: "", sis_digestivo: "",
-        sis_neurologico: "", sis_urinario: "", sis_musculoesqueletico: "",
-        sis_piel: "", sis_endocrino: "", sis_genitoreproductivo: "", sis_psiquiatrico: "",
-        // Signos vitales
-        sv_tas: "", sv_tad: "", sv_fc: "", sv_fr: "", sv_temp: "",
-        sv_spo2: "", sv_glucemia: "", sv_peso: "", sv_talla: "", sv_dolor: "", sv_habitus: "",
-        // Exploración por segmentos
-        exp_cabeza: "", exp_torax: "", exp_abdomen: "",
-        exp_extremidades: "", exp_neurologico: "", exp_genitourinario: "", exp_otros: "",
-        // Estudios
-        estudios_previos: "", estudios_imagen: "", estudios_solicitados: "",
-        // Diagnóstico y pronóstico
-        diagnostico: "", diagnostico_secundario: "", pronostico_detalle: "",
-        // Tratamiento
-        tratamiento: "", indicaciones_reposo: "", indicaciones_dieta: "",
-        indicaciones_cita: "", indicaciones_referencia: "",
-        medicamentos: [],
-        // Nota evolución
-        evolucion_clinica: "", evol_ta: "", evol_fc: "", evol_fr: "",
-        evol_temp: "", evol_spo2: "", evol_peso: "",
-        evolucion_resultados: "", evolucion_diagnostico: "", evolucion_tratamiento: "",
-        // Urgencias
-        urg_tas: "", urg_tad: "", urg_fc: "", urg_fr: "", urg_temp: "",
-        urg_spo2: "", urg_glucemia: "", urg_glasgow: "",
-        urg_motivo: "", urg_exploracion: "", urg_estudios: "",
-        urg_diagnostico: "", urg_tratamiento: "",
-        // Comunes
-        notaImportante: "", evolucion_nota: "",
-        triageLevel: null, triageData: null,
-        status: "active",
-        attachments: []
-    };
-    copyAntecedentsFromPreviousConsultation(consult);
-    consultations.push(consult);
-    saveConsultations();
-    currentConsultation = consult;
-
-    qEntry.status = "attended";
-    saveConsultQueue();
-
-    selectedDiagnosticos = [];  // Resetear diagnósticos CIE-10
-    navigate("medicalRecord");
-    renderMedicalRecord();
-}
-
-function dismissFromConsultQueue(queueId) {
-    const q = consultQueue.find(x => x.id === queueId);
-    if (q) { q.status = "dismissed"; saveConsultQueue(); renderConsultQueue(); }
-}
+function addPatientToQueue(patientId, reason, isNew = false) { return requireClinDataModule("queue").addPatientToQueue(patientId, reason, isNew); }
+function openAddToQueueModal(patientId) { return requireClinDataModule("queue").openAddToQueueModal(patientId); }
+function confirmAddToQueue() { return requireClinDataModule("queue").confirmAddToQueue(); }
+function renderConsultQueue() { return requireClinDataModule("queue").renderConsultQueue(); }
+function attendFromQueue(queueId) { return requireClinDataModule("queue").attendFromQueue(queueId); }
+function dismissFromConsultQueue(queueId) { return requireClinDataModule("queue").dismissFromConsultQueue(queueId); }
 
 // =============================================
 //  HISTORIAL DE CONSULTAS
@@ -724,181 +418,13 @@ function openPatientRecord(patientId) {
     navigate("consultationHistory");
 }
 
-function renderConsultationHistory() {
-    if (!currentPatient) return;
+function renderConsultationHistory() { return requireClinDataModule("patients").renderConsultationHistory(); }
+function renderPatientFullCard() { return requireClinDataModule("patients").renderPatientFullCard(); }
 
-    document.getElementById("historyPatientName").textContent = currentPatient.name;
-    document.getElementById("historyPatientInfo").textContent = `${currentPatient.expediente ? currentPatient.expediente + " · " : ""}${currentPatient.age} años · ${currentPatient.sex}`;
+function createEmptyConsultation(patientId, overrides = {}) { return requireClinDataModule("consultation").createEmptyConsultation(patientId, overrides); }
+function createNewConsultation() { return requireClinDataModule("consultation").createNewConsultation(); }
 
-    const ha = document.getElementById("historyHeaderActions");
-    if (ha) {
-        let btns = "";
-        if (can("canWriteMedicalNotes")) {
-            btns += `<button class="btn-primary" onclick="createNewConsultation()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Nueva consulta</button>`;
-        }
-        btns += `<button class="btn-secondary" onclick="openEditPatientModal()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar datos</button>`;
-        ha.innerHTML = btns;
-    }
-
-    renderPatientFullCard();
-
-    const patientConsults = consultations.filter(c => c.patientId === currentPatient.id);
-    document.getElementById("consultCount").textContent = `${patientConsults.length} consulta${patientConsults.length !== 1 ? "s" : ""}`;
-    const sorted = [...patientConsults].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const container = document.getElementById("consultationList");
-
-    if (sorted.length === 0) {
-        container.innerHTML = `<div class="empty-state">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <p>Este paciente aún no tiene consultas registradas</p>
-            ${can("canWriteMedicalNotes") ? `<button class="btn-primary" onclick="createNewConsultation()">Registrar primera consulta</button>` : ""}
-        </div>`; return;
-    }
-
-    const tipoLabels = { historia: "Historia Clínica", evolucion: "Nota de Evolución", urgencias: "Nota de Urgencias" };
-    container.innerHTML = sorted.map((c, idx) => {
-        const num = sorted.length - idx;
-        const diagPreview = c.diagnostico ? c.diagnostico.substring(0,90)+(c.diagnostico.length>90?"...":"") : "Sin diagnóstico registrado";
-        const tratPreview = c.tratamiento ? c.tratamiento.substring(0,70)+(c.tratamiento.length>70?"...":"") : "Sin tratamiento registrado";
-        const triageBadge = c.triageLevel ? `<span class="triage-badge triage-${(c.triageData?.color||'azul')}">${c.triageLevel}</span>` : "";
-        const isNew = c.isNewPatient ? `<span class="new-badge-sm">1ª visita</span>` : "";
-        const statusBadge = c.status === "closed" ? `<span class="status-closed">Atendido</span>` : `<span class="status-active">Activo</span>`;
-        const attachCount = (c.attachments||[]).length;
-        const attachBadge = attachCount > 0 ? `<span class="attach-count-badge">📎 ${attachCount}</span>` : "";
-        const tipoLabel = tipoLabels[c.tipoNota] || "Historia Clínica";
-        const tipoBadge = `<span class="tipo-nota-badge">${tipoLabel}</span>`;
-        return `<div class="consult-card" onclick="openConsultation(${c.id})">
-            <div class="consult-card-left">
-                <div class="consult-number">Consulta ${num}</div>
-                <div class="consult-date">${formatDateFull(c.date)}</div>
-                ${tipoBadge}${triageBadge}${isNew}${statusBadge}${attachBadge}
-            </div>
-            <div class="consult-card-body">
-                <div class="consult-field"><span class="consult-field-label">Diagnóstico</span><span class="consult-field-value">${diagPreview}</span></div>
-                <div class="consult-field"><span class="consult-field-label">Tratamiento</span><span class="consult-field-value">${tratPreview}</span></div>
-                ${c.queueReason ? `<div class="consult-field"><span class="consult-field-label">Motivo</span><span class="consult-field-value">${c.queueReason}</span></div>` : ""}
-            </div>
-            <div class="consult-card-right">
-                <div class="consult-author">${c.createdBy||"Sistema"}</div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-        </div>`;
-    }).join("");
-}
-
-function renderPatientFullCard() {
-    if (!currentPatient) return;
-    const p = currentPatient;
-    const patientConsults = consultations.filter(c => c.patientId === p.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-    const lastConsult = patientConsults[0];
-
-    const lastDx = lastConsult?.diagnostico ? lastConsult.diagnostico.substring(0,100)+"..." : "Sin diagnóstico previo";
-    const currentTx = p.currentTreatment || lastConsult?.tratamiento || "Sin tratamiento registrado";
-    const notaImp = lastConsult?.notaImportante || lastConsult?.evolucion_nota || null;
-    const alertas = p.alerts || null;
-    const medsHtml = getMedicationSummary(lastConsult?.medicamentos, "html") || "Sin medicamentos registrados";
-
-    document.getElementById("patientFullCard").innerHTML = `
-        <div class="pfc-header">
-            <div class="pfc-avatar">${p.name.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase()}</div>
-            <div class="pfc-main">
-                <div class="pfc-name">${p.name}</div>
-                <div class="pfc-row">
-                    ${p.expediente ? `<span class="pfc-tag">🗂 ${p.expediente}</span>` : ""}
-                    <span class="pfc-tag">🎂 ${p.age} años</span>
-                    <span class="pfc-tag">⚧ ${p.sex}</span>
-                    ${p.dob ? `<span class="pfc-tag">📅 ${formatDate(p.dob)}</span>` : ""}
-                    ${p.birthPlace ? `<span class="pfc-tag">🌎 ${p.birthPlace}</span>` : ""}
-                    ${p.nationality ? `<span class="pfc-tag">🪪 ${p.nationality}</span>` : ""}
-                    ${p.phone ? `<span class="pfc-tag">📞 ${p.phone}</span>` : ""}
-                    ${p.occupation ? `<span class="pfc-tag">💼 ${p.occupation}</span>` : ""}
-                    ${p.address ? `<span class="pfc-tag">📍 ${p.address}</span>` : ""}
-                </div>
-            </div>
-        </div>
-        <div class="pfc-grid">
-            ${p.curp ? `<div class="pfc-item"><div class="pfc-item-label">CURP</div><div class="pfc-item-value">${p.curp}</div></div>` : ""}
-            ${p.rfc ? `<div class="pfc-item"><div class="pfc-item-label">RFC</div><div class="pfc-item-value">${p.rfc}</div></div>` : ""}
-            ${p.nss ? `<div class="pfc-item"><div class="pfc-item-label">NSS</div><div class="pfc-item-value">${p.nss}</div></div>` : ""}
-            <div class="pfc-item ${p.allergies && p.allergies !== 'Ninguna conocida' ? 'pfc-alert' : ''}">
-                <div class="pfc-item-label">Alergias</div>
-                <div class="pfc-item-value">${p.allergies || "No registradas"}</div>
-            </div>
-            ${p.chronicConditions ? `<div class="pfc-item pfc-alert"><div class="pfc-item-label">🩺 Padecimientos crónicos</div><div class="pfc-item-value">${p.chronicConditions}</div></div>` : ""}
-            ${alertas ? `<div class="pfc-item pfc-alert"><div class="pfc-item-label">⚠ Alertas médicas</div><div class="pfc-item-value">${alertas}</div></div>` : ""}
-            <div class="pfc-item">
-                <div class="pfc-item-label">Último diagnóstico</div>
-                <div class="pfc-item-value">${lastDx}</div>
-            </div>
-            <div class="pfc-item">
-                <div class="pfc-item-label">Tratamiento actual</div>
-                <div class="pfc-item-value">${currentTx}</div>
-            </div>
-            ${notaImp ? `<div class="pfc-item pfc-nota full-span"><div class="pfc-item-label">📌 Nota de consulta anterior</div><div class="pfc-item-value">${notaImp}</div></div>` : ""}
-            <div class="pfc-item full-span">
-                <div class="pfc-item-label">💊 Medicamentos preescritos</div>
-                <div class="pfc-item-value">${medsHtml}</div>
-            </div>
-        </div>`;
-}
-
-function createNewConsultation() {
-    if (!currentPatient) return;
-    const consult = {
-        id: Date.now(), patientId: currentPatient.id,
-        date: new Date().toISOString(),
-        createdBy: currentUser?.displayName||"Sistema",
-        tipoNota: "historia",
-        ahf: "", apnp_otros: "",
-        app_enfermedades: "", app_cirugias: "", app_traumatismos: "",
-        app_alergias: "", app_transfusiones: "", app_medicamentos: "",
-        padecimiento_inicio: "", padecimiento_sintomas: "",
-        sis_cardiovascular: "", sis_respiratorio: "", sis_digestivo: "",
-        sis_neurologico: "", sis_urinario: "", sis_musculoesqueletico: "",
-        sis_piel: "", sis_endocrino: "", sis_genitoreproductivo: "", sis_psiquiatrico: "",
-        sv_tas: "", sv_tad: "", sv_fc: "", sv_fr: "", sv_temp: "",
-        sv_spo2: "", sv_glucemia: "", sv_peso: "", sv_talla: "", sv_dolor: "", sv_habitus: "",
-        exp_cabeza: "", exp_torax: "", exp_abdomen: "",
-        exp_extremidades: "", exp_neurologico: "", exp_genitourinario: "", exp_otros: "",
-        estudios_previos: "", estudios_imagen: "", estudios_solicitados: "",
-        diagnostico: "", diagnostico_secundario: "", pronostico_detalle: "",
-        tratamiento: "", indicaciones_reposo: "", indicaciones_dieta: "",
-        indicaciones_cita: "", indicaciones_referencia: "",
-        medicamentos: [],
-        evolucion_clinica: "", evol_ta: "", evol_fc: "", evol_fr: "",
-        evol_temp: "", evol_spo2: "", evol_peso: "",
-        evolucion_resultados: "", evolucion_diagnostico: "", evolucion_tratamiento: "",
-        urg_tas: "", urg_tad: "", urg_fc: "", urg_fr: "", urg_temp: "",
-        urg_spo2: "", urg_glucemia: "", urg_glasgow: "",
-        urg_motivo: "", urg_exploracion: "", urg_estudios: "",
-        urg_diagnostico: "", urg_tratamiento: "",
-        notaImportante: "", evolucion_nota: "",
-        triageLevel: null, triageData: null, status: "active", attachments: []
-    };
-    copyAntecedentsFromPreviousConsultation(consult);
-
-    consultations.push(consult);
-    saveConsultations();
-    currentConsultation = consult;
-    selectedDiagnosticos = [];  // Resetear diagnósticos CIE-10
-    navigate("medicalRecord");
-    renderMedicalRecord();
-}
-
-function openConsultation(consultId) {
-    currentConsultation = consultations.find(c => c.id === consultId);
-    if (!currentConsultation) return;
-    if (!currentPatient || currentPatient.id !== currentConsultation.patientId) {
-        currentPatient = patients.find(p => p.id === currentConsultation.patientId);
-    }
-    selectedDiagnosticos = [];  // Resetear diagnósticos CIE-10 para que se carguen desde la consulta
-    navigate("medicalRecord");
-    renderMedicalRecord();
-}
+function openConsultation(consultId) { return requireClinDataModule("consultation").openConsultation(consultId); }
 
 // =============================================
 //  EXPEDIENTE / CONSULTA  (NOM-004-SSA3-2012)
@@ -1457,6 +983,29 @@ function showAutoSave() {
     setTimeout(() => { el.textContent = "Guardado"; if (dot) dot.style.background = "#22c55e"; }, 800);
 }
 
+function renderMedicalRecord() { return requireClinDataModule("consultation").renderMedicalRecord(); }
+function fillRecordFields() { return requireClinDataModule("consultation").fillRecordFields(); }
+function setRecordReadOnly(isReadOnly) { return requireClinDataModule("consultation").setRecordReadOnly(isReadOnly); }
+function setupIMCCalc() { return requireClinDataModule("consultation").setupIMCCalc(); }
+function setupNursingIMCCalc() { return requireClinDataModule("consultation").setupNursingIMCCalc(); }
+function calcIMC() { return requireClinDataModule("consultation").calcIMC(); }
+function agregarMedicamento() { return requireClinDataModule("consultation").agregarMedicamento(); }
+function renderMedicamentos() { return requireClinDataModule("consultation").renderMedicamentos(); }
+function updateMedicamento(id, field, value) { return requireClinDataModule("consultation").updateMedicamento(id, field, value); }
+function eliminarMedicamento(id) { return requireClinDataModule("consultation").eliminarMedicamento(id); }
+function setupRecordActions() { return requireClinDataModule("consultation").setupRecordActions(); }
+function collectRecordFields() { return requireClinDataModule("consultation").collectRecordFields(); }
+function saveRecord() { return requireClinDataModule("consultation").saveRecord(); }
+function closeConsultation() { return requireClinDataModule("consultation").closeConsultation(); }
+function saveNursingNote() { return requireClinDataModule("consultation").saveNursingNote(); }
+function firmarExpediente() { return requireClinDataModule("consultation").firmarExpediente(); }
+function limpiarFirma() { return requireClinDataModule("consultation").limpiarFirma(); }
+function startAutoSave() { return requireClinDataModule("consultation").startAutoSave(); }
+function stopAutoSave() { return requireClinDataModule("consultation").stopAutoSave(); }
+function saveCurrentRecord() { return requireClinDataModule("consultation").saveCurrentRecord(); }
+function setupAutoSaveEvents() { return requireClinDataModule("consultation").setupAutoSaveEvents(); }
+function showAutoSave() { return requireClinDataModule("consultation").showAutoSave(); }
+
 // =============================================
 //  ARCHIVOS ADJUNTOS
 // =============================================
@@ -1534,216 +1083,17 @@ function previewAttachment(attachId) {
 // =============================================
 //  EDITAR DATOS DEL PACIENTE
 // =============================================
-function openEditPatientModal() {
-    if (!currentPatient) return;
-    const p = currentPatient;
-    document.getElementById("editExpediente").value = p.expediente || "";
-    document.getElementById("editName").value = p.name || "";
-    document.getElementById("editAge").value = p.age || "";
-    document.getElementById("editSex").value = p.sex || "";
-    document.getElementById("editAddress").value = p.address || "";
-    document.getElementById("editPhone").value = p.phone || "";
-    document.getElementById("editDob").value = p.dob || "";
-    document.getElementById("editBirthPlace").value = p.birthPlace || "";
-    document.getElementById("editNationality").value = p.nationality || "";
-    document.getElementById("editCurp").value = p.curp || "";
-    document.getElementById("editRfc").value = p.rfc || "";
-    document.getElementById("editNss").value = p.nss || "";
-    document.getElementById("editEmail").value = p.email || "";
-    document.getElementById("editOccupation").value = p.occupation || "";
-    document.getElementById("editEmergencyContact").value = p.emergencyContact || "";
-    document.getElementById("editAllergies").value = p.allergies || "";
-    document.getElementById("editChronicConditions").value = p.chronicConditions || "";
-    document.getElementById("editCurrentTreatment").value = p.currentTreatment || "";
-    document.getElementById("editAlerts").value = p.alerts || "";
-    document.getElementById("editPatientModal").classList.remove("hidden");
-}
-
-function saveEditedPatient() {
-    if (!currentPatient) return;
-    currentPatient.name = document.getElementById("editName").value.trim() || currentPatient.name;
-    currentPatient.age = document.getElementById("editAge").value || currentPatient.age;
-    currentPatient.sex = document.getElementById("editSex").value || currentPatient.sex;
-    currentPatient.address = document.getElementById("editAddress").value.trim() || currentPatient.address;
-    currentPatient.phone = document.getElementById("editPhone").value.trim();
-    currentPatient.dob = document.getElementById("editDob").value;
-    currentPatient.birthPlace = document.getElementById("editBirthPlace").value.trim();
-    currentPatient.nationality = document.getElementById("editNationality").value.trim();
-    currentPatient.curp = document.getElementById("editCurp").value.trim().toUpperCase();
-    currentPatient.rfc = document.getElementById("editRfc").value.trim().toUpperCase();
-    currentPatient.nss = document.getElementById("editNss").value.trim();
-    currentPatient.email = document.getElementById("editEmail").value.trim();
-    currentPatient.occupation = document.getElementById("editOccupation").value.trim();
-    currentPatient.emergencyContact = document.getElementById("editEmergencyContact").value.trim();
-    currentPatient.allergies = document.getElementById("editAllergies").value.trim();
-    currentPatient.chronicConditions = document.getElementById("editChronicConditions").value.trim();
-    currentPatient.currentTreatment = document.getElementById("editCurrentTreatment").value.trim();
-    currentPatient.alerts = document.getElementById("editAlerts").value.trim();
-    savePatients();
-    closeModal("editPatientModal");
-    showToast("Datos del paciente actualizados.", "success");
-    renderConsultationHistory();
-}
+function openEditPatientModal() { return requireClinDataModule("patients").openEditPatientModal(); }
+function saveEditedPatient() { return requireClinDataModule("patients").saveEditedPatient(); }
 
 // =============================================
 //  TRIAGE
 // =============================================
-function calcularTriage() {
-    const name   = document.getElementById("triageName").value.trim();
-    const age    = parseInt(document.getElementById("triageAge").value) || 0;
-    const sex    = document.getElementById("triageSex").value;
-    const reason = document.getElementById("triageReason").value.trim();
-    const notes  = document.getElementById("triageNotes").value.trim();
-    if (!name || !age || !reason) { showToast("Completa nombre, edad y motivo.", "error"); return; }
-
-    const vitals = {
-        FC:   parseInt(document.getElementById("triageFC").value)   || null,
-        FR:   parseInt(document.getElementById("triageFR").value)   || null,
-        TAS:  parseInt(document.getElementById("triageTAS").value)  || null,
-        TAD:  parseInt(document.getElementById("triageTAD").value)  || null,
-        temp: parseFloat(document.getElementById("triageTemp").value) || null,
-        spo2: parseInt(document.getElementById("triageSpo2").value) || null,
-        gluc: parseInt(document.getElementById("triageGluc").value) || null,
-        dolor: parseInt(document.getElementById("triageDolor").value) || 0
-    };
-
-    let score = 0; let flags = [];
-    if (document.getElementById("sym_inconsciencia").checked) { score+=100; flags.push("Inconsciencia"); }
-    if (document.getElementById("sym_paro").checked)          { score+=100; flags.push("Paro cardiorrespiratorio"); }
-    if (document.getElementById("sym_dificultad_resp").checked){ score+=50; flags.push("Dificultad respiratoria severa"); }
-    if (document.getElementById("sym_dolor_toracico").checked) { score+=50; flags.push("Dolor torácico intenso"); }
-    if (document.getElementById("sym_convulsiones").checked)   { score+=50; flags.push("Convulsiones"); }
-    if (document.getElementById("sym_sangrado_mayor").checked) { score+=50; flags.push("Sangrado mayor"); }
-    if (vitals.FC!==null && (vitals.FC<40||vitals.FC>150))      { score+=50; flags.push("FC crítica"); }
-    if (vitals.spo2!==null && vitals.spo2<90)                   { score+=50; flags.push("SpO₂ <90%"); }
-    if (vitals.TAS!==null && (vitals.TAS<80||vitals.TAS>200))   { score+=40; flags.push("TA crítica"); }
-    if (vitals.FR!==null && (vitals.FR<8||vitals.FR>30))        { score+=40; flags.push("FR anormal"); }
-    if (vitals.temp!==null && vitals.temp>=40)                  { score+=30; flags.push("Hipertermia ≥40°C"); }
-    if (document.getElementById("sym_alteracion_consciencia").checked){ score+=25; flags.push("Alteración consciencia"); }
-    if (document.getElementById("sym_vomito_persistente").checked)   { score+=20; flags.push("Vómito persistente"); }
-    if (document.getElementById("sym_fiebre_alta").checked)          { score+=20; flags.push("Fiebre alta"); }
-    if (document.getElementById("sym_trauma").checked)               { score+=20; flags.push("Trauma"); }
-    if (vitals.spo2!==null && vitals.spo2>=90&&vitals.spo2<94)  { score+=25; flags.push("SpO₂ 90–94%"); }
-    if (vitals.FC!==null && (vitals.FC<50||vitals.FC>120))      { score+=15; flags.push("FC alterada"); }
-    if (vitals.dolor>=8) { score+=35; flags.push("Dolor severo"); } else if (vitals.dolor>=5) { score+=20; flags.push("Dolor moderado"); } else if (vitals.dolor>=3) { score+=5; }
-    if (age<2||age>80) score+=10;
-    if (document.getElementById("sym_dolor_moderado").checked) score+=10;
-    if (document.getElementById("sym_infeccion_leve").checked) score+=2;
-
-    let nivel;
-    if (score>=100)     nivel={number:1,label:"Reanimación",color:"rojo",icon:"🔴",wait:"Atención inmediata",description:"Riesgo vital inmediato. Requiere intervención de reanimación."};
-    else if (score>=50) nivel={number:2,label:"Emergencia",color:"naranja",icon:"🟠",wait:"≤ 10 minutos",description:"Situación de riesgo vital. Evaluación médica urgente."};
-    else if (score>=25) nivel={number:3,label:"Urgencia",color:"amarillo",icon:"🟡",wait:"≤ 30 minutos",description:"Condición grave pero estable. Atención prioritaria."};
-    else if (score>=10) nivel={number:4,label:"Urgencia menor",color:"verde",icon:"🟢",wait:"≤ 60 minutos",description:"Condición no urgente. Puede esperar sin riesgo."};
-    else                nivel={number:5,label:"No urgente",color:"azul",icon:"🔵",wait:"≤ 120 minutos",description:"Sin urgencia. Puede ser referido a consulta externa."};
-
-    const entry = { id:Date.now(), name, age, sex, reason, notes, vitals, level:nivel.number, levelLabel:nivel.label, levelColor:nivel.color, score, flags, timestamp:new Date().toISOString(), registeredBy:currentUser?.displayName||"Enfermero/a", active:true };
-    triageQueue.push(entry);
-    saveTriageQueue();
-
-    const resultDiv = document.getElementById("triageResult");
-    resultDiv.className = `triage-result triage-result-${nivel.color}`;
-    resultDiv.classList.remove("hidden");
-    resultDiv.innerHTML = `
-        <div class="triage-result-header">
-            <div class="triage-level-badge triage-${nivel.color}">
-                <span>${nivel.icon}</span>
-                <div><div class="triage-level-num">Nivel ${nivel.number}</div><div class="triage-level-label">${nivel.label}</div></div>
-            </div>
-            <div class="triage-wait"><div class="triage-wait-label">Tiempo de espera máximo</div><div class="triage-wait-time">${nivel.wait}</div></div>
-        </div>
-        <p class="triage-description">${nivel.description}</p>
-        ${flags.length>0?`<div class="triage-flags"><div class="flags-title">Hallazgos detectados:</div><div class="flags-list">${flags.map(f=>`<span class="flag-tag">${f}</span>`).join("")}</div></div>`:""}
-        <div class="triage-vitals-summary">
-            ${vitals.FC?`<span>FC: <b>${vitals.FC}</b> lpm</span>`:""}
-            ${vitals.TAS?`<span>TA: <b>${vitals.TAS}/${vitals.TAD}</b> mmHg</span>`:""}
-            ${vitals.FR?`<span>FR: <b>${vitals.FR}</b> rpm</span>`:""}
-            ${vitals.spo2?`<span>SpO₂: <b>${vitals.spo2}</b>%</span>`:""}
-            ${vitals.temp?`<span>Temp: <b>${vitals.temp}</b>°C</span>`:""}
-            ${vitals.gluc?`<span>Glucemia: <b>${vitals.gluc}</b> mg/dL</span>`:""}
-        </div>
-        <div class="triage-result-actions">
-            <button class="btn-secondary" onclick="clearTriageForm()">Nuevo triage</button>
-            <button class="btn-primary" onclick="navigate('triageList')">Ver fila de urgencias</button>
-        </div>`;
-    resultDiv.scrollIntoView({behavior:"smooth",block:"start"});
-}
-
-function clearTriageForm() {
-    ["triageName","triageAge","triageSex","triageReason","triageFC","triageFR","triageTAS","triageTAD","triageTemp","triageSpo2","triageGluc","triageDolor","triageNotes"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
-    document.querySelectorAll(".symptom-check input").forEach(c=>c.checked=false);
-    document.getElementById("triageResult").classList.add("hidden");
-    window.scrollTo({top:0,behavior:"smooth"});
-}
-
-function renderTriageList() {
-    const container = document.getElementById("triageQueue");
-    if (!container) return;
-    const active = triageQueue.filter(t=>t.active).sort((a,b)=>a.level-b.level||new Date(a.timestamp)-new Date(b.timestamp));
-    if (active.length===0){container.innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>No hay pacientes en fila de urgencias</p></div>`;return;}
-    container.innerHTML = active.map(t=>`
-        <div class="triage-queue-card triage-queue-${t.levelColor}">
-            <div class="triage-queue-left"><div class="triage-level-circle triage-circle-${t.levelColor}">${t.level}</div></div>
-            <div class="triage-queue-body">
-                <div class="triage-queue-name">${t.name}</div>
-                <div class="triage-queue-meta">${t.age} años · ${t.sex||"—"} · ${t.reason}</div>
-                <div class="triage-queue-label triage-${t.levelColor}">${t.levelLabel}</div>
-            </div>
-            <div class="triage-queue-right">
-                <div class="triage-queue-time">${formatTime(t.timestamp)}</div>
-                ${can("canWriteMedicalNotes")?`<button class="btn-attend" onclick="attendTriage(${t.id})">Atender</button>`:""}
-                <button class="btn-dismiss" onclick="dismissTriage(${t.id})">Alta</button>
-            </div>
-        </div>`).join("");
-}
-
-function attendTriage(triageId) {
-    const entry = triageQueue.find(t=>t.id===triageId);
-    if(!entry) return;
-    let patient = patients.find(p=>p.name.toLowerCase()===entry.name.toLowerCase());
-    if(!patient){
-        patient={id:Date.now(),expediente:generatePatientExpediente(),name:entry.name,age:entry.age,sex:entry.sex||"No especificado",address:"Urgencias",phone:"",dob:"",birthPlace:"",nationality:"",curp:"",rfc:"",nss:"",email:"",occupation:"",emergencyContact:"",ethnicGroup:"",allergies:"",chronicConditions:"",alerts:"",currentTreatment:"",createdAt:new Date().toISOString(),createdBy:currentUser?.username};
-        patients.push(patient); savePatients();
-    }
-    currentPatient=patient;
-    const consult={
-        id:Date.now(), patientId:patient.id, date:new Date().toISOString(),
-        createdBy:currentUser?.displayName||"Sistema",
-        tipoNota: "urgencias",
-        ahf:"", apnp_otros:"",
-        app_enfermedades:"", app_cirugias:"", app_traumatismos:"", app_alergias:"", app_transfusiones:"", app_medicamentos:"",
-        padecimiento_inicio:"", padecimiento_sintomas:"",
-        sis_cardiovascular:"", sis_respiratorio:"", sis_digestivo:"", sis_neurologico:"", sis_urinario:"",
-        sis_musculoesqueletico:"", sis_piel:"", sis_endocrino:"", sis_genitoreproductivo:"", sis_psiquiatrico:"",
-        sv_tas:"", sv_tad:"", sv_fc:"", sv_fr:"", sv_temp:"", sv_spo2:"", sv_glucemia:"", sv_peso:"", sv_talla:"", sv_dolor:"", sv_habitus:"",
-        exp_cabeza:"", exp_torax:"", exp_abdomen:"", exp_extremidades:"", exp_neurologico:"", exp_genitourinario:"", exp_otros:"",
-        estudios_previos:"", estudios_imagen:"", estudios_solicitados:"",
-        diagnostico:"", diagnostico_secundario:"", pronostico_detalle:"",
-        tratamiento:"", indicaciones_reposo:"", indicaciones_dieta:"", indicaciones_cita:"", indicaciones_referencia:"",
-        medicamentos:[],
-        evolucion_clinica:"", evol_ta:"", evol_fc:"", evol_fr:"", evol_temp:"", evol_spo2:"", evol_peso:"",
-        evolucion_resultados:"", evolucion_diagnostico:"", evolucion_tratamiento:"",
-        urg_tas: entry.vitals?.TAS?.toString()||"", urg_tad: entry.vitals?.TAD?.toString()||"",
-        urg_fc: entry.vitals?.FC?.toString()||"", urg_fr: entry.vitals?.FR?.toString()||"",
-        urg_temp: entry.vitals?.temp?.toString()||"", urg_spo2: entry.vitals?.spo2?.toString()||"",
-        urg_glucemia: entry.vitals?.gluc?.toString()||"", urg_glasgow:"",
-        urg_motivo: entry.reason||"", urg_exploracion: entry.notes||"",
-        urg_estudios:"", urg_diagnostico:"", urg_tratamiento:"",
-        notaImportante:"", evolucion_nota:"",
-        triageLevel:`Nivel ${entry.level}`,
-        triageData:{...entry.vitals,number:entry.level,label:entry.levelLabel,color:entry.levelColor,reason:entry.reason},
-        status:"active", attachments:[]
-    };
-    consultations.push(consult); saveConsultations();
-    currentConsultation=consult;
-    entry.active=false; saveTriageQueue();
-    navigate("medicalRecord"); renderMedicalRecord();
-}
-
-function dismissTriage(triageId) {
-    const t=triageQueue.find(x=>x.id===triageId);
-    if(t){t.active=false;saveTriageQueue();renderTriageList();}
-}
+function calcularTriage() { return requireClinDataModule("triage").calcularTriage(); }
+function clearTriageForm() { return requireClinDataModule("triage").clearTriageForm(); }
+function renderTriageList() { return requireClinDataModule("triage").renderTriageList(); }
+function attendTriage(triageId) { return requireClinDataModule("triage").attendTriage(triageId); }
+function dismissTriage(triageId) { return requireClinDataModule("triage").dismissTriage(triageId); }
 
 // =============================================
 //  ADMIN DE USUARIOS
@@ -1844,7 +1194,7 @@ function deleteUser(userId) {
 // =============================================
 //  MODALES
 // =============================================
-function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+function closeModal(id) { return requireClinDataModule("utils").closeModal(id); }
 
 // =============================================
 //  AUTOCOMPLETADO Y ABREVIATURAS
@@ -1888,26 +1238,7 @@ function getSuggestions(w){
 
 function applySuggestion(input,s){const w=input.value.split(" ");w.pop();w.push(s);input.value=w.join(" ")+" ";input.focus();}
 
-function highlightText(text){
-    return text.split(" ").map(token=>{
-        const raw=token.trim();
-        const clean=raw.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\/0-9]/g,"");
-        const upper=clean.toUpperCase();
-        const isAbbrForm = upper.length>=2 && upper.length<=ABBR_MAX_LENGTH && /^[A-ZÁÉÍÓÚÜÑ0-9\/]+$/.test(upper);
-
-        if(isAbbrForm) {
-            if(COMMON_UPPER_NOT_ABBR.has(upper) || /^[0-9]+$/.test(upper)) {
-                return raw; // Palabra común o números puros, no se trata como abreviatura
-            }
-            if(abbreviations[upper]) {
-                return `<span class="abbr-valid" title="${abbreviations[upper]}">${raw}</span>`;
-            }
-            return `<span class="abbr-invalid" title="Abreviatura no reconocida">${raw}</span>`;
-        }
-
-        return raw;
-    }).join(" ");
-}
+function highlightText(text){ return requireClinDataModule("exporter").highlightText(text); }
 
 function setupAbbreviationDetection() {
     const input=document.getElementById("diagnostico"), preview=document.getElementById("diagnosticoPreview");
@@ -1931,16 +1262,7 @@ function setupAbbreviationDetection() {
     input.addEventListener("input",input._abbrevHandler);
 }
 
-function expandAbbreviations(text,mode="patient"){
-    if(!text) return "";
-    return text.split(" ").map(raw=>{
-        const key = raw.toUpperCase();
-        if(key.length<=ABBR_MAX_LENGTH && abbreviations[key]) {
-            return mode==="patient" ? abbreviations[key] : `${abbreviations[key]} (${key})`;
-        }
-        return raw;
-    }).join(" ");
-}
+function expandAbbreviations(text,mode="patient"){ return requireClinDataModule("exporter").expandAbbreviations(text,mode); }
 
 // =============================================
 //  AUTOCOMPLETADO CIE-10 - DIAGNÓSTICOS
@@ -1952,251 +1274,23 @@ let currentAutocompleteTextarea = null;
 let currentDiagSuggestions = [];
 let diagAutocompleteClickBound = false;
 
-async function loadCie10Cache() {
-    if (cie10CacheLoaded) return;
-    const isFileProtocol = window.location.protocol === "file:";
+async function loadCie10Cache() { return requireClinDataModule("diagnostics").loadCie10Cache(); }
+function searchCie10Local(query) { return requireClinDataModule("diagnostics").searchCie10Local(query); }
 
-    if (Array.isArray(window.CIE10_INDEX) && window.CIE10_INDEX.length > 0) {
-        cie10Cache = window.CIE10_INDEX;
-        cie10CacheLoaded = true;
-        console.log(`CIE-10 cargado desde índice local (${cie10Cache.length} registros)`);
-        return;
-    }
+function escapeRegExp(text) { return requireClinDataModule("utils").escapeRegExp(text); }
+function escapeHtml(text) { return requireClinDataModule("utils").escapeHtml(text); }
 
-    if (isFileProtocol) {
-        cie10CacheLoaded = true;
-        console.warn("No hay índice CIE-10 embebido para modo file://.");
-        return;
-    }
-
-    const candidates = [
-        'database/conceptos.json',
-        '/database/conceptos.json',
-        'programa_CIE10/database/conceptos.json',
-        './database/conceptos.json'
-    ];
-
-    for (const path of candidates) {
-        try {
-            const res = await fetch(path);
-            if (!res.ok) continue;
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-                cie10Cache = data;
-                cie10CacheLoaded = true;
-                console.log(`✅ CIE-10 cargado localmente desde ${path} (${data.length} registros)`);
-                return;
-            }
-        } catch (err) {
-            // Intentamos la siguiente ruta
-        }
-    }
-
-    cie10CacheLoaded = true;
-    console.warn('⚠️ No se pudo cargar conceptos.json localmente; se usará API /api/conceptos si está disponible.');
-}
-
-function searchCie10Local(query) {
-    if (!cie10Cache.length) return [];
-    const term = query.toLowerCase();
-    return cie10Cache
-        .filter(c =>
-            (c.cie10_code || '').toLowerCase().startsWith(term) ||
-            (c.termino || '').toLowerCase().includes(term)
-        )
-        .slice(0, 5)
-        .map(c => ({ codigo: c.cie10_code, descripcion: c.termino, tipo: 'CIE-10' }));
-}
-
-function escapeRegExp(text) {
-    return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function escapeHtml(text) {
-    return String(text ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
-function ensureAutocompleteUI() {
-    const legacyTools = document.getElementById("diagnosticoAutocompleteTools");
-    if (legacyTools) legacyTools.remove();
-}
-
-function getDiagSuggestionText(item) {
-    if (!item) return "";
-    if (item.isAbrev) return item.descripcion || item.codigo || "";
-    return [item.descripcion, item.codigo ? `(${item.codigo})` : ""].filter(Boolean).join(" ").trim();
-}
-
-function getDiagSearchQuery(input) {
-    if (!input) return "";
-    return String(input.value || "").split("\n").pop().trim();
-}
-
-function upsertSelectedDiagnostico(item) {
-    if (!item || !item.codigo || !item.descripcion) return;
-    const exists = selectedDiagnosticos.some(d => d.codigo === item.codigo);
-    if (!exists) {
-        selectedDiagnosticos.push({ codigo: item.codigo, descripcion: item.descripcion, tipo: item.tipo || "CIE-10" });
-        renderDiagBadges();
-    }
-}
-
-function applyDiagSuggestion(index) {
-    const item = currentDiagSuggestions[index];
-    if (!item || !currentAutocompleteTextarea) return;
-
-    const targetInput = currentAutocompleteTextarea;
-    const suggestionText = getDiagSuggestionText(item);
-
-    if (targetInput.id === "diagnostico") {
-        targetInput.value = suggestionText;
-    } else {
-        const existingLines = targetInput.value.split("\n");
-        existingLines[existingLines.length - 1] = suggestionText;
-        targetInput.value = existingLines
-            .map(line => line.trim())
-            .filter(Boolean)
-            .join("\n");
-    }
-
-    if (!item.isAbrev) upsertSelectedDiagnostico(item);
-
-    targetInput.dispatchEvent(new Event("input", { bubbles: true }));
-    targetInput.focus();
-    hideSuggestions();
-}
-
-function getDiagSuggestionBox(input) {
-    if (!input) return null;
-    const explicitId = input.id === "diagnostico" ? "diagnosticoSugerencias" : `${input.id}Sugerencias`;
-    let box = document.getElementById(explicitId);
-    if (box) return box;
-
-    box = document.createElement("div");
-    box.id = explicitId;
-    box.className = "diagnostico-suggestions";
-    box.style.display = "none";
-    document.body.appendChild(box);
-    return box;
-}
-
-function showDiagSuggestions(results, input) {
-    const box = getDiagSuggestionBox(input);
-    if (!box || !results.length || !input) {
-        hideSuggestions();
-        return;
-    }
-
-    currentAutocompleteTextarea = input;
-    currentDiagSuggestions = results.slice(0, 5);
-    box.innerHTML = currentDiagSuggestions.map((item, idx) => {
-        const code = escapeHtml(item.codigo || "CIE-10");
-        const description = escapeHtml(item.descripcion || "");
-        return `
-            <button type="button" class="suggestion-item" data-index="${idx}" onclick="applyDiagSuggestion(${idx})">
-                <span class="sugg-code sugg-cie">${code}</span>
-                <span class="sugg-text">${description}</span>
-            </button>
-        `;
-    }).join("");
-    const rect = input.getBoundingClientRect();
-    box.style.position = "fixed";
-    box.style.top = `${Math.round(rect.bottom + 6)}px`;
-    box.style.left = `${Math.round(rect.left)}px`;
-    box.style.width = `${Math.round(rect.width)}px`;
-    box.style.zIndex = "20000";
-    box.style.display = "block";
-}
-
-function initDiagnosticoAutocomplete() {
-    const fields = ["diagnostico", "diagnostico_secundario"];
-
-    loadCie10Cache();
-
-    fields.forEach((id) => {
-        const diagInput = document.getElementById(id);
-        if (!diagInput) return;
-
-        getDiagSuggestionBox(diagInput);
-
-        const handler = debounce(async (e) => {
-            const query = getDiagSearchQuery(e.target);
-            if (query.length < 2) {
-                hideSuggestions(diagInput);
-                return;
-            }
-
-            let cieResults = searchCie10Local(query);
-            if (!cieResults.length && window.location.protocol !== "file:") {
-                try {
-                    const res = await fetch(`/api/conceptos?q=${encodeURIComponent(query)}`);
-                    if (res.ok) cieResults = await res.json();
-                } catch (err) {
-                    console.error("Error CIE-10 API:", err);
-                }
-            }
-
-            showDiagSuggestions(cieResults, diagInput);
-        }, 180);
-
-        diagInput.removeEventListener("input", diagInput._autocompleteHandler);
-        diagInput._autocompleteHandler = handler;
-        diagInput.addEventListener("input", handler);
-
-        diagInput.removeEventListener("keydown", handleTextareaAutocompleteKey);
-        diagInput.addEventListener("keydown", handleTextareaAutocompleteKey);
-
-        diagInput.removeEventListener("blur", diagInput._autocompleteBlurHandler);
-        diagInput._autocompleteBlurHandler = () => setTimeout(() => hideSuggestions(diagInput), 150);
-        diagInput.addEventListener("blur", diagInput._autocompleteBlurHandler);
-    });
-
-    if (!diagAutocompleteClickBound) {
-        document.addEventListener("click", (e) => {
-            const activeBox = currentAutocompleteTextarea ? getDiagSuggestionBox(currentAutocompleteTextarea) : null;
-            if (!activeBox) return;
-            if (!activeBox.contains(e.target) && e.target !== currentAutocompleteTextarea) {
-                hideSuggestions();
-            }
-        });
-        window.addEventListener("scroll", () => hideSuggestions(), true);
-        window.addEventListener("resize", () => hideSuggestions());
-        diagAutocompleteClickBound = true;
-    }
-}
-
-function renderDiagBadges() {
-    const container = document.getElementById('diagnosticosSeleccionados');
-    if (!container) return;
-    
-    container.innerHTML = selectedDiagnosticos.map((d, i) => `
-        <div class="pfc-tag">
-            <b>${d.codigo}</b> ${d.descripcion}
-            <span style="cursor:pointer;margin-left:5px" onclick="removeDiag(${i})">×</span>
-        </div>
-    `).join("");
-}
-
-function removeDiag(idx) {
-    selectedDiagnosticos.splice(idx, 1);
-    renderDiagBadges();
-}
-
-function hideSuggestions(input = null) {
-    const targetInput = input || currentAutocompleteTextarea;
-    const box = getDiagSuggestionBox(targetInput);
-    if (box) {
-        box.style.display = "none";
-        box.innerHTML = "";
-    }
-    currentDiagSuggestions = [];
-    if (!input || targetInput === currentAutocompleteTextarea) currentAutocompleteTextarea = null;
-}
+function ensureAutocompleteUI() { return requireClinDataModule("diagnostics").ensureAutocompleteUI(); }
+function getDiagSuggestionText(item) { return requireClinDataModule("diagnostics").getDiagSuggestionText(item); }
+function getDiagSearchQuery(input) { return requireClinDataModule("diagnostics").getDiagSearchQuery(input); }
+function upsertSelectedDiagnostico(item) { return requireClinDataModule("diagnostics").upsertSelectedDiagnostico(item); }
+function applyDiagSuggestion(index) { return requireClinDataModule("diagnostics").applyDiagSuggestion(index); }
+function getDiagSuggestionBox(input) { return requireClinDataModule("diagnostics").getDiagSuggestionBox(input); }
+function showDiagSuggestions(results, input) { return requireClinDataModule("diagnostics").showDiagSuggestions(results, input); }
+function initDiagnosticoAutocomplete() { return requireClinDataModule("diagnostics").initDiagnosticoAutocomplete(); }
+function renderDiagBadges() { return requireClinDataModule("diagnostics").renderDiagBadges(); }
+function removeDiag(idx) { return requireClinDataModule("diagnostics").removeDiag(idx); }
+function hideSuggestions(input = null) { return requireClinDataModule("diagnostics").hideSuggestions(input); }
 
 function debounceAutocomplete(func, wait) {
     let timeout;
@@ -2206,289 +1300,19 @@ function debounceAutocomplete(func, wait) {
     };
 }
 
-function handleTextareaAutocompleteKey(e) {
-    const targetInput = e.target;
-    const box = getDiagSuggestionBox(targetInput);
-    if (!box || box.style.display === "none") return;
-
-    const items = box.querySelectorAll(".suggestion-item");
-    let current = Array.from(items).findIndex(i => i.classList.contains('active'));
-
-    if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (current < items.length - 1) {
-            if (current >= 0) items[current].classList.remove('active');
-            items[current + 1].classList.add('active');
-            items[current + 1].scrollIntoView({ block: 'nearest' });
-        }
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (current > 0) {
-            items[current].classList.remove('active');
-            items[current - 1].classList.add('active');
-            items[current - 1].scrollIntoView({ block: 'nearest' });
-        }
-    } else if (e.key === 'Enter' && current >= 0) {
-        e.preventDefault();
-        items[current].click();
-    } else if (e.key === 'Escape') {
-        hideSuggestions();
-    }
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
+function handleTextareaAutocompleteKey(e) { return requireClinDataModule("diagnostics").handleTextareaAutocompleteKey(e); }
+function debounce(func, wait) { return requireClinDataModule("diagnostics").debounce(func, wait); }
 
 // =============================================
 //  EXPORTAR PDF  (NOM-004-SSA3-2012)
 // =============================================
-function exportPDF(type) {
-    if (!currentConsultation||!currentPatient) return;
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-        openPrintableRecord(type);
-        return;
-    }
-    const {jsPDF}=window.jspdf; const doc=new jsPDF();
-    let y=15; const margin=15, pageW=210, contentW=pageW-margin*2;
+function exportPDF(type) { return requireClinDataModule("exporter").exportPDF(type); }
 
-    // Header
-    doc.setFillColor(15,23,42); doc.rect(0,0,pageW,24,"F");
-    doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont(undefined,"bold");
-    doc.text("ClinData — Expediente Clínico",margin,14);
-    doc.setFontSize(8); doc.setFont(undefined,"normal");
-    doc.text("NOM-004-SSA3-2012",margin,20);
-    doc.text(type==="patient"?"Versión para paciente":"Versión para médico / equipo de salud",pageW-margin,14,{align:"right"});
+function getExpandedPrintableText(text, type, replacements = {}) { return requireClinDataModule("exporter").getExpandedPrintableText(text, type, replacements); }
 
-    // Datos del paciente
-    y=32; doc.setTextColor(0,0,0);
-    doc.setFontSize(13); doc.setFont(undefined,"bold");
-    doc.text(`Paciente: ${currentPatient.name}`,margin,y); y+=7;
-    doc.setFontSize(9.5); doc.setFont(undefined,"normal");
-    if(currentPatient.expediente) {doc.text(`Expediente: ${currentPatient.expediente}`,margin,y); y+=5.5;}
-    doc.text(`Edad: ${currentPatient.age} años  |  Sexo: ${currentPatient.sex}  |  Fecha: ${formatDateFull(currentConsultation.date)}`,margin,y); y+=5.5;
-    if(currentPatient.dob || currentPatient.birthPlace) {doc.text(`Nacimiento: ${currentPatient.dob ? formatDate(currentPatient.dob) : "—"}  |  Lugar: ${currentPatient.birthPlace||"—"}`,margin,y); y+=5.5;}
-    if(currentPatient.nationality || currentPatient.curp || currentPatient.rfc || currentPatient.nss) {doc.text(`Nacionalidad: ${currentPatient.nationality||"—"}  |  CURP: ${currentPatient.curp||"—"}  |  RFC: ${currentPatient.rfc||"—"}  |  NSS: ${currentPatient.nss||"—"}`,margin,y); y+=5.5;}
-    if(currentPatient.address) {doc.text(`Domicilio: ${currentPatient.address||"—"}`,margin,y); y+=5.5;}
-    if(currentPatient.occupation||currentPatient.phone) {doc.text(`Ocupación: ${currentPatient.occupation||"—"}  |  Tel: ${currentPatient.phone||"—"}`,margin,y); y+=5.5;}
-    if(currentPatient.allergies) {doc.setTextColor(180,0,0);doc.text(`⚠ Alergias: ${currentPatient.allergies}`,margin,y);doc.setTextColor(0,0,0); y+=5.5;}
-    if(currentPatient.chronicConditions) {doc.text(`Padecimientos crónicos: ${currentPatient.chronicConditions}`,margin,y); y+=5.5;}
-    doc.setDrawColor(200,200,200); doc.line(margin,y,pageW-margin,y); y+=6;
+function getPrintableSections(type = "patient", replacements = {}) { return requireClinDataModule("exporter").getPrintableSections(type, replacements); }
 
-    function addSection(title,text) {
-        if(!text||text.trim()==="") return;
-        if(y>255){doc.addPage();y=15;}
-        doc.setFontSize(10.5);doc.setFont(undefined,"bold");doc.setTextColor(14,165,233);
-        doc.text(title,margin,y);y+=5.5;
-        doc.setTextColor(0,0,0);doc.setFont(undefined,"normal");doc.setFontSize(9.5);
-        const lines=doc.splitTextToSize(expandAbbreviations(text,type),contentW);
-        lines.forEach(l=>{if(y>270){doc.addPage();y=15;}doc.text(l,margin,y);y+=5;});
-        y+=3;
-    }
-
-    const c = currentConsultation;
-    const tipoNota = c.tipoNota || "historia";
-
-    if(tipoNota==="historia") {
-        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("HISTORIA CLÍNICA / NOTA DE INGRESO",margin,y);y+=7;
-        addSection("Antecedentes Heredofamiliares (AHF)",c.ahf);
-        const apnp=[c.apnp_otros].filter(Boolean).join("\n");
-        addSection("Antecedentes Personales No Patológicos (APNP)",apnp||"");
-        const app=[c.app_enfermedades,c.app_cirugias,c.app_traumatismos,c.app_alergias,c.app_transfusiones,c.app_medicamentos].filter(Boolean).join("\n");
-        addSection("Antecedentes Personales Patológicos (APP)",app||"");
-        const pad=[(c.padecimiento_inicio?"Inicio: "+c.padecimiento_inicio:""),(c.padecimiento_sintomas?"Síntomas: "+c.padecimiento_sintomas:"")].filter(Boolean).join("\n");
-        addSection("Padecimiento Actual",pad||"");
-        const svText=`TA: ${c.sv_tas||"—"}/${c.sv_tad||"—"} mmHg | FC: ${c.sv_fc||"—"} lpm | FR: ${c.sv_fr||"—"} rpm | Temp: ${c.sv_temp||"—"}°C | SpO₂: ${c.sv_spo2||"—"}% | Peso: ${c.sv_peso||"—"} kg | Talla: ${c.sv_talla||"—"} cm | Glucemia: ${c.sv_glucemia||"—"} mg/dL | Dolor: ${c.sv_dolor||"—"}/10`;
-        addSection("Signos Vitales y Somatometría",svText);
-        const expText=[c.exp_cabeza&&"Cabeza/cuello: "+c.exp_cabeza,c.exp_torax&&"Tórax: "+c.exp_torax,c.exp_abdomen&&"Abdomen: "+c.exp_abdomen,c.exp_extremidades&&"Extremidades: "+c.exp_extremidades,c.exp_neurologico&&"Neurológico: "+c.exp_neurologico,c.exp_otros&&"Otros: "+c.exp_otros].filter(Boolean).join("\n");
-        addSection("Exploración Física",expText||"");
-        addSection("Estudios de Laboratorio y Gabinete",c.estudios_previos);
-        addSection("Diagnóstico Principal",c.diagnostico);
-        addSection("Diagnósticos Secundarios / Diferenciales",c.diagnostico_secundario);
-        addSection("Pronóstico",(c.pronostico_radio?c.pronostico_radio+": ":"")+c.pronostico_detalle);
-        const medsTxt=(c.medicamentos||[]).map((m,i)=>`${i+1}. ${m.nombre||""} ${m.concentracion||""} — ${m.dosis||""} ${m.via||""} ${m.frecuencia||""} por ${m.duracion||""}`).join("\n");
-        addSection("Medicamentos Prescritos",medsTxt||c.tratamiento||"");
-        addSection("Indicaciones al Paciente",[c.indicaciones_reposo&&"Reposo: "+c.indicaciones_reposo,c.indicaciones_dieta&&"Dieta: "+c.indicaciones_dieta,c.indicaciones_cita&&"Seguimiento: "+c.indicaciones_cita,c.indicaciones_referencia&&"Referencia: "+c.indicaciones_referencia].filter(Boolean).join("\n"));
-        if(c.notaImportante) addSection("Nota Importante",c.notaImportante);
-    } else if(tipoNota==="evolucion") {
-        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("NOTA MÉDICA",margin,y);y+=7;
-        addSection("Evolución del cuadro clínico",c.evolucion_clinica);
-        if(c.evol_ta||c.evol_fc) addSection("Signos Vitales",`TA: ${c.evol_ta||"—"} | FC: ${c.evol_fc||"—"} lpm | FR: ${c.evol_fr||"—"} rpm | Temp: ${c.evol_temp||"—"}°C | SpO₂: ${c.evol_spo2||"—"}%`);
-        addSection("Nuevos Resultados de Estudios",c.evolucion_resultados);
-        addSection("Diagnóstico Actualizado",c.evolucion_diagnostico);
-        addSection("Tratamiento e Indicaciones",c.evolucion_tratamiento);
-        if(c.evolucion_nota) addSection("Nota Importante",c.evolucion_nota);
-    } else if(tipoNota==="urgencias") {
-        doc.setFontSize(11);doc.setFont(undefined,"bold");doc.text("NOTA INICIAL DE URGENCIAS",margin,y);y+=7;
-        addSection("Signos Vitales al Ingreso",`TA: ${c.urg_tas||"—"}/${c.urg_tad||"—"} mmHg | FC: ${c.urg_fc||"—"} lpm | FR: ${c.urg_fr||"—"} rpm | Temp: ${c.urg_temp||"—"}°C | SpO₂: ${c.urg_spo2||"—"}% | Glucemia: ${c.urg_glucemia||"—"} mg/dL | Glasgow: ${c.urg_glasgow||"—"}`);
-        addSection("Motivo de Atención en Urgencias",c.urg_motivo);
-        addSection("Resumen Interrogatorio y Exploración",c.urg_exploracion);
-        addSection("Resultados de Estudios Iniciales",c.urg_estudios);
-        addSection("Diagnóstico en Urgencias",c.urg_diagnostico);
-        addSection("Tratamiento y Pronóstico",c.urg_tratamiento);
-    }
-
-    // Agregar información de firma si existe
-    if (c.firma_medico) {
-        y += 8; // Espacio adicional
-        if (y > 255) { doc.addPage(); y = 15; }
-        
-        doc.setFontSize(10.5); doc.setFont(undefined, "bold"); doc.setTextColor(14, 165, 233);
-        doc.text("AUTORÍA Y FIRMA ELECTRÓNICA", margin, y); y += 5.5;
-        
-        doc.setTextColor(0, 0, 0); doc.setFont(undefined, "normal"); doc.setFontSize(9.5);
-        
-        const firmaInfo = [
-            `Médico responsable: ${c.firma_medico}`,
-            `Tipo de firma: ${c.firma_tipo || "electrónica"}`,
-            `Fecha y hora: ${c.firma_fecha || formatDate(currentConsultation.date)}`
-        ];
-        
-        if (c.firma_cedula) {
-            firmaInfo.push(`Cédula profesional: ${c.firma_cedula}`);
-        }
-        
-        firmaInfo.forEach(line => {
-            if (y > 270) { doc.addPage(); y = 15; }
-            doc.text(line, margin, y); y += 5;
-        });
-        
-        y += 3; // Espacio después de la firma
-    }
-
-    const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){
-        doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(150);
-        doc.text(`ClinData — NOM-004-SSA3-2012 — ${new Date().toLocaleDateString("es-MX")} — Página ${i}/${pages}`,pageW/2,290,{align:"center"});
-    }
-    doc.save(`expediente_${currentPatient.name.replace(/\s/g,"_")}_${tipoNota}_${type}.pdf`);
-}
-
-function getExpandedPrintableText(text, type, replacements = {}) {
-    let output = String(text || "");
-    Object.entries(replacements || {}).forEach(([source, target]) => {
-        output = output.replace(new RegExp(`\\b${escapeRegExp(source)}\\b`, "gi"), target);
-    });
-    if (typeof abrevExpandir === "function") return abrevExpandir(output, type);
-    return expandAbbreviations(output, type);
-}
-
-function getPrintableSections(type = "patient", replacements = {}) {
-    const c = currentConsultation;
-    const tipoNota = c.tipoNota || "historia";
-    const sections = [];
-    const add = (title, text) => {
-        if (text && String(text).trim()) {
-            sections.push({ title, text: getExpandedPrintableText(text, type, replacements) });
-        }
-    };
-
-    if (tipoNota === "historia") {
-        add("Antecedentes heredofamiliares", c.ahf);
-        add("Antecedentes personales no patológicos", c.apnp_otros);
-        add("Antecedentes personales patológicos", [c.app_enfermedades, c.app_cirugias, c.app_traumatismos, c.app_alergias, c.app_transfusiones, c.app_medicamentos].filter(Boolean).join("\n"));
-        add("Padecimiento actual", [c.padecimiento_inicio, c.padecimiento_sintomas].filter(Boolean).join("\n"));
-        add("Exploración física", [c.exp_cabeza, c.exp_torax, c.exp_abdomen, c.exp_extremidades, c.exp_neurologico, c.exp_genitourinario, c.exp_otros].filter(Boolean).join("\n"));
-        add("Estudios", [c.estudios_previos, c.estudios_imagen, c.estudios_solicitados].filter(Boolean).join("\n"));
-        add("Diagnóstico principal", c.diagnostico);
-        add("Diagnósticos secundarios", c.diagnostico_secundario);
-        add("Pronóstico", [c.pronostico_radio, c.pronostico_detalle].filter(Boolean).join(" "));
-        add("Tratamiento", c.tratamiento);
-        add("Indicaciones", [c.indicaciones_reposo, c.indicaciones_dieta, c.indicaciones_cita, c.indicaciones_referencia].filter(Boolean).join("\n"));
-        add("Nota importante", c.notaImportante);
-    } else if (tipoNota === "evolucion") {
-        add("Evolución del cuadro clínico", c.evolucion_clinica);
-        add("Resultados de estudios", c.evolucion_resultados);
-        add("Diagnóstico actualizado", c.evolucion_diagnostico);
-        add("Tratamiento e indicaciones", c.evolucion_tratamiento);
-        add("Nota importante", c.evolucion_nota);
-    } else {
-        add("Motivo de atención en urgencias", c.urg_motivo);
-        add("Resumen de interrogatorio y exploración", c.urg_exploracion);
-        add("Resultados de estudios iniciales", c.urg_estudios);
-        add("Diagnóstico en urgencias", c.urg_diagnostico);
-        add("Tratamiento y pronóstico", c.urg_tratamiento);
-        add("Destino del paciente", [c.destino_urg, c.urg_destino_detalle].filter(Boolean).join(" — "));
-    }
-
-    return { tipoNota, sections };
-}
-
-function openPrintableRecord(type = "patient", extras = {}, replacements = {}) {
-    if (!currentConsultation || !currentPatient) return;
-    const printable = getPrintableSections(type, replacements);
-    const win = window.open("about:blank", "_blank", "noopener,noreferrer");
-    if (!win) {
-        showToast("No se pudo abrir la vista imprimible. Revisa el bloqueador de ventanas.", "error");
-        return;
-    }
-
-    const signatureHtml = currentConsultation.firma_medico ? `
-        <section class="print-section">
-            <h3>Autoría y firma</h3>
-            <p><strong>Médico:</strong> ${escapeHtml(currentConsultation.firma_medico)}</p>
-            <p><strong>Tipo:</strong> ${escapeHtml(currentConsultation.firma_tipo || "electrónica")}</p>
-            <p><strong>Fecha:</strong> ${escapeHtml(currentConsultation.firma_fecha || "")}</p>
-            ${currentConsultation.firma_cedula ? `<p><strong>Cédula:</strong> ${escapeHtml(currentConsultation.firma_cedula)}</p>` : ""}
-        </section>
-    ` : "";
-
-    win.document.write(`<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>ClinData - Vista imprimible</title>
-    <style>
-        body{font-family:Segoe UI,Tahoma,sans-serif;background:#f3f6fb;color:#102033;margin:0;padding:32px;}
-        .sheet{max-width:920px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(15,23,42,.12);overflow:hidden}
-        .hero{background:linear-gradient(135deg,#0f172a,#1d4ed8);color:#fff;padding:28px 32px}
-        .hero h1{margin:0 0 6px;font-size:24px}
-        .hero p{margin:0;font-size:14px;opacity:.9}
-        .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;padding:24px 32px;border-bottom:1px solid #dbe4f0}
-        .meta-card{background:#f8fbff;border:1px solid #d7e3f4;border-radius:12px;padding:12px 14px}
-        .meta-card strong{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#4f647f;margin-bottom:4px}
-        .content{padding:24px 32px 32px}
-        .print-section{border:1px solid #dbe4f0;border-radius:14px;padding:16px 18px;margin-bottom:16px;background:#fff}
-        .print-section h3{margin:0 0 10px;color:#174a8b;font-size:16px}
-        .print-section p{margin:0;white-space:pre-wrap;line-height:1.55}
-        @media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border-radius:0}.print-section{break-inside:avoid}}
-    </style>
-</head>
-<body>
-    <div class="sheet">
-        <div class="hero">
-            <h1>ClinData · Vista imprimible</h1>
-            <p>${escapeHtml(type === "patient" ? "Versión para paciente" : "Versión para médico")} · ${escapeHtml(printable.tipoNota)}</p>
-        </div>
-        <div class="meta">
-            <div class="meta-card"><strong>Paciente</strong>${escapeHtml(currentPatient.name)}</div>
-            <div class="meta-card"><strong>Expediente</strong>${escapeHtml(currentPatient.expediente || "Pendiente")}</div>
-            <div class="meta-card"><strong>Edad / Sexo</strong>${escapeHtml(`${currentPatient.age} años · ${currentPatient.sex}`)}</div>
-            <div class="meta-card"><strong>Fecha</strong>${escapeHtml(formatDateFull(currentConsultation.date))}</div>
-            <div class="meta-card"><strong>Alergias</strong>${escapeHtml(currentPatient.allergies || "No refiere")}</div>
-        </div>
-        <div class="content">
-            ${printable.sections.map(section => `
-                <section class="print-section">
-                    <h3>${escapeHtml(section.title)}</h3>
-                    <p>${escapeHtml(section.text)}</p>
-                </section>
-            `).join("")}
-            ${signatureHtml}
-        </div>
-    </div>
-</body>
-</html>`);
-    win.document.close();
-    showToast("No se detectó la librería PDF. Se abrió una versión imprimible para guardar como PDF desde el navegador.", "info");
-    setTimeout(() => {
-        try { win.focus(); win.print(); } catch (err) { /* noop */ }
-    }, 350);
-}
+function openPrintableRecord(type = "patient", extras = {}, replacements = {}) { return requireClinDataModule("exporter").openPrintableRecord(type, extras, replacements); }
 
 // =============================================
 //  CONSULTORIOS
@@ -2500,13 +1324,7 @@ let consultorios = JSON.parse(localStorage.getItem("cd_consultorios")) || [
 ];
 function saveConsultorios() { localStorage.setItem("cd_consultorios", JSON.stringify(consultorios)); }
 
-function renderNewPatientConsultorioSelect() {
-    const sel = document.getElementById("newPatientConsultorio");
-    updateNewPatientExpedientePreview();
-    if (!sel) return;
-    const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}">${c.nombre} — ${c.descripcion}</option>`).join("");
-    sel.innerHTML = `<option value="">Sin asignar</option>${opts}`;
-}
+function renderNewPatientConsultorioSelect() { return requireClinDataModule("patients").renderNewPatientConsultorioSelect(); }
 
 function renderConsultorios() {
     const container = document.getElementById("consultoriosSection");
@@ -2654,10 +1472,10 @@ function eliminarConsultorio(id) {
 // =============================================
 //  UTILIDADES
 // =============================================
-function formatDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"});}
-function formatDateFull(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{weekday:"short",day:"2-digit",month:"long",year:"numeric"});}
-function formatTime(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
-function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
+function formatDate(iso){ return requireClinDataModule("utils").formatDate(iso); }
+function formatDateFull(iso){ return requireClinDataModule("utils").formatDateFull(iso); }
+function formatTime(iso){ return requireClinDataModule("utils").formatTime(iso); }
+function showToast(message,type="info"){ return requireClinDataModule("utils").showToast(message,type); }
 
 // =============================================
 //  COLLAPSIBLE SECTIONS
