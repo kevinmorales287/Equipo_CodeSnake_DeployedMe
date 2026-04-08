@@ -94,12 +94,38 @@ let consultations = JSON.parse(localStorage.getItem("cd_consults"))  || [];
 let triageQueue   = JSON.parse(localStorage.getItem("cd_triage"))    || [];
 let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
 let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
+const HOSPITAL_CODE = "HGR";
 
 function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
 function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
 function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
 function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
 function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
+
+function getRecordYear(date = new Date()) {
+    return new Date(date).getFullYear();
+}
+
+function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) {
+    const prefix = `${hospitalCode}-${year}-`;
+    return patients.reduce((max, patient) => {
+        if (!patient?.expediente || !String(patient.expediente).startsWith(prefix)) return max;
+        const sequence = parseInt(String(patient.expediente).slice(prefix.length), 10);
+        return Number.isFinite(sequence) ? Math.max(max, sequence) : max;
+    }, 0);
+}
+
+function generatePatientExpediente(hospitalCode = HOSPITAL_CODE, date = new Date()) {
+    const year = getRecordYear(date);
+    const nextSequence = getLastExpedienteSequence(hospitalCode, year) + 1;
+    return `${hospitalCode}-${year}-${String(nextSequence).padStart(6, "0")}`;
+}
+
+function updateNewPatientExpedientePreview() {
+    const preview = document.getElementById("patientFileNumberPreview");
+    if (!preview) return;
+    preview.value = generatePatientExpediente();
+}
 
 function formatMedicationSummary(med = {}, format = "html") {
     const parts = [
@@ -230,6 +256,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginUser").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("loginPass").focus(); });
     const s = document.getElementById("search");
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
+    updateNewPatientExpedientePreview();
     setupSelectableRadioCards();
 });
 
@@ -449,6 +476,11 @@ function submitPatient() {
     const address = document.getElementById("address").value.trim();
     const phone  = document.getElementById("phone").value.trim();
     const dob    = document.getElementById("dob").value;
+    const birthPlace = document.getElementById("birthPlace")?.value.trim() || "";
+    const nationality = document.getElementById("nationality")?.value.trim() || "";
+    const curp = (document.getElementById("curp")?.value || "").trim().toUpperCase();
+    const rfc = (document.getElementById("rfc")?.value || "").trim().toUpperCase();
+    const nss = (document.getElementById("nss")?.value || "").trim();
     const email  = document.getElementById("email")?.value.trim() || "";
     const occupation = document.getElementById("occupation")?.value.trim() || "";
     const emergencyContact = document.getElementById("emergencyContact")?.value.trim() || "";
@@ -462,9 +494,10 @@ function submitPatient() {
         showToast("Completa los campos obligatorios (nombre, edad, sexo, domicilio, motivo).", "error"); return;
     }
 
+    const expediente = generatePatientExpediente();
     const patient = {
-        id: Date.now(), name, age, sex, address, phone, dob, email, occupation,
-        emergencyContact, ethnicGroup, allergies, chronicConditions,
+        id: Date.now(), expediente, name, age, sex, address, phone, dob, birthPlace, nationality,
+        curp, rfc, nss, email, occupation, emergencyContact, ethnicGroup, allergies, chronicConditions,
         alerts: "", currentTreatment: "",
         consultorio: consultorioAsignado,
         createdAt: new Date().toISOString(), createdBy: currentUser?.username
@@ -473,11 +506,12 @@ function submitPatient() {
     savePatients();
 
     addPatientToQueue(patient.id, reason, true);
-    showToast("Paciente registrado y agregado a la fila de consulta.", "success");
+    showToast(`Paciente registrado con expediente ${expediente} y agregado a la fila de consulta.`, "success");
 
-    ["name","age","sex","address","phone","dob","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
+    ["name","age","sex","address","phone","dob","birthPlace","nationality","curp","rfc","nss","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = "";
     });
+    updateNewPatientExpedientePreview();
     const cpEl = document.getElementById("newPatientConsultorio");
     if (cpEl) cpEl.value = "";
     navigate("consultQueue");
@@ -513,7 +547,10 @@ function renderPatients(customList = null) {
             <div class="patient-avatar">${initials}</div>
             <div class="patient-info">
                 <div class="patient-name">${p.name}</div>
-                <div class="patient-meta"><span>${p.age} años</span><span class="dot">·</span><span>${p.sex}</span><span class="dot">·</span><span>${p.address}</span></div>
+                <div class="patient-meta">
+                    ${p.expediente ? `<span>${p.expediente}</span><span class="dot">·</span>` : ""}
+                    <span>${p.age} años</span><span class="dot">·</span><span>${p.sex}</span><span class="dot">·</span><span>${p.address}</span>
+                </div>
                 ${p.allergies ? `<div class="patient-allergy-tag">⚠ ${p.allergies}</div>` : ""}
                 ${p.consultorio ? `<div style="display:inline-block;margin-top:3px;"><span class="consultorio-tag">🏥 ${p.consultorio}</span></div>` : ""}
             </div>
@@ -529,7 +566,15 @@ function renderPatients(customList = null) {
 
 function searchPatients(query) {
     if (!query) { renderPatients(); return; }
-    renderPatients(patients.filter(p => p.name.toLowerCase().includes(query) || p.age.toString().includes(query) || p.sex.toLowerCase().includes(query)));
+    renderPatients(patients.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.age.toString().includes(query) ||
+        p.sex.toLowerCase().includes(query) ||
+        (p.expediente || "").toLowerCase().includes(query) ||
+        (p.curp || "").toLowerCase().includes(query) ||
+        (p.rfc || "").toLowerCase().includes(query) ||
+        (p.nss || "").toLowerCase().includes(query)
+    ));
 }
 
 // =============================================
@@ -683,7 +728,7 @@ function renderConsultationHistory() {
     if (!currentPatient) return;
 
     document.getElementById("historyPatientName").textContent = currentPatient.name;
-    document.getElementById("historyPatientInfo").textContent = `${currentPatient.age} años · ${currentPatient.sex}`;
+    document.getElementById("historyPatientInfo").textContent = `${currentPatient.expediente ? currentPatient.expediente + " · " : ""}${currentPatient.age} años · ${currentPatient.sex}`;
 
     const ha = document.getElementById("historyHeaderActions");
     if (ha) {
@@ -763,9 +808,12 @@ function renderPatientFullCard() {
             <div class="pfc-main">
                 <div class="pfc-name">${p.name}</div>
                 <div class="pfc-row">
+                    ${p.expediente ? `<span class="pfc-tag">🗂 ${p.expediente}</span>` : ""}
                     <span class="pfc-tag">🎂 ${p.age} años</span>
                     <span class="pfc-tag">⚧ ${p.sex}</span>
                     ${p.dob ? `<span class="pfc-tag">📅 ${formatDate(p.dob)}</span>` : ""}
+                    ${p.birthPlace ? `<span class="pfc-tag">🌎 ${p.birthPlace}</span>` : ""}
+                    ${p.nationality ? `<span class="pfc-tag">🪪 ${p.nationality}</span>` : ""}
                     ${p.phone ? `<span class="pfc-tag">📞 ${p.phone}</span>` : ""}
                     ${p.occupation ? `<span class="pfc-tag">💼 ${p.occupation}</span>` : ""}
                     ${p.address ? `<span class="pfc-tag">📍 ${p.address}</span>` : ""}
@@ -773,6 +821,9 @@ function renderPatientFullCard() {
             </div>
         </div>
         <div class="pfc-grid">
+            ${p.curp ? `<div class="pfc-item"><div class="pfc-item-label">CURP</div><div class="pfc-item-value">${p.curp}</div></div>` : ""}
+            ${p.rfc ? `<div class="pfc-item"><div class="pfc-item-label">RFC</div><div class="pfc-item-value">${p.rfc}</div></div>` : ""}
+            ${p.nss ? `<div class="pfc-item"><div class="pfc-item-label">NSS</div><div class="pfc-item-value">${p.nss}</div></div>` : ""}
             <div class="pfc-item ${p.allergies && p.allergies !== 'Ninguna conocida' ? 'pfc-alert' : ''}">
                 <div class="pfc-item-label">Alergias</div>
                 <div class="pfc-item-value">${p.allergies || "No registradas"}</div>
@@ -1486,12 +1537,18 @@ function previewAttachment(attachId) {
 function openEditPatientModal() {
     if (!currentPatient) return;
     const p = currentPatient;
+    document.getElementById("editExpediente").value = p.expediente || "";
     document.getElementById("editName").value = p.name || "";
     document.getElementById("editAge").value = p.age || "";
     document.getElementById("editSex").value = p.sex || "";
     document.getElementById("editAddress").value = p.address || "";
     document.getElementById("editPhone").value = p.phone || "";
     document.getElementById("editDob").value = p.dob || "";
+    document.getElementById("editBirthPlace").value = p.birthPlace || "";
+    document.getElementById("editNationality").value = p.nationality || "";
+    document.getElementById("editCurp").value = p.curp || "";
+    document.getElementById("editRfc").value = p.rfc || "";
+    document.getElementById("editNss").value = p.nss || "";
     document.getElementById("editEmail").value = p.email || "";
     document.getElementById("editOccupation").value = p.occupation || "";
     document.getElementById("editEmergencyContact").value = p.emergencyContact || "";
@@ -1510,6 +1567,11 @@ function saveEditedPatient() {
     currentPatient.address = document.getElementById("editAddress").value.trim() || currentPatient.address;
     currentPatient.phone = document.getElementById("editPhone").value.trim();
     currentPatient.dob = document.getElementById("editDob").value;
+    currentPatient.birthPlace = document.getElementById("editBirthPlace").value.trim();
+    currentPatient.nationality = document.getElementById("editNationality").value.trim();
+    currentPatient.curp = document.getElementById("editCurp").value.trim().toUpperCase();
+    currentPatient.rfc = document.getElementById("editRfc").value.trim().toUpperCase();
+    currentPatient.nss = document.getElementById("editNss").value.trim();
     currentPatient.email = document.getElementById("editEmail").value.trim();
     currentPatient.occupation = document.getElementById("editOccupation").value.trim();
     currentPatient.emergencyContact = document.getElementById("editEmergencyContact").value.trim();
@@ -1640,7 +1702,7 @@ function attendTriage(triageId) {
     if(!entry) return;
     let patient = patients.find(p=>p.name.toLowerCase()===entry.name.toLowerCase());
     if(!patient){
-        patient={id:Date.now(),name:entry.name,age:entry.age,sex:entry.sex||"No especificado",address:"Urgencias",phone:"",dob:"",email:"",occupation:"",emergencyContact:"",ethnicGroup:"",allergies:"",chronicConditions:"",alerts:"",currentTreatment:"",createdAt:new Date().toISOString(),createdBy:currentUser?.username};
+        patient={id:Date.now(),expediente:generatePatientExpediente(),name:entry.name,age:entry.age,sex:entry.sex||"No especificado",address:"Urgencias",phone:"",dob:"",birthPlace:"",nationality:"",curp:"",rfc:"",nss:"",email:"",occupation:"",emergencyContact:"",ethnicGroup:"",allergies:"",chronicConditions:"",alerts:"",currentTreatment:"",createdAt:new Date().toISOString(),createdBy:currentUser?.username};
         patients.push(patient); savePatients();
     }
     currentPatient=patient;
@@ -1970,6 +2032,11 @@ function getDiagSuggestionText(item) {
     return [item.descripcion, item.codigo ? `(${item.codigo})` : ""].filter(Boolean).join(" ").trim();
 }
 
+function getDiagSearchQuery(input) {
+    if (!input) return "";
+    return String(input.value || "").split("\n").pop().trim();
+}
+
 function upsertSelectedDiagnostico(item) {
     if (!item || !item.codigo || !item.descripcion) return;
     const exists = selectedDiagnosticos.some(d => d.codigo === item.codigo);
@@ -1989,12 +2056,12 @@ function applyDiagSuggestion(index) {
     if (targetInput.id === "diagnostico") {
         targetInput.value = suggestionText;
     } else {
-        const existingLines = targetInput.value
-            .split("\n")
+        const existingLines = targetInput.value.split("\n");
+        existingLines[existingLines.length - 1] = suggestionText;
+        targetInput.value = existingLines
             .map(line => line.trim())
-            .filter(Boolean);
-        if (!existingLines.includes(suggestionText)) existingLines.push(suggestionText);
-        targetInput.value = existingLines.join("\n");
+            .filter(Boolean)
+            .join("\n");
     }
 
     if (!item.isAbrev) upsertSelectedDiagnostico(item);
@@ -2010,14 +2077,11 @@ function getDiagSuggestionBox(input) {
     let box = document.getElementById(explicitId);
     if (box) return box;
 
-    const parent = input.parentElement;
-    if (!parent) return null;
-
     box = document.createElement("div");
     box.id = explicitId;
     box.className = "diagnostico-suggestions";
     box.style.display = "none";
-    parent.appendChild(box);
+    document.body.appendChild(box);
     return box;
 }
 
@@ -2040,6 +2104,12 @@ function showDiagSuggestions(results, input) {
             </button>
         `;
     }).join("");
+    const rect = input.getBoundingClientRect();
+    box.style.position = "fixed";
+    box.style.top = `${Math.round(rect.bottom + 6)}px`;
+    box.style.left = `${Math.round(rect.left)}px`;
+    box.style.width = `${Math.round(rect.width)}px`;
+    box.style.zIndex = "20000";
     box.style.display = "block";
 }
 
@@ -2055,7 +2125,7 @@ function initDiagnosticoAutocomplete() {
         getDiagSuggestionBox(diagInput);
 
         const handler = debounce(async (e) => {
-            const query = e.target.value.trim();
+            const query = getDiagSearchQuery(e.target);
             if (query.length < 2) {
                 hideSuggestions(diagInput);
                 return;
@@ -2094,6 +2164,8 @@ function initDiagnosticoAutocomplete() {
                 hideSuggestions();
             }
         });
+        window.addEventListener("scroll", () => hideSuggestions(), true);
+        window.addEventListener("resize", () => hideSuggestions());
         diagAutocompleteClickBound = true;
     }
 }
@@ -2197,8 +2269,11 @@ function exportPDF(type) {
     doc.setFontSize(13); doc.setFont(undefined,"bold");
     doc.text(`Paciente: ${currentPatient.name}`,margin,y); y+=7;
     doc.setFontSize(9.5); doc.setFont(undefined,"normal");
+    if(currentPatient.expediente) {doc.text(`Expediente: ${currentPatient.expediente}`,margin,y); y+=5.5;}
     doc.text(`Edad: ${currentPatient.age} años  |  Sexo: ${currentPatient.sex}  |  Fecha: ${formatDateFull(currentConsultation.date)}`,margin,y); y+=5.5;
-    if(currentPatient.dob) {doc.text(`Nacimiento: ${formatDate(currentPatient.dob)}  |  Domicilio: ${currentPatient.address||"—"}`,margin,y); y+=5.5;}
+    if(currentPatient.dob || currentPatient.birthPlace) {doc.text(`Nacimiento: ${currentPatient.dob ? formatDate(currentPatient.dob) : "—"}  |  Lugar: ${currentPatient.birthPlace||"—"}`,margin,y); y+=5.5;}
+    if(currentPatient.nationality || currentPatient.curp || currentPatient.rfc || currentPatient.nss) {doc.text(`Nacionalidad: ${currentPatient.nationality||"—"}  |  CURP: ${currentPatient.curp||"—"}  |  RFC: ${currentPatient.rfc||"—"}  |  NSS: ${currentPatient.nss||"—"}`,margin,y); y+=5.5;}
+    if(currentPatient.address) {doc.text(`Domicilio: ${currentPatient.address||"—"}`,margin,y); y+=5.5;}
     if(currentPatient.occupation||currentPatient.phone) {doc.text(`Ocupación: ${currentPatient.occupation||"—"}  |  Tel: ${currentPatient.phone||"—"}`,margin,y); y+=5.5;}
     if(currentPatient.allergies) {doc.setTextColor(180,0,0);doc.text(`⚠ Alergias: ${currentPatient.allergies}`,margin,y);doc.setTextColor(0,0,0); y+=5.5;}
     if(currentPatient.chronicConditions) {doc.text(`Padecimientos crónicos: ${currentPatient.chronicConditions}`,margin,y); y+=5.5;}
@@ -2391,6 +2466,7 @@ function openPrintableRecord(type = "patient", extras = {}, replacements = {}) {
         </div>
         <div class="meta">
             <div class="meta-card"><strong>Paciente</strong>${escapeHtml(currentPatient.name)}</div>
+            <div class="meta-card"><strong>Expediente</strong>${escapeHtml(currentPatient.expediente || "Pendiente")}</div>
             <div class="meta-card"><strong>Edad / Sexo</strong>${escapeHtml(`${currentPatient.age} años · ${currentPatient.sex}`)}</div>
             <div class="meta-card"><strong>Fecha</strong>${escapeHtml(formatDateFull(currentConsultation.date))}</div>
             <div class="meta-card"><strong>Alergias</strong>${escapeHtml(currentPatient.allergies || "No refiere")}</div>
@@ -2426,6 +2502,7 @@ function saveConsultorios() { localStorage.setItem("cd_consultorios", JSON.strin
 
 function renderNewPatientConsultorioSelect() {
     const sel = document.getElementById("newPatientConsultorio");
+    updateNewPatientExpedientePreview();
     if (!sel) return;
     const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}">${c.nombre} — ${c.descripcion}</option>`).join("");
     sel.innerHTML = `<option value="">Sin asignar</option>${opts}`;
