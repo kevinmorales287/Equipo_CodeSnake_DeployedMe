@@ -38,7 +38,12 @@
         const age = document.getElementById("age").value;
         const sex = document.getElementById("sex").value;
         const address = document.getElementById("address").value.trim();
-        const phone = document.getElementById("phone").value.trim();
+        const phonePrefix       = document.getElementById("phonePrefix")?.value || "+52";
+        const phoneRaw          = document.getElementById("phone")?.value.trim() || "";
+        const phone             = phoneRaw ? `${phonePrefix} ${phoneRaw}` : "";
+        const phoneLocalPrefix  = document.getElementById("phoneLocalPrefix")?.value || "+52";
+        const phoneLocalRaw     = document.getElementById("phoneLocal")?.value.trim() || "";
+        const phoneLocal        = phoneLocalRaw ? `${phoneLocalPrefix} ${phoneLocalRaw}` : "";
         const dob = document.getElementById("dob").value;
         const birthPlace = document.getElementById("birthPlace")?.value.trim() || "";
         const nationality = document.getElementById("nationality")?.value.trim() || "";
@@ -47,8 +52,16 @@
         const nss = (document.getElementById("nss")?.value || "").trim();
         const email = document.getElementById("email")?.value.trim() || "";
         const occupation = document.getElementById("occupation")?.value.trim() || "";
-        const emergencyContact = document.getElementById("emergencyContact")?.value.trim() || "";
-        const ethnicGroup = document.getElementById("ethnicGroup")?.value.trim() || "";
+        const emergencyContact      = document.getElementById("emergencyContact")?.value.trim() || "";
+        const emergencyPhonePrefix  = document.getElementById("emergencyPhonePrefix")?.value || "+52";
+        const emergencyPhoneRaw     = document.getElementById("emergencyPhone")?.value.trim() || "";
+        const emergencyPhone        = emergencyPhoneRaw ? `${emergencyPhonePrefix} ${emergencyPhoneRaw}` : "";
+        const ethnicGroup       = document.getElementById("ethnicGroup")?.value.trim() || "";
+        const maritalStatus     = document.getElementById("maritalStatus")?.value || "";
+        const patientType       = document.getElementById("patientType")?.value || "";
+        const socialProgram     = document.getElementById("socialProgram")?.value || "";
+        const insurers          = Array.from(document.querySelectorAll("#insurerList .insurer-item-text")).map(el => el.textContent.trim());
+        const generalNotes      = document.getElementById("generalNotes")?.value.trim() || "";
         const allergies = document.getElementById("allergies").value.trim();
         const chronicConditions = document.getElementById("chronicConditions")?.value.trim() || "";
         const reason = document.getElementById("consultReason").value.trim();
@@ -77,7 +90,14 @@
             email,
             occupation,
             emergencyContact,
+            emergencyPhone,
             ethnicGroup,
+            maritalStatus,
+            patientType,
+            socialProgram,
+            insurers,
+            generalNotes,
+            phoneLocal,
             allergies,
             chronicConditions,
             alerts: "",
@@ -92,10 +112,16 @@
         global.addPatientToQueue(patient.id, reason, true);
         global.showToast(`Paciente registrado con expediente ${expediente} y agregado a la fila de consulta.`, "success");
 
-        ["name","age","sex","address","phone","dob","birthPlace","nationality","curp","rfc","nss","email","occupation","emergencyContact","ethnicGroup","allergies","chronicConditions","consultReason"].forEach((id) => {
+        ["name","age","sex","address","phone","phoneLocal","dob","birthPlace","nationality","curp","rfc","nss","email","occupation","emergencyContact","emergencyPhone","ethnicGroup","generalNotes","allergies","chronicConditions","consultReason"].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
+        document.getElementById("insurerList").innerHTML = "";
+        const prefixIds = ["phonePrefix","phoneLocalPrefix","emergencyPhonePrefix"];
+        prefixIds.forEach(id => { const el = document.getElementById(id); if (el) el.value = "+52"; });
+        document.getElementById("maritalStatus").value = "";
+        document.getElementById("patientType").value = "";
+        document.getElementById("socialProgram").value = "";
 
         updateNewPatientExpedientePreview();
         const consultorioSelect = document.getElementById("newPatientConsultorio");
@@ -303,7 +329,15 @@
         document.getElementById("editAge").value = patient.age || "";
         document.getElementById("editSex").value = patient.sex || "";
         document.getElementById("editAddress").value = patient.address || "";
-        document.getElementById("editPhone").value = patient.phone || "";
+        const [phonePrefix, ...phoneParts] = (patient.phone || "").split(" ");
+        const phoneIsFormatted = phonePrefix?.startsWith("+");
+        document.getElementById("editPhonePrefix").value = phoneIsFormatted ? phonePrefix : "+52";
+        document.getElementById("editPhone").value       = phoneIsFormatted ? phoneParts.join(" ") : (patient.phone || "");
+
+        const [phoneLocalPrefix, ...phoneLocalParts] = (patient.phoneLocal || "").split(" ");
+        const phoneLocalFormatted = phoneLocalPrefix?.startsWith("+");
+        document.getElementById("editPhoneLocalPrefix").value = phoneLocalFormatted ? phoneLocalPrefix : "+52";
+        document.getElementById("editPhoneLocal").value       = phoneLocalFormatted ? phoneLocalParts.join(" ") : (patient.phoneLocal || "");
         document.getElementById("editDob").value = patient.dob || "";
         document.getElementById("editBirthPlace").value = patient.birthPlace || "";
         document.getElementById("editNationality").value = patient.nationality || "";
@@ -313,6 +347,21 @@
         document.getElementById("editEmail").value = patient.email || "";
         document.getElementById("editOccupation").value = patient.occupation || "";
         document.getElementById("editEmergencyContact").value = patient.emergencyContact || "";
+
+        const [emergPrefix, ...emergParts] = (patient.emergencyPhone || "").split(" ");
+        const emergFormatted = emergPrefix?.startsWith("+");
+        document.getElementById("editEmergencyPhonePrefix").value = emergFormatted ? emergPrefix : "+52";
+        document.getElementById("editEmergencyPhone").value       = emergFormatted ? emergParts.join(" ") : (patient.emergencyPhone || "");
+
+        document.getElementById("editMaritalStatus").value  = patient.maritalStatus || "";
+        document.getElementById("editPatientType").value    = patient.patientType || "";
+        document.getElementById("editSocialProgram").value  = patient.socialProgram || "";
+        document.getElementById("editGeneralNotes").value   = patient.generalNotes || "";
+
+        const editList = document.getElementById("editInsurerList");
+        editList.innerHTML = "";
+        (patient.insurers || []).forEach(ins => appendInsurerRow(editList, ins, true));
+
         document.getElementById("editAllergies").value = patient.allergies || "";
         document.getElementById("editChronicConditions").value = patient.chronicConditions || "";
         document.getElementById("editCurrentTreatment").value = patient.currentTreatment || "";
@@ -328,7 +377,13 @@
         patient.age = document.getElementById("editAge").value || patient.age;
         patient.sex = document.getElementById("editSex").value || patient.sex;
         patient.address = document.getElementById("editAddress").value.trim() || patient.address;
-        patient.phone = document.getElementById("editPhone").value.trim();
+        const editPhonePrefix = document.getElementById("editPhonePrefix")?.value || "+52";
+        const editPhoneRaw    = document.getElementById("editPhone")?.value.trim() || "";
+        patient.phone         = editPhoneRaw ? `${editPhonePrefix} ${editPhoneRaw}` : "";
+
+        const editLocalPrefix = document.getElementById("editPhoneLocalPrefix")?.value || "+52";
+        const editLocalRaw    = document.getElementById("editPhoneLocal")?.value.trim() || "";
+        patient.phoneLocal    = editLocalRaw ? `${editLocalPrefix} ${editLocalRaw}` : "";
         patient.dob = document.getElementById("editDob").value;
         patient.birthPlace = document.getElementById("editBirthPlace").value.trim();
         patient.nationality = document.getElementById("editNationality").value.trim();
@@ -337,7 +392,18 @@
         patient.nss = document.getElementById("editNss").value.trim();
         patient.email = document.getElementById("editEmail").value.trim();
         patient.occupation = document.getElementById("editOccupation").value.trim();
-        patient.emergencyContact = document.getElementById("editEmergencyContact").value.trim();
+        patient.emergencyContact = document.getElementById("editEmergencyContact")?.value.trim() || "";
+
+        const editEmergPrefix  = document.getElementById("editEmergencyPhonePrefix")?.value || "+52";
+        const editEmergRaw     = document.getElementById("editEmergencyPhone")?.value.trim() || "";
+        patient.emergencyPhone = editEmergRaw ? `${editEmergPrefix} ${editEmergRaw}` : "";
+
+        patient.maritalStatus  = document.getElementById("editMaritalStatus")?.value || "";
+        patient.patientType    = document.getElementById("editPatientType")?.value || "";
+        patient.socialProgram  = document.getElementById("editSocialProgram")?.value || "";
+        patient.generalNotes   = document.getElementById("editGeneralNotes")?.value.trim() || "";
+        patient.insurers       = Array.from(document.querySelectorAll("#editInsurerList .insurer-item-text")).map(el => el.textContent.trim());
+
         patient.allergies = document.getElementById("editAllergies").value.trim();
         patient.chronicConditions = document.getElementById("editChronicConditions").value.trim();
         patient.currentTreatment = document.getElementById("editCurrentTreatment").value.trim();
@@ -361,6 +427,27 @@
         select.innerHTML = `<option value="">Sin asignar</option>${options}`;
     }
 
+    function appendInsurerRow(container, text, isEdit = false) {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-surface-2);";
+        row.innerHTML = `<span class="insurer-item-text" style="flex:1;font-size:13px;">${text}</span><button type="button" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);padding:0 2px;" onclick="this.closest('div').remove()">×</button>`;
+        container.appendChild(row);
+    }
+
+    function addInsurer() {
+        const input = document.getElementById("newInsurerInput");
+        if (!input || !input.value.trim()) return;
+        appendInsurerRow(document.getElementById("insurerList"), input.value.trim(), false);
+        input.value = "";
+    }
+
+    function addEditInsurer() {
+        const input = document.getElementById("editNewInsurerInput");
+        if (!input || !input.value.trim()) return;
+        appendInsurerRow(document.getElementById("editInsurerList"), input.value.trim(), true);
+        input.value = "";
+    }
+
     registry.patients = {
         getRecordYear,
         getLastExpedienteSequence,
@@ -373,6 +460,12 @@
         renderPatientFullCard,
         openEditPatientModal,
         saveEditedPatient,
-        renderNewPatientConsultorioSelect
+        renderNewPatientConsultorioSelect,
+        appendInsurerRow,
+        addInsurer,
+        addEditInsurer
     };
+
+    global.addInsurer     = addInsurer;
+    global.addEditInsurer = addEditInsurer;
 })(window);

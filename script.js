@@ -74,6 +74,7 @@ let autoSaveTimer       = null;
 let addToQueuePatientId = null;
 let currentTab          = "historia";
 let selectedDiagnosticos = [];  // Array para diagnósticos CIE-10 seleccionados
+let previousSection     = null; // Sección desde la que se navegó a medicalRecord
 
 window.ClinDataApp = window.ClinDataApp || {};
 Object.defineProperties(window.ClinDataApp, {
@@ -91,7 +92,8 @@ Object.defineProperties(window.ClinDataApp, {
     addToQueuePatientId: { get: () => addToQueuePatientId, set: (value) => { addToQueuePatientId = value; } },
     currentTab: { get: () => currentTab, set: (value) => { currentTab = value; } },
     consultorios: { get: () => consultorios },
-    selectedDiagnosticos: { get: () => selectedDiagnosticos, set: (value) => { selectedDiagnosticos = value; } }
+    selectedDiagnosticos: { get: () => selectedDiagnosticos, set: (value) => { selectedDiagnosticos = value; } },
+    previousSection: { get: () => previousSection, set: (value) => { previousSection = value; } }
 });
 
 const CONSULT_ANTECEDENT_FIELDS = [
@@ -271,6 +273,7 @@ const HASH_MAP = {
     newPatient:          "#/patients/new",
     consultQueue:        "#/queue",
     consultationHistory: "#/patient/history",
+    expediente:          "#/patient/expediente",  // NUEVO: ruta para vista de expediente por autor (NOM-004-SSA3-2012)
     medicalRecord:       "#/patient/record",
     triage:              "#/triage",
     triageList:          "#/triage/queue",
@@ -283,6 +286,7 @@ const HASH_TO_SECTION = {
     "#/patients/new":    "newPatient",
     "#/queue":           "consultQueue",
     "#/patient/history": "consultationHistory",
+    "#/patient/expediente": "expediente",  // NUEVO: hash para vista de expediente por autor (NOM-004-SSA3-2012)
     "#/patient/record":  "medicalRecord",
     "#/triage":          "triage",
     "#/triage/queue":    "triageList",
@@ -295,6 +299,7 @@ const ROUTE_TITLE = {
     newPatient:          "Nuevo Paciente · ClinData",
     consultQueue:        "Fila de Consulta · ClinData",
     consultationHistory: "Expediente · ClinData",
+    expediente: "Expediente · ClinData",  // NUEVO: título para vista de expediente por autor (NOM-004-SSA3-2012)
     medicalRecord:       "Consulta · ClinData",
     triage:              "Triage · ClinData",
     triageList:          "Fila de Urgencias · ClinData",
@@ -330,7 +335,8 @@ function _activateSection(section) {
         patients:            "patientsSection",
         newPatient:          "newPatientSection",
         consultQueue:        "consultQueueSection",
-        consultationHistory: "consultationHistorySection",
+        consultationHistory: "expedienteSection",
+        expediente: "expedienteSection",  // NUEVO: agregar sección para expediente por autor (NOM-004-SSA3-2012)
         medicalRecord:       "medicalRecordSection",
         triage:              "triageSection",
         triageList:          "triageListSection",
@@ -342,6 +348,7 @@ function _activateSection(section) {
         newPatient:          "nav-newPatient",
         consultQueue:        "nav-consultQueue",
         consultationHistory: "nav-patients",
+        expediente: "nav-patients",  // NUEVO: agregar ruta de navegación para expediente en el sidebar (NOM-004-SSA3-2012)
         medicalRecord:       "nav-patients",
         triage:              "nav-triage",
         triageList:          "nav-triageList",
@@ -363,12 +370,20 @@ function _activateSection(section) {
     if (section === "patients")            renderPatients();
     if (section === "newPatient")          renderNewPatientConsultorioSelect();
     if (section === "consultQueue")        renderConsultQueue();
-    if (section === "consultationHistory") renderConsultationHistory();
+    if (section === "consultationHistory") renderExpediente();
+    if (section === "expediente") renderExpediente();
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
     if (section === "consultorios")        renderConsultorios();
     if (section === "medicalRecord")       renderMedicalRecord();
     if (section === "triage" && typeof abrevInit === "function") abrevInit();
+}
+
+// Regresa desde medicalRecord a la sección de origen (expediente o historial clásico)
+function goBackFromRecord() {
+    const dest = previousSection || 'expediente';
+    previousSection = null;
+    navigate(dest);
 }
 
 // Versión segura de collectRecordFields (no lanza si el DOM no está listo)
@@ -415,7 +430,7 @@ function dismissFromConsultQueue(queueId) { return requireClinDataModule("queue"
 // =============================================
 function openPatientRecord(patientId) {
     currentPatient = patients.find(p => p.id === patientId);
-    navigate("consultationHistory");
+    navigate('expediente');
 }
 
 function renderConsultationHistory() { return requireClinDataModule("patients").renderConsultationHistory(); }
@@ -806,7 +821,7 @@ function setupRecordActions() {
 
     if (can("canWriteMedicalNotes")) {
         el.innerHTML = `
-            <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+            <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
             <button class="btn-secondary" onclick="abrevIniciarExport('patient')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 PDF Paciente</button>
@@ -821,7 +836,7 @@ function setupRecordActions() {
                 Marcar como Atendido</button>`;
     } else if (can("canWriteNursingNotes")) {
         el.innerHTML = `
-            <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+            <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
             <button class="btn-primary" onclick="saveNursingNote()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                 Guardar Nota de Enfermería</button>`;
@@ -886,7 +901,7 @@ function closeConsultation() {
     }
     saveConsultations();
     showToast("Consulta cerrada — paciente marcado como atendido.", "success");
-    navigate("consultationHistory");
+    navigate("expediente");
 }
 
 function saveNursingNote() {
@@ -1523,6 +1538,10 @@ function initializeCollapsibleSections() {
             section.classList.add("collapsed");
         }
     });
+}
+
+function renderExpediente() {
+    return requireClinDataModule('expediente').renderExpediente();
 }
 
 // Inicializar cuando se renderiza el expediente

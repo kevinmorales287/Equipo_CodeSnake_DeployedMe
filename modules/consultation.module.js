@@ -391,17 +391,18 @@
         if (headerEl) headerEl.innerHTML = "";
         if (global.can("canWriteMedicalNotes")) {
             el.innerHTML = `
-                <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+                <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('patient')">PDF Paciente</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('doctor')">PDF Médico</button>
                 <button class="btn-secondary" onclick="saveRecord()">Guardar</button>
                 <button class="btn-primary" onclick="closeConsultation()">Marcar como Atendido</button>`;
         } else if (global.can("canWriteNursingNotes")) {
             el.innerHTML = `
-                <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+                <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
                 <button class="btn-primary" onclick="saveNursingNote()">Guardar Nota de Enfermería</button>`;
         } else {
             el.innerHTML = `
+                <button class="btn-secondary" onclick="goBackFromRecord()">Volver</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('patient')">PDF Paciente</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('doctor')">PDF Médico</button>
                 <p class="readonly-note">Vista de solo lectura — Solo el médico puede editar notas clínicas.</p>`;
@@ -453,7 +454,7 @@
         }
         global.saveConsultations();
         global.showToast("Consulta cerrada — paciente marcado como atendido.", "success");
-        global.navigate("consultationHistory");
+        global.navigate("expediente");
     }
 
     function saveNursingNote() {
