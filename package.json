@@ -1,7 +1,17 @@
 {
+  "name": "clin-data",
+  "version": "1.0.0",
+  "private": true,
+  "main": "Server.js",
+  "scripts": {
+    "start": "node Server.js",
+    "dev": "node Server.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "mysql2": "^3.20.0"
   }
 }
