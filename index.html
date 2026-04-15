@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="expediente.css">
 </head>
 <body>
 
@@ -46,6 +47,10 @@
                 <div class="demo-title">Usuarios para demo:</div>
                 <div class="demo-row"><span class="demo-role role-medico-pill">Médico</span><code>dr.garcia / Medico#2026</code></div>
                 <div class="demo-row"><span class="demo-role role-enfermero-pill">Enfermero/a</span><code>enf.lopez / Enfermero#2026</code></div>
+<<<<<<< HEAD
+=======
+                <div class="demo-row"><span class="demo-role role-recepcion-pill">Recepción</span><code>recep.ruiz / Recepcion#2026</code></div>
+>>>>>>> ExperimentalBranch_LanderLopez
                 <div class="demo-row"><span class="demo-role role-admin-pill">Admin</span><code>admin.sys / Admin#2026</code></div>
             </div>
         </div>
@@ -96,6 +101,12 @@
         </aside>
 
         <main id="app">
+<<<<<<< HEAD
+=======
+            <section id="expedienteSection" class="section">
+                <!-- El contenido se renderiza dinámicamente por expediente.module.js -->
+            </section>
+>>>>>>> ExperimentalBranch_LanderLopez
 
             <!-- PACIENTES -->
             <section id="patientsSection" class="section">
@@ -132,19 +143,159 @@
                             Datos de Identificación
                         </div>
                         <div class="form-grid">
+<<<<<<< HEAD
                             <div class="form-group full"><label>Nombre completo <span class="required">*</span></label><input type="text" id="name" placeholder="Apellido Paterno, Apellido Materno, Nombre(s)"></div>
                             <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="dob"></div>
+=======
+                            <div class="form-group"><label>Número de expediente</label><input type="text" id="patientFileNumberPreview" class="readonly-field" placeholder="Se generará automáticamente" readonly></div>
+                            <div class="form-group full"><label>Nombre completo <span class="required">*</span></label><input type="text" id="name" placeholder="Apellido Paterno, Apellido Materno, Nombre(s)"></div>
+                            <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="dob"></div>
+                            <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="birthPlace" placeholder="Ciudad, estado, país"></div>
+                            <div class="form-group"><label>Nacionalidad</label><input type="text" id="nationality" placeholder="Ej: Mexicana"></div>
+                            <div class="form-group"><label>CURP</label><input type="text" id="curp" placeholder="18 caracteres"></div>
+                            <div class="form-group"><label>RFC</label><input type="text" id="rfc" placeholder="13 caracteres"></div>
+                            <div class="form-group"><label>NSS</label><input type="text" id="nss" placeholder="Número de seguridad social"></div>
+>>>>>>> ExperimentalBranch_LanderLopez
                             <div class="form-group"><label>Edad <span class="required">*</span></label><input type="number" id="age" placeholder="Años" min="0" max="130"></div>
                             <div class="form-group"><label>Sexo <span class="required">*</span></label>
                                 <select id="sex"><option value="">Seleccionar...</option><option>Masculino</option><option>Femenino</option></select>
                             </div>
                             <div class="form-group"><label>Ocupación</label><input type="text" id="occupation" placeholder="Ej: Estudiante, Comerciante..."></div>
                             <div class="form-group full"><label>Domicilio <span class="required">*</span></label><input type="text" id="address" placeholder="Calle, número, colonia, ciudad, C.P."></div>
+<<<<<<< HEAD
                             <div class="form-group"><label>Teléfono</label><input type="tel" id="phone" placeholder="10 dígitos"></div>
                             <div class="form-group"><label>Correo electrónico</label><input type="email" id="email" placeholder="correo@ejemplo.com"></div>
                             <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="emergencyContact" placeholder="Nombre y teléfono"></div>
                             <div class="form-group"><label>Grupo étnico</label><input type="text" id="ethnicGroup" placeholder="Opcional"></div>
                         </div>
+=======
+                            <div class="form-group"><label>Grupo étnico</label><input type="text" id="ethnicGroup" placeholder="Opcional"></div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.13 1 .36 1.97.72 2.91a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.16 6.16l.91-.91a2 2 0 0 1 2.11-.45c.94.36 1.91.59 2.91.72A2 2 0 0 1 21.73 16.92z"/></svg>
+                            Comunicación
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Teléfono celular</label>
+                                <div style="display:flex;">
+                                    <select id="phonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="phone" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono local / fijo</label>
+                                <div style="display:flex;">
+                                    <select id="phoneLocalPrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="phoneLocal" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                            <div class="form-group"><label>Correo electrónico</label><input type="email" id="email" placeholder="correo@ejemplo.com"></div>
+                            <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="emergencyContact" placeholder="Nombre completo"></div>
+                            <div class="form-group">
+                                <label>Teléfono de emergencia</label>
+                                <div style="display:flex;">
+                                    <select id="emergencyPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="emergencyPhone" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Perfil Social y Programa
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Estado civil</label>
+                                <select id="maritalStatus">
+                                    <option value="">Seleccionar...</option>
+                                    <option>Soltero/a</option>
+                                    <option>Casado/a</option>
+                                    <option>Unión libre</option>
+                                    <option>Divorciado/a</option>
+                                    <option>Viudo/a</option>
+                                    <option>Separado/a</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de paciente</label>
+                                <select id="patientType">
+                                    <option value="">Seleccionar...</option>
+                                    <option>Primera vez</option>
+                                    <option>Subsecuente</option>
+                                    <option>Urgencia</option>
+                                    <option>Referido externo</option>
+                                    <option>Interconsulta</option>
+                                </select>
+                            </div>
+                            <div class="form-group full">
+                                <label>Programa médico / social</label>
+                                <select id="socialProgram">
+                                    <option value="">Ninguno / particular</option>
+                                    <option>IMSS</option>
+                                    <option>ISSSTE</option>
+                                    <option>ISSSTE Estatal</option>
+                                    <option>Seguro Popular / INSABI</option>
+                                    <option>IMSS Bienestar</option>
+                                    <option>PEMEX</option>
+                                    <option>SEDENA / SEMAR</option>
+                                    <option>Cruz Roja</option>
+                                    <option>DIF</option>
+                                    <option>Seguro privado</option>
+                                    <option>Otro programa social</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Seguros y Anotaciones
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div>
+                                <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Aseguradoras vinculadas</label>
+                                <div id="insurerList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" id="newInsurerInput" placeholder="Nombre de aseguradora y/o número de póliza" style="flex:1;">
+                                    <button type="button" class="btn-secondary" onclick="addInsurer()" style="white-space:nowrap;">+ Agregar</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Anotaciones generales</label>
+                                <textarea id="generalNotes" placeholder="Notas administrativas, observaciones sobre cobertura u otro contexto relevante..." style="min-height:80px;resize:vertical;"></textarea>
+                            </div>
+                        </div>
+
+>>>>>>> ExperimentalBranch_LanderLopez
                         <div class="nom-section-label" style="margin-top:18px;">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             Datos Clínicos Iniciales
@@ -153,6 +304,14 @@
                             <div class="form-group full"><label>Alergias conocidas</label><input type="text" id="allergies" placeholder="Ej: Penicilina, AINEs, Látex... o 'Ninguna conocida'"></div>
                             <div class="form-group full"><label>Padecimientos crónicos conocidos</label><input type="text" id="chronicConditions" placeholder="Ej: Diabetes tipo 2, HTA, Hipotiroidismo..."></div>
                             <div class="form-group full"><label>Motivo de consulta de hoy <span class="required">*</span></label><input type="text" id="consultReason" placeholder="¿Por qué acude hoy?"></div>
+<<<<<<< HEAD
+=======
+                            <div class="form-group"><label>Asignar consultorio</label>
+                                <select id="newPatientConsultorio">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
+>>>>>>> ExperimentalBranch_LanderLopez
                         </div>
                     </div>
                     <div class="form-card-footer">
@@ -204,7 +363,11 @@
             <section id="medicalRecordSection" class="section">
                 <div class="section-header">
                     <div>
+<<<<<<< HEAD
                         <button class="btn-back" onclick="navigate('consultationHistory')">
+=======
+                        <button class="btn-back" onclick="goBackFromRecord()">
+>>>>>>> ExperimentalBranch_LanderLopez
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                             Volver al expediente
                         </button>
@@ -227,8 +390,13 @@
                         Historia Clínica
                     </button>
                     <button class="record-tab" data-tab="evolucion" onclick="switchRecordTab('evolucion', this)">
+<<<<<<< HEAD
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                         Nota Médica
+=======
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        Nota de Enfermería
+>>>>>>> ExperimentalBranch_LanderLopez
                     </button>
                     <button class="record-tab" data-tab="urgencias" onclick="switchRecordTab('urgencias', this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
@@ -583,7 +751,7 @@
                         </div>
 
                         <!-- BLOQUE 4: DIAGNÓSTICO Y PRONÓSTICO -->
-                        <div class="record-block">
+                        <div class="record-block diagnostico-block">
                             <div class="record-block-header">
                                 <span class="record-block-icon">🧾</span>
                                 <div>
@@ -592,15 +760,26 @@
                                 </div>
                             </div>
                             <div class="record-block-body">
+<<<<<<< HEAD
                                 <div class="record-section-card">
+=======
+                                <div class="record-section-card diagnostico-card">
+>>>>>>> ExperimentalBranch_LanderLopez
                                     <div class="record-section-title">
                                         <span class="record-icon">🧾</span>Diagnóstico
                                         <span class="tag-cie">CIE-10</span>
                                     </div>
                                     <div class="diagnostico-tipos">
+<<<<<<< HEAD
                                         <div class="form-group">
                                             <label class="apnp-label">Diagnóstico principal (definitivo o presuntivo)</label>
                                             <textarea id="diagnostico" placeholder="Diagnóstico principal con código CIE-10 si se conoce..."></textarea>
+=======
+                                        <div class="form-group" style="position: relative;">
+                                            <label class="apnp-label">Diagnóstico principal (definitivo o presuntivo)</label>
+                                            <textarea id="diagnostico" placeholder="Diagnóstico principal con código CIE-10 si se conoce..."></textarea>
+                                            <div id="diagnosticoSugerencias" class="diagnostico-suggestions" style="display:none;"></div>
+>>>>>>> ExperimentalBranch_LanderLopez
                                             <div id="diagnosticoPreview" class="preview-box" style="display:none;"></div>
                                         </div>
                                         <div id="diagnosticosSeleccionados" class="diagnosticos-badges"></div>
@@ -704,11 +883,16 @@
                     </div><!-- /tab-historia -->
 
                     <!-- ═══════════════════════════════════════
+<<<<<<< HEAD
                          TAB: NOTA MÉDICA
+=======
+                         TAB: NOTA DE ENFERMERÍA
+>>>>>>> ExperimentalBranch_LanderLopez
                          ═══════════════════════════════════════ -->
                     <div id="tab-evolucion" class="record-tab-content">
                         <div class="record-block">
                             <div class="record-block-header">
+<<<<<<< HEAD
                                 <span class="record-block-icon">📝</span>
                                 <div>
                                     <div class="record-block-title">Nota Médica</div>
@@ -750,6 +934,123 @@
                                 <div class="record-section-card">
                                     <div class="record-section-title"><span class="record-icon">📝</span>Nota de Evolución <span class="field-hint">(actualizar si el paciente continúa tratamiento)</span></div>
                                     <textarea id="evolucion_clinica" style="min-height:100px;" placeholder="Evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
+=======
+                                <span class="record-block-icon">🩺</span>
+                                <div>
+                                    <div class="record-block-title">Nota de Enfermería</div>
+                                    <div class="record-block-subtitle">Valoración y seguimiento por enfermería</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+
+                                <!-- Signos vitales completos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📊</span>Signos Vitales y Somatometría
+                                        <span class="nom-tag">ENF</span>
+                                    </div>
+                                    <div class="vitales-grid">
+                                        <div class="vital-item">
+                                            <label>T.A. sistólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tas" placeholder="120">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>T.A. diastólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tad" placeholder="80">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Cardiaca <span class="vital-unit">lpm</span></label>
+                                            <input type="number" id="enf_sv_fc" placeholder="60–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Respiratoria <span class="vital-unit">rpm</span></label>
+                                            <input type="number" id="enf_sv_fr" placeholder="12–20">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Temperatura <span class="vital-unit">°C</span></label>
+                                            <input type="number" id="enf_sv_temp" placeholder="36.5" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>SpO₂ <span class="vital-unit">%</span></label>
+                                            <input type="number" id="enf_sv_spo2" placeholder="95–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Glucemia <span class="vital-unit">mg/dL</span></label>
+                                            <input type="number" id="enf_sv_glucemia" placeholder="70–110">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Peso <span class="vital-unit">kg</span></label>
+                                            <input type="number" id="enf_sv_peso" placeholder="70.0" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Talla <span class="vital-unit">cm</span></label>
+                                            <input type="number" id="enf_sv_talla" placeholder="170">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>IMC <span class="vital-unit">kg/m²</span></label>
+                                            <input type="text" id="enf_sv_imc" placeholder="Auto-calculado" readonly class="imc-field">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Dolor <span class="vital-unit">0–10</span></label>
+                                            <input type="number" id="enf_sv_dolor" min="0" max="10" placeholder="EVA">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Habitus exterior</label>
+                                            <input type="text" id="enf_sv_habitus" placeholder="BAEG, cooperador...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Exploración por segmentos (enfermería) -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧑‍⚕️</span>Valoración por Segmentos
+                                    </div>
+                                    <div class="exploracion-segmentos">
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Cabeza y cuello</label>
+                                            <textarea id="enf_exp_cabeza" style="min-height:60px;" placeholder="Observaciones de cabeza y cuello..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Tórax y cardiopulmonar</label>
+                                            <textarea id="enf_exp_torax" style="min-height:60px;" placeholder="Observaciones torácicas..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Abdomen</label>
+                                            <textarea id="enf_exp_abdomen" style="min-height:60px;" placeholder="Observaciones abdominales..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Extremidades</label>
+                                            <textarea id="enf_exp_extremidades" style="min-height:60px;" placeholder="Observaciones de extremidades, accesos venosos..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Neurológico</label>
+                                            <textarea id="enf_exp_neurologico" style="min-height:60px;" placeholder="Estado neurológico, nivel de consciencia..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Genitourinario</label>
+                                            <textarea id="enf_exp_genitourinario" style="min-height:60px;" placeholder="Diuresis, sonda, otros..."></textarea>
+                                        </div>
+                                        <div class="segmento-item full-col">
+                                            <label class="segmento-label">Piel y tegumentos / Otros hallazgos</label>
+                                            <textarea id="enf_exp_otros" style="min-height:60px;" placeholder="Coloración, úlceras, heridas, drenajes, otros hallazgos..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Evolución y observaciones -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">📋</span>Evolución y Observaciones de Enfermería</div>
+                                    <textarea id="enf_evolucion_clinica" style="min-height:100px;" placeholder="Descripción de la evolución del paciente, cambios observados, respuesta al tratamiento desde la perspectiva de enfermería..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">💉</span>Procedimientos y Cuidados Realizados</div>
+                                    <textarea id="enf_procedimientos" style="min-height:80px;" placeholder="Medicamentos administrados, procedimientos de enfermería, curación de heridas, instalación de accesos, nebulizaciones..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🚨</span>Nota Importante <span class="field-hint">(visible en la próxima consulta)</span></div>
+                                    <textarea id="enf_nota_imp" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
+>>>>>>> ExperimentalBranch_LanderLopez
                                 </div>
                             </div>
                         </div>
@@ -990,10 +1291,22 @@
                 <div id="userTable" class="user-table-wrap"></div>
             </section>
 
+<<<<<<< HEAD
         </main>
     </div>
 </div>
 
+=======
+            <!-- CONSULTORIOS -->
+            <section id="consultoriosSection" class="section">
+                <!-- Content rendered dynamically by renderConsultorios() -->
+            </section>
+
+        </main>
+    </div>
+</div>
+
+>>>>>>> ExperimentalBranch_LanderLopez
 <!-- MODAL: USUARIO -->
 <div id="userModal" class="modal-overlay hidden">
     <div class="modal-card">
@@ -1013,9 +1326,21 @@
                     <option value="">Seleccionar...</option>
                     <option value="medico">Médico/a</option>
                     <option value="enfermero">Enfermero/a</option>
+<<<<<<< HEAD
                     <option value="admin">Administrador técnico</option>
                 </select>
             </div>
+=======
+                    <option value="recepcion">Recepción</option>
+                    <option value="admin">Administrador técnico</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Consultorio asignado</label>
+                <select id="modalConsultorio">
+                    <option value="">Sin asignar</option>
+                </select>
+            </div>
+>>>>>>> ExperimentalBranch_LanderLopez
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
@@ -1055,15 +1380,117 @@
         </div>
         <div class="modal-body">
             <div class="form-grid">
+<<<<<<< HEAD
+=======
+                <div class="form-group"><label>Número de expediente</label><input type="text" id="editExpediente" readonly></div>
+>>>>>>> ExperimentalBranch_LanderLopez
                 <div class="form-group full"><label>Nombre completo</label><input type="text" id="editName"></div>
                 <div class="form-group"><label>Edad</label><input type="number" id="editAge"></div>
                 <div class="form-group"><label>Sexo</label><select id="editSex"><option value="">—</option><option>Masculino</option><option>Femenino</option></select></div>
                 <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="editDob"></div>
+<<<<<<< HEAD
                 <div class="form-group"><label>Ocupación</label><input type="text" id="editOccupation"></div>
                 <div class="form-group full"><label>Domicilio</label><input type="text" id="editAddress"></div>
                 <div class="form-group"><label>Teléfono</label><input type="tel" id="editPhone"></div>
                 <div class="form-group"><label>Correo electrónico</label><input type="email" id="editEmail"></div>
                 <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="editEmergencyContact"></div>
+=======
+                <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="editBirthPlace"></div>
+                <div class="form-group"><label>Nacionalidad</label><input type="text" id="editNationality"></div>
+                <div class="form-group"><label>CURP</label><input type="text" id="editCurp"></div>
+                <div class="form-group"><label>RFC</label><input type="text" id="editRfc"></div>
+                <div class="form-group"><label>NSS</label><input type="text" id="editNss"></div>
+                <div class="form-group"><label>Ocupación</label><input type="text" id="editOccupation"></div>
+                <div class="form-group full"><label>Domicilio</label><input type="text" id="editAddress"></div>
+                <div class="form-group">
+                    <label>Teléfono celular</label>
+                    <div style="display:flex;">
+                        <select id="editPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editPhone" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono local / fijo</label>
+                    <div style="display:flex;">
+                        <select id="editPhoneLocalPrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editPhoneLocal" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group"><label>Correo electrónico</label><input type="email" id="editEmail"></div>
+                <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="editEmergencyContact"></div>
+                <div class="form-group">
+                    <label>Teléfono de emergencia</label>
+                    <div style="display:flex;">
+                        <select id="editEmergencyPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editEmergencyPhone" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Estado civil</label>
+                    <select id="editMaritalStatus">
+                        <option value="">Seleccionar...</option>
+                        <option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option>
+                        <option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de paciente</label>
+                    <select id="editPatientType">
+                        <option value="">Seleccionar...</option>
+                        <option>Primera vez</option><option>Subsecuente</option><option>Urgencia</option>
+                        <option>Referido externo</option><option>Interconsulta</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>Programa médico / social</label>
+                    <select id="editSocialProgram">
+                        <option value="">Ninguno / particular</option>
+                        <option>IMSS</option><option>ISSSTE</option><option>ISSSTE Estatal</option>
+                        <option>Seguro Popular / INSABI</option><option>IMSS Bienestar</option>
+                        <option>PEMEX</option><option>SEDENA / SEMAR</option><option>Cruz Roja</option>
+                        <option>DIF</option><option>Seguro privado</option><option>Otro programa social</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>Aseguradoras vinculadas</label>
+                    <div id="editInsurerList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="editNewInsurerInput" placeholder="Nombre y/o número de póliza" style="flex:1;">
+                        <button type="button" class="btn-secondary" onclick="addEditInsurer()" style="white-space:nowrap;">+ Agregar</button>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label>Anotaciones generales</label>
+                    <textarea id="editGeneralNotes" style="min-height:70px;resize:vertical;" placeholder="Notas administrativas u otro contexto relevante..."></textarea>
+                </div>
+>>>>>>> ExperimentalBranch_LanderLopez
                 <div class="form-group full"><label>Alergias</label><input type="text" id="editAllergies"></div>
                 <div class="form-group full"><label>Padecimientos crónicos</label><input type="text" id="editChronicConditions"></div>
                 <div class="form-group full"><label>Tratamiento actual</label><input type="text" id="editCurrentTreatment" placeholder="Se sincroniza con la última consulta o edita manualmente"></div>
@@ -1080,6 +1507,20 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 <script src="Principal_abr.js"></script>
+<<<<<<< HEAD
 <script src="script.js"></script>
+=======
+<script src="database/conceptos-index.js"></script>
+<script src="script.js"></script>
+<script src="modules/utils.module.js"></script>
+<script src="modules/auth.module.js"></script>
+<script src="modules/patients.module.js"></script>
+<script src="modules/diagnostics.module.js"></script>
+<script src="modules/queue.module.js"></script>
+<script src="modules/triage.module.js"></script>
+<script src="modules/consultation.module.js"></script>
+<script src="modules/export.module.js"></script>
+<script src="modules/expediente.module.js"></script>
+>>>>>>> ExperimentalBranch_LanderLopez
 </body>
 </html>

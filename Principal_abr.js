@@ -328,7 +328,11 @@ function abrevIniciarExport(tipo) {
         // Estudios
         "estudios_previos","estudios_imagen","estudios_solicitados",
         // Diagnóstico y tratamiento
+<<<<<<< HEAD
         "diagnostico","diagnostico_secundario","pronostico_detalle",
+=======
+        "pronostico_detalle",
+>>>>>>> ExperimentalBranch_LanderLopez
         "tratamiento","indicaciones_reposo","indicaciones_dieta",
         "indicaciones_cita","indicaciones_referencia",
         // Nota de evolución
@@ -539,6 +543,17 @@ function abrevTerminar() {
 // =============================================
 function abrevEjecutarPDF(tipo, extras, reemplazos) {
     if (!currentConsultation || !currentPatient) return;
+<<<<<<< HEAD
+=======
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        if (typeof window.openPrintableRecord === "function") {
+            window.openPrintableRecord(tipo, extras, reemplazos);
+        } else if (typeof showToast === "function") {
+            showToast("No se pudo cargar la librería PDF.", "error");
+        }
+        return;
+    }
+>>>>>>> ExperimentalBranch_LanderLopez
 
     const catalogoFull = {...ABREV_CATALOGO, ...abrevAprendidas, ...extras};
 
@@ -596,6 +611,17 @@ function abrevEjecutarPDF(tipo, extras, reemplazos) {
 
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
+<<<<<<< HEAD
+=======
+    if (typeof doc.autoTable !== "function") {
+        if (typeof window.openPrintableRecord === "function") {
+            window.openPrintableRecord(tipo, extras, reemplazos);
+        } else if (typeof showToast === "function") {
+            showToast("No se pudo cargar la extensión de tablas para el PDF.", "error");
+        }
+        return;
+    }
+>>>>>>> ExperimentalBranch_LanderLopez
     let y = 15;
     const margin = 15, pageW = 210, contentW = pageW - margin * 2;
 
@@ -976,7 +1002,11 @@ function abrevInit() {
         // Estudios
         "estudios_previos","estudios_imagen","estudios_solicitados",
         // Diagnóstico y tratamiento
+<<<<<<< HEAD
         "diagnostico","diagnostico_secundario","pronostico_detalle",
+=======
+        "pronostico_detalle",
+>>>>>>> ExperimentalBranch_LanderLopez
         "tratamiento","indicaciones_reposo","indicaciones_dieta",
         "indicaciones_cita","indicaciones_referencia",
         // Nota de evolución
@@ -990,4 +1020,8 @@ function abrevInit() {
         "triageName","triageReason","triageNotes",
         "name","address"
     ]);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ExperimentalBranch_LanderLopez

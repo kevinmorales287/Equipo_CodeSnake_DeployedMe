@@ -169,6 +169,11 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 .form-group input,.form-group select,.form-group textarea{background:var(--bg-surface);border:1px solid var(--border-medium);border-radius:var(--radius);padding:9px 12px;font-size:14px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s,box-shadow .15s;width:100%;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(14,165,233,.12);}
 .form-group textarea{resize:vertical;min-height:80px;}
+<<<<<<< HEAD
+=======
+.form-group input.readonly-field,
+.form-group input[readonly]{background:var(--bg-surface-2);color:var(--text-secondary);cursor:default;}
+>>>>>>> ExperimentalBranch_LanderLopez
 
 /* ===== FILA DE CONSULTA ===== */
 .consult-queue-list{display:flex;flex-direction:column;gap:10px;}
@@ -411,6 +416,7 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
    ClinData — Estilos NOM-004-SSA3-2012 v3
    Expediente Clínico Electrónico
    ============================================= */
+<<<<<<< HEAD
 
 /* ===== ETIQUETA NOM ===== */
 .nom-section-label{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;padding:14px 0 10px;border-bottom:2px solid var(--brand-light);margin-bottom:16px;}
@@ -539,6 +545,144 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 /* ===== TIPO DE NOTA BADGE ===== */
 .tipo-nota-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;margin-bottom:2px;}
 
+=======
+
+/* ===== ETIQUETA NOM ===== */
+.nom-section-label{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;padding:14px 0 10px;border-bottom:2px solid var(--brand-light);margin-bottom:16px;}
+.nom-tag{margin-left:auto;background:#eff6ff;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;border:1px solid #bfdbfe;}
+
+/* ===== TABS DEL EXPEDIENTE ===== */
+.record-tabs{display:flex;gap:0;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;margin-bottom:0;box-shadow:var(--shadow-sm);}
+.record-tab{flex:1;padding:11px 16px;background:var(--bg-surface-2);border:none;border-right:1px solid var(--border);border-bottom:2px solid transparent;font-size:13px;font-weight:500;font-family:var(--font);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;white-space:nowrap;}
+.record-tab:last-child{border-right:none;}
+.record-tab:hover{background:var(--bg-surface);color:var(--text-primary);}
+.record-tab.active{background:var(--bg-surface);color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.record-tab-content{display:none;}
+.record-tab-content.active{display:flex;flex-direction:column;gap:14px;}
+
+/* ===== BLOQUES DEL EXPEDIENTE ===== */
+.record-block{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+.record-block-header{display:flex;align-items:center;gap:14px;padding:14px 20px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);}
+.record-block-icon{font-size:22px;flex-shrink:0;}
+.record-block-title{font-size:14px;font-weight:700;color:var(--text-primary);}
+.record-block-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--mono);}
+.record-block-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.diagnostico-block,
+.diagnostico-block .record-block-body,
+.diagnostico-card,
+.diagnostico-card .diagnostico-tipos,
+.diagnostico-card .form-group{
+    overflow: visible;
+}
+.diagnostico-card{position:relative;z-index:3;}
+
+/* ===== SECCIONES DENTRO DE BLOQUES ===== */
+.record-section-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.record-section-title{padding:9px 16px;background:var(--bg-surface-2);border-bottom:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.record-section-card textarea{width:100%;border:none;outline:none;padding:12px 16px;font-size:13px;font-family:var(--font);color:var(--text-primary);resize:vertical;min-height:80px;background:transparent;line-height:1.6;}
+.record-section-card textarea:disabled{background:var(--bg-surface-2);color:var(--text-secondary);cursor:not-allowed;}
+.record-section-card input[type="text"]:not(.apnp-detail):not(.med-input):not(.sistema-item input):not(.segmento-item input){width:calc(100% - 32px);margin:0 16px 12px;border:1px solid var(--border-medium);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;}
+.record-section-card input[type="text"]:focus,.record-section-card input[type="number"]:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== APNP — GRID ===== */
+.apnp-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:14px 16px 0;border-bottom:1px solid var(--border);}
+.apnp-item{padding:10px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.apnp-item:nth-child(even){border-right:none;}
+.apnp-item:nth-last-child(-n+2){border-bottom:none;}
+.apnp-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px;}
+.apnp-radios{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px;}
+
+/* Mayúsculas para campos de enfermedades */
+#pp-deg,#pp-neo,#pp-ets{text-transform:uppercase;}
+.apnp-radios label{display:flex;align-items:center;gap:4px;font-size:12.5px;color:var(--text-secondary);cursor:pointer;}
+.apnp-radios input[type="radio"]{accent-color:var(--accent);cursor:pointer;}
+.apnp-detail{width:100%;border:1px solid var(--border);border-radius:var(--radius);padding:6px 8px;font-size:12px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;background:var(--bg-surface-2);}
+.apnp-detail:focus{border-color:var(--brand);background:var(--bg-surface);}
+
+/* ===== APP — GRID ===== */
+.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.app-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.app-grid textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.app-grid textarea:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== PADECIMIENTO ACTUAL ===== */
+.padecimiento-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.padecimiento-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.padecimiento-grid .full-col{grid-column:1/-1;}
+.padecimiento-grid textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.padecimiento-grid textarea:focus{border-color:var(--brand);}
+
+/* ===== REVISIÓN POR SISTEMAS ===== */
+.sistemas-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.sistema-item{display:flex;flex-direction:column;gap:4px;}
+.sistema-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px;}
+.sistema-item input{border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12.5px;font-family:var(--font);outline:none;color:var(--text-primary);transition:border-color .15s;}
+.sistema-item input:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.1);}
+
+/* ===== SIGNOS VITALES ===== */
+.vitales-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px 16px;}
+.vitales-grid.compact{grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 14px;}
+.vital-item{display:flex;flex-direction:column;gap:5px;}
+.vital-item label{font-size:11px;font-weight:600;color:var(--text-secondary);display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.3px;}
+.vital-unit{font-size:10px;color:var(--text-muted);font-weight:400;text-transform:none;}
+.vital-item input{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13.5px;font-family:var(--mono);font-weight:500;color:var(--text-primary);outline:none;text-align:center;transition:border-color .15s,box-shadow .15s;}
+.vital-item input:focus{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.12);}
+.vital-item input:disabled{background:var(--bg-surface-2);cursor:not-allowed;}
+.imc-field{background:var(--bg-surface-2)!important;font-size:11.5px!important;font-weight:600;color:var(--accent)!important;}
+
+/* ===== EXPLORACIÓN POR SEGMENTOS ===== */
+.exploracion-segmentos{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.segmento-item{display:flex;flex-direction:column;gap:5px;}
+.segmento-item.full-col{grid-column:1/-1;}
+.segmento-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px;}
+.segmento-item textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.segmento-item textarea:focus{border-color:var(--brand);}
+
+/* ===== DIAGNÓSTICO ===== */
+.diagnostico-tipos{display:flex;flex-direction:column;gap:12px;padding:14px 16px;}
+.diagnostico-tipos .form-group{display:flex;flex-direction:column;gap:6px;}
+.diagnostico-tipos textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);resize:vertical;min-height:70px;outline:none;color:var(--text-primary);transition:border-color .15s;}
+.diagnostico-tipos textarea:focus{border-color:var(--brand);}
+
+/* ===== PRONÓSTICO ===== */
+.pronostico-wrap{padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.pronostico-radios,.destino-radios{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+.pronostico-opt{display:flex;align-items:center;gap:6px;padding:6px 14px;border:1.5px solid var(--border-medium);border-radius:20px;font-size:12.5px;color:var(--text-secondary);cursor:pointer;transition:all .12s;font-family:var(--font);}
+.pronostico-opt:hover{border-color:var(--accent);color:var(--accent);}
+.pronostico-opt input[type="radio"]{display:none;}
+.pronostico-opt.is-selected{border-color:var(--accent);background:var(--brand-light);color:var(--accent);font-weight:600;}
+.opt-bueno.is-selected{border-color:#16a34a;background:#f0fdf4;color:#15803d;}
+.opt-reservado.is-selected{border-color:#d97706;background:#fffbeb;color:#b45309;}
+.opt-grave.is-selected{border-color:#ea580c;background:#fff7ed;color:#c2410c;}
+.opt-critico.is-selected{border-color:#dc2626;background:#fef2f2;color:#b91c1c;}
+.pronostico-wrap textarea{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);resize:vertical;outline:none;color:var(--text-primary);}
+.pronostico-wrap textarea:focus{border-color:var(--brand);}
+
+/* ===== MEDICAMENTOS ===== */
+.btn-add-med{margin-left:auto;background:#f0fdf4;border:1px solid #86efac;color:#15803d;border-radius:var(--radius);padding:5px 11px;font-size:11.5px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap;}
+.btn-add-med:hover{background:#dcfce7;border-color:#4ade80;}
+.medicamentos-list{padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+.med-empty{font-size:12.5px;color:var(--text-muted);font-style:italic;text-align:center;padding:16px 0;}
+.med-row{display:flex;align-items:flex-start;gap:10px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.med-num{width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:6px;}
+.med-fields{flex:1;display:grid;grid-template-columns:1fr .8fr .5fr .4fr .5fr .5fr;gap:6px;}
+.med-input{border:1px solid var(--border);border-radius:var(--radius);padding:7px 8px;font-size:12.5px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;width:100%;}
+.med-input:focus{border-color:var(--brand);}
+.med-delete{background:transparent;border:1px solid transparent;border-radius:var(--radius);padding:6px;cursor:pointer;color:var(--text-muted);transition:all .12s;flex-shrink:0;margin-top:2px;}
+.med-delete:hover{color:var(--error);background:#fef2f2;border-color:#fca5a5;}
+.tratamiento-libre-wrap{}
+.tratamiento-libre-wrap textarea{min-height:70px;}
+
+/* ===== INDICACIONES ===== */
+.indicaciones-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;}
+.indicaciones-grid .form-group{display:flex;flex-direction:column;gap:5px;}
+.indicaciones-grid input{border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-size:12.5px;font-family:var(--font);color:var(--text-primary);outline:none;transition:border-color .15s;}
+.indicaciones-grid input:focus{border-color:var(--brand);}
+
+/* ===== TIPO DE NOTA BADGE ===== */
+.tipo-nota-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600;background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;margin-bottom:2px;}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 /* ===== FORM-GROUPS WITHIN RECORD BLOCKS ===== */
 .form-group {
     position: relative;
@@ -547,6 +691,7 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 .form-group .apnp-label{font-size:11.5px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
 
 /* ===== CIE-10 AUTOCOMPLETADO ===== */
+<<<<<<< HEAD
 .autocomplete-wrapper { position: relative; }
 .autocomplete-hint {
     position: absolute;
@@ -567,6 +712,14 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
     border: 1px solid #ccc;
     border-top: none;
     border-radius: 0 0 4px 4px;
+=======
+.suggestions-box {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin: 0;
+>>>>>>> ExperimentalBranch_LanderLopez
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     display: none;
@@ -580,6 +733,13 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
     cursor: pointer;
     font-size: 13px;
     color: #333;
+<<<<<<< HEAD
+=======
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+>>>>>>> ExperimentalBranch_LanderLopez
     transition: background-color 0.1s ease;
     border-bottom: 1px solid #f0f0f0;
     display: flex;
@@ -661,12 +821,133 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
     opacity: 0.7;
     transition: opacity 0.2s;
 }
+.pfc-tag span:hover{opacity:1;}
 
+<<<<<<< HEAD
+=======
+/* ===== AUTOCOMPLETADO DE DIAGNÓSTICOS ===== */
+.diagnostico-suggestions {
+    position: fixed;
+    margin-top: 0;
+    min-width: 320px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 20000;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.diagnostico-suggestions::-webkit-scrollbar {
+    width: 8px;
+}
+
+.diagnostico-suggestions::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.diagnostico-suggestions::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 4px;
+}
+
+.diagnostico-suggestions::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+.suggestion-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background-color: var(--brand-light);
+}
+
+.suggestion-item.highlighted {
+    background-color: var(--brand-light);
+}
+
+.suggestion-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.suggestion-nombre {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.suggestion-code {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.suggestion-chapter {
+    font-size: 11px;
+    color: var(--brand);
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 2px 6px;
+    background: var(--brand-light);
+    border-radius: 4px;
+}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 .pfc-tag span:hover {
     opacity: 1;
 }
 
+<<<<<<< HEAD
 /* ===== RESPONSIVE RECORD ===== */
+=======
+/* ===== RECEPCIÓN ROLE PILL ===== */
+.role-recepcion-pill{background:#0891b2;}
+
+/* ===== CONSULTORIO TAG ===== */
+.consultorio-tag{background:#f0fdf4;border:1px solid #86efac;color:#15803d;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;}
+
+/* ===== CONSULTORIOS SECTION ===== */
+.consultorios-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;margin-top:0;}
+.consultorio-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;}
+.consultorio-card-header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:1px solid var(--border);}
+.consultorio-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--brand),var(--accent));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+.consultorio-info{flex:1;}
+.consultorio-nombre{font-size:14px;font-weight:700;color:var(--text-primary);}
+.consultorio-desc{font-size:12px;color:var(--text-muted);}
+.consultorio-section-label{display:flex;align-items:center;gap:7px;padding:10px 16px 6px;font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;border-top:1px solid var(--border);}
+.consultorio-assign-area{padding:8px 16px 12px;display:flex;flex-direction:column;gap:6px;}
+.consultorio-empty{font-size:12px;color:var(--text-muted);font-style:italic;padding:4px 0;}
+.consultorio-assignee{display:flex;align-items:center;gap:8px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:12.5px;color:var(--text-primary);}
+.consultorio-assignee-avatar{width:24px;height:24px;background:linear-gradient(135deg,var(--brand),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.consultorio-assignee-avatar.pat-av{background:linear-gradient(135deg,#6d28d9,#7c3aed);}
+.consultorio-assignee span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.assignee-remove{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 2px;line-height:1;transition:color .12s;flex-shrink:0;}
+.assignee-remove:hover{color:var(--error);}
+.consultorio-select{width:100%;border:1px dashed var(--border-medium);border-radius:var(--radius);padding:6px 10px;font-size:12.5px;font-family:var(--font);color:var(--text-secondary);background:var(--bg-surface);outline:none;cursor:pointer;transition:border-color .15s;}
+.consultorio-select:focus{border-color:var(--brand);border-style:solid;color:var(--text-primary);}
+
+/* ===== NURSING NOTE ENF_ FIELDS ===== */
+#enf_sv_habitus{width:calc(100% - 20px);margin:0 10px 0 0;border:1px solid var(--border-medium);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--text-primary);outline:none;}
+#enf_sv_habitus:focus{border-color:var(--brand);}
+
+@media(max-width:900px){.consultorios-grid{grid-template-columns:1fr;}}
+>>>>>>> ExperimentalBranch_LanderLopez
 @media(max-width:1100px){
     .vitales-grid{grid-template-columns:repeat(3,1fr);}
     .vitales-grid.compact{grid-template-columns:repeat(4,1fr);}

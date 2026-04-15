@@ -1,4 +1,15 @@
 {
+<<<<<<< HEAD
+=======
+  "name": "clin-data",
+  "version": "1.0.0",
+  "private": true,
+  "main": "Server.js",
+  "scripts": {
+    "start": "node Server.js",
+    "dev": "node Server.js"
+  },
+>>>>>>> ExperimentalBranch_LanderLopez
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",

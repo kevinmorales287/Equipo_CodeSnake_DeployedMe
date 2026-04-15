@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // =============================================
+=======
+﻿// =============================================
+>>>>>>> ExperimentalBranch_LanderLopez
 //  ClinData — script.js  v3
 //  Sistema de Expediente Clínico Electrónico
 //  NOM-004-SSA3-2012
@@ -8,16 +12,27 @@
 const ROLE_PERMISSIONS = {
     medico: {
         canViewPatients: true,
+<<<<<<< HEAD
         canRegisterPatients: true,
         canWriteMedicalNotes: true,
+=======
+        canRegisterPatients: false,
+        canWriteMedicalNotes: true,
+        canWriteNursingNotes: false,
+>>>>>>> ExperimentalBranch_LanderLopez
         canUseTriage: true,
         canViewQueue: true,
         canAddToQueue: false,
         canManageUsers: false,
+<<<<<<< HEAD
+=======
+        canManageConsultorios: false,
+>>>>>>> ExperimentalBranch_LanderLopez
         sidebarLabel: "Médico/a"
     },
     enfermero: {
         canViewPatients: true,
+<<<<<<< HEAD
         canRegisterPatients: true,
         canWriteMedicalNotes: false,
         canUseTriage: true,
@@ -25,19 +40,51 @@ const ROLE_PERMISSIONS = {
         canAddToQueue: true,
         canManageUsers: false,
         sidebarLabel: "Enfermero/a"
+=======
+        canRegisterPatients: false,
+        canWriteMedicalNotes: false,
+        canWriteNursingNotes: true,
+        canUseTriage: true,
+        canViewQueue: true,
+        canAddToQueue: false,
+        canManageUsers: false,
+        canManageConsultorios: false,
+        sidebarLabel: "Enfermero/a"
+    },
+    recepcion: {
+        canViewPatients: true,
+        canRegisterPatients: true,
+        canWriteMedicalNotes: false,
+        canWriteNursingNotes: false,
+        canUseTriage: false,
+        canViewQueue: true,
+        canAddToQueue: true,
+        canManageUsers: false,
+        canManageConsultorios: false,
+        sidebarLabel: "Recepción"
+>>>>>>> ExperimentalBranch_LanderLopez
     },
     admin: {
         canViewPatients: false,
         canRegisterPatients: false,
         canWriteMedicalNotes: false,
+<<<<<<< HEAD
+=======
+        canWriteNursingNotes: false,
+>>>>>>> ExperimentalBranch_LanderLopez
         canUseTriage: false,
         canViewQueue: false,
         canAddToQueue: false,
         canManageUsers: true,
+<<<<<<< HEAD
+=======
+        canManageConsultorios: true,
+>>>>>>> ExperimentalBranch_LanderLopez
         sidebarLabel: "Administrador"
     }
 };
 
+<<<<<<< HEAD
 function can(permission) {
     if (!currentUser) return false;
     return ROLE_PERMISSIONS[currentUser.role]?.[permission] === true;
@@ -48,6 +95,16 @@ const DEFAULT_USERS = [
     { id: 1, username: "dr.garcia",  password: "Medico#2026",     role: "medico",    displayName: "Dr. García" },
     { id: 2, username: "enf.lopez",  password: "Enfermero#2026",  role: "enfermero", displayName: "Enf. López" },
     { id: 3, username: "admin.sys",  password: "Admin#2026",      role: "admin",     displayName: "Administrador" }
+=======
+function can(permission) { return requireClinDataModule("auth").can(permission); }
+
+// ===== USUARIOS POR DEFECTO =====
+const DEFAULT_USERS = [
+    { id: 1, username: "dr.garcia",  password: "Medico#2026",     role: "medico",    displayName: "Dr. García",    consultorio: "Consultorio 1" },
+    { id: 2, username: "enf.lopez",  password: "Enfermero#2026",  role: "enfermero", displayName: "Enf. López",    consultorio: "" },
+    { id: 3, username: "recep.ruiz", password: "Recepcion#2026",  role: "recepcion", displayName: "Recep. Ruiz",   consultorio: "" },
+    { id: 4, username: "admin.sys",  password: "Admin#2026",      role: "admin",     displayName: "Administrador", consultorio: "" }
+>>>>>>> ExperimentalBranch_LanderLopez
 ];
 
 // ===== ESTADO GLOBAL =====
@@ -58,6 +115,39 @@ let autoSaveTimer       = null;
 let addToQueuePatientId = null;
 let currentTab          = "historia";
 let selectedDiagnosticos = [];  // Array para diagnósticos CIE-10 seleccionados
+<<<<<<< HEAD
+=======
+let previousSection     = null; // Sección desde la que se navegó a medicalRecord
+
+window.ClinDataApp = window.ClinDataApp || {};
+Object.defineProperties(window.ClinDataApp, {
+    patients: { get: () => patients },
+    consultations: { get: () => consultations },
+    triageQueue: { get: () => triageQueue },
+    consultQueue: { get: () => consultQueue },
+    systemUsers: { get: () => systemUsers },
+    rolePermissions: { get: () => ROLE_PERMISSIONS },
+    defaultUsers: { get: () => DEFAULT_USERS },
+    currentUser: { get: () => currentUser, set: (value) => { currentUser = value; } },
+    currentPatient: { get: () => currentPatient, set: (value) => { currentPatient = value; } },
+    currentConsultation: { get: () => currentConsultation, set: (value) => { currentConsultation = value; } },
+    autoSaveTimer: { get: () => autoSaveTimer, set: (value) => { autoSaveTimer = value; } },
+    addToQueuePatientId: { get: () => addToQueuePatientId, set: (value) => { addToQueuePatientId = value; } },
+    currentTab: { get: () => currentTab, set: (value) => { currentTab = value; } },
+    consultorios: { get: () => consultorios },
+    selectedDiagnosticos: { get: () => selectedDiagnosticos, set: (value) => { selectedDiagnosticos = value; } },
+    previousSection: { get: () => previousSection, set: (value) => { previousSection = value; } }
+});
+
+const CONSULT_ANTECEDENT_FIELDS = [
+    "ahf","hf-madre","hf-padre","hf-abp","hf-abpa","hf-abm","hf-abma","hf-hijos","hf-herm","hf-otros",
+    "pnp-ocu","pnp-esc","pnp-ec","pnp-emb","pnp-mac","pnp-vac","apnp_otros",
+    "tabaquismo_detalle","alcoholismo_detalle","toxicomanias_detalle","actfisica_detalle",
+    "app_enfermedades","app_cirugias","app_traumatismos","app_alergias","app_transfusiones","app_medicamentos",
+    "pp-deg","pp-neo","pp-ets"
+];
+const CONSULT_ANTECEDENT_RADIOS = ["tabaquismo","alcoholismo","toxicomanias","actfisica"];
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // ===== DATOS PERSISTENTES =====
 
@@ -66,16 +156,76 @@ let consultations = JSON.parse(localStorage.getItem("cd_consults"))  || [];
 let triageQueue   = JSON.parse(localStorage.getItem("cd_triage"))    || [];
 let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
 let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
+<<<<<<< HEAD
+=======
+const HOSPITAL_CODE = "HGR";
+
+function requireClinDataModule(name) {
+    const module = window.ClinDataModules?.[name];
+    if (!module) throw new Error(`Módulo ClinData no disponible: ${name}`);
+    return module;
+}
+>>>>>>> ExperimentalBranch_LanderLopez
 
 function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
 function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
 function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
 function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
 function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
+<<<<<<< HEAD
+=======
+
+function getRecordYear(date = new Date()) { return requireClinDataModule("patients").getRecordYear(date); }
+function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) { return requireClinDataModule("patients").getLastExpedienteSequence(hospitalCode, year); }
+function generatePatientExpediente(hospitalCode = HOSPITAL_CODE, date = new Date()) { return requireClinDataModule("patients").generatePatientExpediente(hospitalCode, date); }
+function updateNewPatientExpedientePreview() { return requireClinDataModule("patients").updateNewPatientExpedientePreview(); }
+
+function formatMedicationSummary(med = {}, format = "html") {
+    const parts = [
+        med.nombre || "",
+        med.concentracion ? `(${med.concentracion})` : "",
+        med.dosis || "",
+        med.via || "",
+        med.frecuencia || "",
+        med.duracion ? `por ${med.duracion}` : ""
+    ].filter(Boolean);
+    const text = parts.join(" - ");
+    return format === "html" ? escapeHtml(text) : text;
+}
+
+function getMedicationSummary(medicamentos = [], format = "html") {
+    if (!Array.isArray(medicamentos) || medicamentos.length === 0) return "";
+    const items = medicamentos
+        .map(med => formatMedicationSummary(med, format))
+        .filter(Boolean);
+
+    if (!items.length) return "";
+    if (format === "html") return items.map(item => `<div>${item}</div>`).join("");
+    return items.join("\n");
+}
+
+function copyAntecedentsFromPreviousConsultation(consult) {
+    if (!consult || !currentPatient) return;
+    const prev = consultations
+        .filter(c => c.patientId === currentPatient.id && c.id !== consult.id)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+    if (!prev) return;
+
+    CONSULT_ANTECEDENT_FIELDS.forEach(field => {
+        consult[field] = prev[field] || "";
+    });
+
+    CONSULT_ANTECEDENT_RADIOS.forEach(name => {
+        consult["radio_" + name] = prev["radio_" + name] || (name === "actfisica" ? "Sedentario" : "Negativo");
+    });
+}
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  AUTH
 // =============================================
+<<<<<<< HEAD
 function handleLogin() {
     const u = document.getElementById("loginUser").value.trim();
     const p = document.getElementById("loginPass").value;
@@ -127,6 +277,34 @@ function togglePassword() {
     i.type = i.type === "password" ? "text" : "password";
 }
 
+=======
+function handleLogin() { return requireClinDataModule("auth").handleLogin(); }
+function bootApp() { return requireClinDataModule("auth").bootApp(); }
+function handleLogout() { return requireClinDataModule("auth").handleLogout(); }
+function togglePassword() { return requireClinDataModule("auth").togglePassword(); }
+
+function setupSelectableRadioCards() {
+    const radioCards = document.querySelectorAll(".pronostico-opt");
+    if (!radioCards.length) return;
+
+    const syncRadioCards = () => {
+        radioCards.forEach(card => {
+            const input = card.querySelector('input[type="radio"]');
+            card.classList.toggle("is-selected", Boolean(input?.checked));
+        });
+    };
+
+    radioCards.forEach(card => {
+        const input = card.querySelector('input[type="radio"]');
+        if (!input || input.dataset.cardBound === "true") return;
+        input.dataset.cardBound = "true";
+        input.addEventListener("change", syncRadioCards);
+    });
+
+    syncRadioCards();
+}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 window.addEventListener("DOMContentLoaded", () => {
     const saved = sessionStorage.getItem("cd_session");
     if (saved) {
@@ -139,6 +317,11 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loginUser").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("loginPass").focus(); });
     const s = document.getElementById("search");
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
+<<<<<<< HEAD
+=======
+    updateNewPatientExpedientePreview();
+    setupSelectableRadioCards();
+>>>>>>> ExperimentalBranch_LanderLopez
 });
 
 // =============================================
@@ -161,9 +344,16 @@ window.addEventListener("hashchange", () => {
 
     if (!section) {
         // Hash desconocido → home del rol
+<<<<<<< HEAD
         const homeSection = currentUser.role === "admin"  ? "admin"
                           : currentUser.role === "medico" ? "consultQueue"
                           : "patients";
+=======
+        const homeSection = currentUser.role === "admin"      ? "admin"
+                          : currentUser.role === "medico"     ? "consultQueue"
+                          : currentUser.role === "recepcion"  ? "patients"
+                          : "triage";
+>>>>>>> ExperimentalBranch_LanderLopez
         _activateSection(homeSection);
         return;
     }
@@ -180,6 +370,7 @@ window.addEventListener("hashchange", () => {
 // =============================================
 //  SIDEBAR DINÁMICA
 // =============================================
+<<<<<<< HEAD
 function renderSidebar() {
     const nav = document.getElementById("sidebarNav");
     if (!nav) return;
@@ -206,6 +397,9 @@ function renderSidebar() {
             ${item.label}
         </button>`).join("");
 }
+=======
+function renderSidebar() { return requireClinDataModule("auth").renderSidebar(); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  NAVEGACIÓN
@@ -221,10 +415,18 @@ const HASH_MAP = {
     newPatient:          "#/patients/new",
     consultQueue:        "#/queue",
     consultationHistory: "#/patient/history",
+<<<<<<< HEAD
+=======
+    expediente:          "#/patient/expediente",  // NUEVO: ruta para vista de expediente por autor (NOM-004-SSA3-2012)
+>>>>>>> ExperimentalBranch_LanderLopez
     medicalRecord:       "#/patient/record",
     triage:              "#/triage",
     triageList:          "#/triage/queue",
     admin:               "#/admin",
+<<<<<<< HEAD
+=======
+    consultorios:        "#/consultorios",
+>>>>>>> ExperimentalBranch_LanderLopez
 };
 
 const HASH_TO_SECTION = {
@@ -232,10 +434,18 @@ const HASH_TO_SECTION = {
     "#/patients/new":    "newPatient",
     "#/queue":           "consultQueue",
     "#/patient/history": "consultationHistory",
+<<<<<<< HEAD
+=======
+    "#/patient/expediente": "expediente",  // NUEVO: hash para vista de expediente por autor (NOM-004-SSA3-2012)
+>>>>>>> ExperimentalBranch_LanderLopez
     "#/patient/record":  "medicalRecord",
     "#/triage":          "triage",
     "#/triage/queue":    "triageList",
     "#/admin":           "admin",
+<<<<<<< HEAD
+=======
+    "#/consultorios":    "consultorios",
+>>>>>>> ExperimentalBranch_LanderLopez
 };
 
 const ROUTE_TITLE = {
@@ -243,10 +453,18 @@ const ROUTE_TITLE = {
     newPatient:          "Nuevo Paciente · ClinData",
     consultQueue:        "Fila de Consulta · ClinData",
     consultationHistory: "Expediente · ClinData",
+<<<<<<< HEAD
+=======
+    expediente: "Expediente · ClinData",  // NUEVO: título para vista de expediente por autor (NOM-004-SSA3-2012)
+>>>>>>> ExperimentalBranch_LanderLopez
     medicalRecord:       "Consulta · ClinData",
     triage:              "Triage · ClinData",
     triageList:          "Fila de Urgencias · ClinData",
     admin:               "Administración · ClinData",
+<<<<<<< HEAD
+=======
+    consultorios:        "Consultorios · ClinData",
+>>>>>>> ExperimentalBranch_LanderLopez
 };
 
 // navigate() — punto de entrada público.
@@ -272,28 +490,50 @@ function navigate(section) {
     _activateSection(section);
 }
 
+<<<<<<< HEAD
 // _activateSection() — lógica visual pura, sin tocar el hash.
 // La llaman navigate() y el listener hashchange.
+=======
+>>>>>>> ExperimentalBranch_LanderLopez
 function _activateSection(section) {
     const map = {
         patients:            "patientsSection",
         newPatient:          "newPatientSection",
         consultQueue:        "consultQueueSection",
+<<<<<<< HEAD
         consultationHistory: "consultationHistorySection",
         medicalRecord:       "medicalRecordSection",
         triage:              "triageSection",
         triageList:          "triageListSection",
         admin:               "adminSection"
+=======
+        consultationHistory: "expedienteSection",
+        expediente: "expedienteSection",  // NUEVO: agregar sección para expediente por autor (NOM-004-SSA3-2012)
+        medicalRecord:       "medicalRecordSection",
+        triage:              "triageSection",
+        triageList:          "triageListSection",
+        admin:               "adminSection",
+        consultorios:        "consultoriosSection"
+>>>>>>> ExperimentalBranch_LanderLopez
     };
     const navMap = {
         patients:            "nav-patients",
         newPatient:          "nav-newPatient",
         consultQueue:        "nav-consultQueue",
         consultationHistory: "nav-patients",
+<<<<<<< HEAD
         medicalRecord:       "nav-patients",
         triage:              "nav-triage",
         triageList:          "nav-triageList",
         admin:               "nav-admin"
+=======
+        expediente: "nav-patients",  // NUEVO: agregar ruta de navegación para expediente en el sidebar (NOM-004-SSA3-2012)
+        medicalRecord:       "nav-patients",
+        triage:              "nav-triage",
+        triageList:          "nav-triageList",
+        admin:               "nav-admin",
+        consultorios:        "nav-consultorios"
+>>>>>>> ExperimentalBranch_LanderLopez
     };
 
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
@@ -308,14 +548,34 @@ function _activateSection(section) {
     window.scrollTo({ top: 0, behavior: "instant" });
 
     if (section === "patients")            renderPatients();
+<<<<<<< HEAD
     if (section === "consultQueue")        renderConsultQueue();
     if (section === "consultationHistory") renderConsultationHistory();
     if (section === "triageList")          renderTriageList();
     if (section === "admin")               renderUserTable();
+=======
+    if (section === "newPatient")          renderNewPatientConsultorioSelect();
+    if (section === "consultQueue")        renderConsultQueue();
+    if (section === "consultationHistory") renderExpediente();
+    if (section === "expediente") renderExpediente();
+    if (section === "triageList")          renderTriageList();
+    if (section === "admin")               renderUserTable();
+    if (section === "consultorios")        renderConsultorios();
+>>>>>>> ExperimentalBranch_LanderLopez
     if (section === "medicalRecord")       renderMedicalRecord();
     if (section === "triage" && typeof abrevInit === "function") abrevInit();
 }
 
+<<<<<<< HEAD
+=======
+// Regresa desde medicalRecord a la sección de origen (expediente o historial clásico)
+function goBackFromRecord() {
+    const dest = previousSection || 'expediente';
+    previousSection = null;
+    navigate(dest);
+}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 // Versión segura de collectRecordFields (no lanza si el DOM no está listo)
 function collectRecordFieldsSafe() {
     try { collectRecordFields(); saveConsultations(); } catch(e) { /* silencioso */ }
@@ -341,6 +601,7 @@ function switchRecordTab(tabName, btn) {
 // =============================================
 //  PACIENTES
 // =============================================
+<<<<<<< HEAD
 function submitPatient() {
     const name   = document.getElementById("name").value.trim();
     const age    = document.getElementById("age").value;
@@ -562,18 +823,34 @@ function dismissFromConsultQueue(queueId) {
     const q = consultQueue.find(x => x.id === queueId);
     if (q) { q.status = "dismissed"; saveConsultQueue(); renderConsultQueue(); }
 }
+=======
+function submitPatient() { return requireClinDataModule("patients").submitPatient(); }
+function renderPatients(customList = null) { return requireClinDataModule("patients").renderPatients(customList); }
+function searchPatients(query) { return requireClinDataModule("patients").searchPatients(query); }
+
+// =============================================
+//  FILA DE CONSULTA
+// =============================================
+function addPatientToQueue(patientId, reason, isNew = false) { return requireClinDataModule("queue").addPatientToQueue(patientId, reason, isNew); }
+function openAddToQueueModal(patientId) { return requireClinDataModule("queue").openAddToQueueModal(patientId); }
+function confirmAddToQueue() { return requireClinDataModule("queue").confirmAddToQueue(); }
+function renderConsultQueue() { return requireClinDataModule("queue").renderConsultQueue(); }
+function attendFromQueue(queueId) { return requireClinDataModule("queue").attendFromQueue(queueId); }
+function dismissFromConsultQueue(queueId) { return requireClinDataModule("queue").dismissFromConsultQueue(queueId); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  HISTORIAL DE CONSULTAS
 // =============================================
 function openPatientRecord(patientId) {
     currentPatient = patients.find(p => p.id === patientId);
-    navigate("consultationHistory");
+    navigate('expediente');
 }
 
-function renderConsultationHistory() {
-    if (!currentPatient) return;
+function renderConsultationHistory() { return requireClinDataModule("patients").renderConsultationHistory(); }
+function renderPatientFullCard() { return requireClinDataModule("patients").renderPatientFullCard(); }
 
+<<<<<<< HEAD
     document.getElementById("historyPatientName").textContent = currentPatient.name;
     document.getElementById("historyPatientInfo").textContent = `${currentPatient.age} años · ${currentPatient.sex}`;
 
@@ -764,6 +1041,12 @@ function openConsultation(consultId) {
     navigate("medicalRecord");
     renderMedicalRecord();
 }
+=======
+function createEmptyConsultation(patientId, overrides = {}) { return requireClinDataModule("consultation").createEmptyConsultation(patientId, overrides); }
+function createNewConsultation() { return requireClinDataModule("consultation").createNewConsultation(); }
+
+function openConsultation(consultId) { return requireClinDataModule("consultation").openConsultation(consultId); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  EXPEDIENTE / CONSULTA  (NOM-004-SSA3-2012)
@@ -776,21 +1059,42 @@ function renderMedicalRecord() {
 
     // Triage banner
     const banner = document.getElementById("triageAlertBanner");
+    let vitals = {};
     if (currentConsultation.triageLevel && currentConsultation.triageData) {
         const td = currentConsultation.triageData;
+        vitals = td.vitals || td;
         banner.className = `triage-alert-banner triage-banner-${td.color}`;
         banner.classList.remove("hidden");
+<<<<<<< HEAD
+=======
+        banner.setAttribute("data-fc", vitals.FC || "");
+        banner.setAttribute("data-triage-summary", `${vitals.FC || "-"}|${vitals.TAS || "-"}|${vitals.TAD || "-"}|${vitals.spo2 || "-"}`);
+>>>>>>> ExperimentalBranch_LanderLopez
         banner.innerHTML = `<strong>Triage:</strong> Nivel ${td.number} — ${td.label} &nbsp;·&nbsp; Motivo: ${td.reason||"—"} &nbsp;·&nbsp; FC: ${td.vitals?.FC||"—"} lpm &nbsp; TA: ${td.vitals?.TAS||"—"}/${td.vitals?.TAD||"—"} mmHg &nbsp; SpO₂: ${td.vitals?.spo2||"—"}%`;
     } else {
         banner.classList.add("hidden");
     }
+    if (!banner.classList.contains("hidden")) {
+        banner.innerHTML = `<strong>Triage:</strong> Nivel ${currentConsultation.triageData.number} - ${currentConsultation.triageData.label} &nbsp;|&nbsp; Motivo: ${currentConsultation.triageData.reason || "-"} &nbsp;|&nbsp; FC: ${vitals.FC || "-"} lpm &nbsp; TA: ${vitals.TAS || "-"}/${vitals.TAD || "-"} mmHg &nbsp; SpO2: ${vitals.spo2 || "-"}%`;
+    }
 
+<<<<<<< HEAD
+=======
+    if (!banner.classList.contains("hidden")) {
+        banner.innerHTML = `<strong>Triage:</strong> Nivel ${currentConsultation.triageData.number} - ${currentConsultation.triageData.label} &nbsp;|&nbsp; Motivo: ${currentConsultation.triageData.reason || "-"} &nbsp;|&nbsp; FC: ${vitals.FC || "-"} lpm &nbsp; TA: ${vitals.TAS || "-"}/${vitals.TAD || "-"} mmHg &nbsp; SpO2: ${vitals.spo2 || "-"}%`;
+    }
+
+>>>>>>> ExperimentalBranch_LanderLopez
     // Summary bar
     const allConsults = consultations.filter(c => c.patientId === currentPatient.id && c.id !== currentConsultation.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const summaryBar = document.getElementById("recordSummaryBar");
     if (allConsults.length > 0) {
         const prev = allConsults[0];
         const p = currentPatient;
+<<<<<<< HEAD
+=======
+        const prevMedsHtml = getMedicationSummary(prev.medicamentos, "html");
+>>>>>>> ExperimentalBranch_LanderLopez
         summaryBar.classList.remove("hidden");
         summaryBar.innerHTML = `
             <div class="rsb-label">Resumen del paciente</div>
@@ -800,6 +1104,10 @@ function renderMedicalRecord() {
                 ${p.alerts ? `<div class="rsb-item rsb-warn"><span>🚨</span><div><b>Alertas:</b> ${p.alerts}</div></div>` : ""}
                 ${prev.diagnostico ? `<div class="rsb-item"><span>🧾</span><div><b>Último Dx:</b> ${prev.diagnostico.substring(0,80)}</div></div>` : ""}
                 ${prev.tratamiento ? `<div class="rsb-item"><span>💊</span><div><b>Tratamiento previo:</b> ${prev.tratamiento.substring(0,80)}</div></div>` : ""}
+<<<<<<< HEAD
+=======
+                ${prevMedsHtml ? `<div class="rsb-item"><span>💉</span><div><b>Medicamentos previos:</b> ${prevMedsHtml}</div></div>` : ""}
+>>>>>>> ExperimentalBranch_LanderLopez
                 ${(prev.notaImportante||prev.evolucion_nota) ? `<div class="rsb-item rsb-nota"><span>📌</span><div><b>Nota anterior:</b> ${(prev.notaImportante||prev.evolucion_nota)}</div></div>` : ""}
             </div>`;
     } else {
@@ -827,11 +1135,19 @@ function renderMedicalRecord() {
 
     // IMC auto-calc
     setupIMCCalc();
+<<<<<<< HEAD
+=======
+    setupNursingIMCCalc();
+>>>>>>> ExperimentalBranch_LanderLopez
     setupRecordActions();
     renderAttachments();
     setupAttachments();
     setupAbbreviationDetection();
     renderMedicamentos();
+<<<<<<< HEAD
+=======
+    initDiagnosticoAutocomplete();
+>>>>>>> ExperimentalBranch_LanderLopez
     if (typeof abrevInit === "function") abrevInit();
     if (!isReadOnly) { startAutoSave(); setupAutoSaveEvents(); }
 }
@@ -903,6 +1219,46 @@ function fillRecordFields() {
     // IMC
     calcIMC();
     
+<<<<<<< HEAD
+=======
+    // Fill nursing fields
+    const nursingFields = [
+        "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+        "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+        "enf_sv_dolor","enf_sv_habitus",
+        "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+        "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+        "enf_observaciones","enf_procedimientos","enf_nota_imp"
+    ];
+    nursingFields.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) el.value = currentConsultation[f] || "";
+    });
+    const enfImcEl = document.getElementById("enf_sv_imc");
+    if (enfImcEl) enfImcEl.value = currentConsultation.enf_sv_imc || "";
+
+    // Show/hide tabs based on role
+    const tabHistoria = document.querySelector('.record-tab[data-tab="historia"]');
+    const tabEvolucion = document.querySelector('.record-tab[data-tab="evolucion"]');
+    const tabUrgencias = document.querySelector('.record-tab[data-tab="urgencias"]');
+    if (tabEvolucion) {
+        // Nursing tab always visible, but only enfermero navigates there by default
+        tabEvolucion.style.display = "";
+    }
+    if (tabHistoria && tabUrgencias) {
+        // Enfermero can still VIEW other tabs (read-only), but starts on enfermería
+        if (can("canWriteNursingNotes") && !can("canWriteMedicalNotes")) {
+            // Switch to nursing tab by default
+            document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
+            document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
+            const tab = document.getElementById("tab-evolucion");
+            if (tab) tab.classList.add("active");
+            if (tabEvolucion) tabEvolucion.classList.add("active");
+            currentTab = "evolucion";
+        }
+    }
+    
+>>>>>>> ExperimentalBranch_LanderLopez
     // Cargar diagnósticos CIE-10 seleccionados
     selectedDiagnosticos = (currentConsultation.diagnosticos_cie10 || []).map(d => ({...d}));
     renderDiagBadges();
@@ -949,6 +1305,25 @@ function setRecordReadOnly(isReadOnly) {
     document.querySelectorAll(".apnp-detail").forEach(el => el.disabled = isReadOnly);
     const addMedBtn = document.getElementById("btnAgregarMed");
     if (addMedBtn) addMedBtn.style.display = isReadOnly ? "none" : "";
+<<<<<<< HEAD
+=======
+
+    // Si es enfermero, habilitar sólo la pestaña de Nota de Enfermería
+    if (can("canWriteNursingNotes") && !can("canWriteMedicalNotes")) {
+        const nursingFields = [
+            "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+            "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+            "enf_sv_dolor","enf_sv_habitus","enf_sv_imc",
+            "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+            "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+            "enf_observaciones","enf_procedimientos","enf_nota_imp"
+        ];
+        nursingFields.forEach(f => {
+            const el = document.getElementById(f);
+            if (el) el.disabled = false;
+        });
+    }
+>>>>>>> ExperimentalBranch_LanderLopez
 }
 
 function setupIMCCalc() {
@@ -964,6 +1339,33 @@ function setupIMCCalc() {
     talla.addEventListener("input", handler);
 }
 
+<<<<<<< HEAD
+=======
+function setupNursingIMCCalc() {
+    const peso = document.getElementById("enf_sv_peso");
+    const talla = document.getElementById("enf_sv_talla");
+    if (!peso || !talla) return;
+    const handler = () => {
+        const p = parseFloat(peso.value);
+        const t = parseFloat(talla.value);
+        const imcEl = document.getElementById("enf_sv_imc");
+        if (!imcEl) return;
+        if (p && t) {
+            const tm = t / 100;
+            const imc = (p / (tm * tm)).toFixed(1);
+            let cat = imc < 18.5 ? "Bajo peso" : imc < 25 ? "Normal" : imc < 30 ? "Sobrepeso" : "Obesidad";
+            imcEl.value = `${imc} (${cat})`;
+        } else { imcEl.value = ""; }
+    };
+    peso.removeEventListener("input", peso._enfImcHandler);
+    talla.removeEventListener("input", talla._enfImcHandler);
+    peso._enfImcHandler = handler;
+    talla._enfImcHandler = handler;
+    peso.addEventListener("input", handler);
+    talla.addEventListener("input", handler);
+}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 function calcIMC() {
     const peso = parseFloat(document.getElementById("sv_peso")?.value);
     const talla = parseFloat(document.getElementById("sv_talla")?.value);
@@ -1053,7 +1455,11 @@ function setupRecordActions() {
 
     if (can("canWriteMedicalNotes")) {
         el.innerHTML = `
+<<<<<<< HEAD
             <button class="btn-secondary" onclick="navigate('consultationHistory')">Cancelar</button>
+=======
+            <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
+>>>>>>> ExperimentalBranch_LanderLopez
             <button class="btn-secondary" onclick="abrevIniciarExport('patient')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 PDF Paciente</button>
@@ -1066,6 +1472,15 @@ function setupRecordActions() {
             <button class="btn-primary" onclick="closeConsultation()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 Marcar como Atendido</button>`;
+<<<<<<< HEAD
+=======
+    } else if (can("canWriteNursingNotes")) {
+        el.innerHTML = `
+            <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
+            <button class="btn-primary" onclick="saveNursingNote()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+                Guardar Nota de Enfermería</button>`;
+>>>>>>> ExperimentalBranch_LanderLopez
     } else {
         el.innerHTML = `
             <button class="btn-secondary" onclick="abrevIniciarExport('patient')">
@@ -1127,7 +1542,39 @@ function closeConsultation() {
     }
     saveConsultations();
     showToast("Consulta cerrada — paciente marcado como atendido.", "success");
+<<<<<<< HEAD
     navigate("consultationHistory");
+=======
+    navigate("expediente");
+}
+
+function saveNursingNote() {
+    if (!currentConsultation) return;
+    const nursingFields = [
+        "enf_evolucion_clinica","enf_sv_tas","enf_sv_tad","enf_sv_fc","enf_sv_fr",
+        "enf_sv_temp","enf_sv_spo2","enf_sv_glucemia","enf_sv_peso","enf_sv_talla",
+        "enf_sv_dolor","enf_sv_habitus",
+        "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+        "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+        "enf_observaciones","enf_procedimientos","enf_nota_imp"
+    ];
+    nursingFields.forEach(f => {
+        const el = document.getElementById(f);
+        if (el) currentConsultation[f] = el.value;
+    });
+    // Calcular IMC de enfermería
+    const peso = parseFloat(document.getElementById("enf_sv_peso")?.value);
+    const talla = parseFloat(document.getElementById("enf_sv_talla")?.value);
+    if (peso && talla) {
+        const tallaM = talla / 100;
+        currentConsultation.enf_sv_imc = (peso / (tallaM * tallaM)).toFixed(1);
+    }
+    currentConsultation.nursingUpdatedBy = currentUser?.displayName;
+    currentConsultation.nursingUpdatedAt = new Date().toISOString();
+    saveConsultations();
+    showToast("Nota de enfermería guardada correctamente.", "success");
+    showAutoSave();
+>>>>>>> ExperimentalBranch_LanderLopez
 }
 
 // ===== AUTORÍA Y FIRMA =====
@@ -1181,7 +1628,10 @@ function saveCurrentRecord() {
 function setupAutoSaveEvents() {
     ALL_RECORD_FIELDS.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener("input", saveCurrentRecord);
+        if (!el) return;
+        el.removeEventListener("input", el._autosaveHandler);
+        el._autosaveHandler = saveCurrentRecord;
+        el.addEventListener("input", el._autosaveHandler);
     });
 }
 function showAutoSave() {
@@ -1191,6 +1641,7 @@ function showAutoSave() {
     el.textContent = "Guardando…";
     if (dot) dot.style.background = "#f59e0b";
     setTimeout(() => { el.textContent = "Guardado"; if (dot) dot.style.background = "#22c55e"; }, 800);
+<<<<<<< HEAD
 }
 
 // =============================================
@@ -1307,11 +1758,117 @@ function saveEditedPatient() {
     closeModal("editPatientModal");
     showToast("Datos del paciente actualizados.", "success");
     renderConsultationHistory();
+=======
+>>>>>>> ExperimentalBranch_LanderLopez
 }
+
+function renderMedicalRecord() { return requireClinDataModule("consultation").renderMedicalRecord(); }
+function fillRecordFields() { return requireClinDataModule("consultation").fillRecordFields(); }
+function setRecordReadOnly(isReadOnly) { return requireClinDataModule("consultation").setRecordReadOnly(isReadOnly); }
+function setupIMCCalc() { return requireClinDataModule("consultation").setupIMCCalc(); }
+function setupNursingIMCCalc() { return requireClinDataModule("consultation").setupNursingIMCCalc(); }
+function calcIMC() { return requireClinDataModule("consultation").calcIMC(); }
+function agregarMedicamento() { return requireClinDataModule("consultation").agregarMedicamento(); }
+function renderMedicamentos() { return requireClinDataModule("consultation").renderMedicamentos(); }
+function updateMedicamento(id, field, value) { return requireClinDataModule("consultation").updateMedicamento(id, field, value); }
+function eliminarMedicamento(id) { return requireClinDataModule("consultation").eliminarMedicamento(id); }
+function setupRecordActions() { return requireClinDataModule("consultation").setupRecordActions(); }
+function collectRecordFields() { return requireClinDataModule("consultation").collectRecordFields(); }
+function saveRecord() { return requireClinDataModule("consultation").saveRecord(); }
+function closeConsultation() { return requireClinDataModule("consultation").closeConsultation(); }
+function saveNursingNote() { return requireClinDataModule("consultation").saveNursingNote(); }
+function firmarExpediente() { return requireClinDataModule("consultation").firmarExpediente(); }
+function limpiarFirma() { return requireClinDataModule("consultation").limpiarFirma(); }
+function startAutoSave() { return requireClinDataModule("consultation").startAutoSave(); }
+function stopAutoSave() { return requireClinDataModule("consultation").stopAutoSave(); }
+function saveCurrentRecord() { return requireClinDataModule("consultation").saveCurrentRecord(); }
+function setupAutoSaveEvents() { return requireClinDataModule("consultation").setupAutoSaveEvents(); }
+function showAutoSave() { return requireClinDataModule("consultation").showAutoSave(); }
+
+// =============================================
+//  ARCHIVOS ADJUNTOS
+// =============================================
+function setupAttachments() {
+    const input = document.getElementById("attachInput");
+    const zone  = document.getElementById("attachDropZone");
+    if (!input || !zone || !can("canWriteMedicalNotes")) return;
+
+    input.onchange = e => handleFiles(e.target.files);
+    zone.ondragover = e => { e.preventDefault(); zone.classList.add("drag-over"); };
+    zone.ondragleave = () => zone.classList.remove("drag-over");
+    zone.ondrop = e => { e.preventDefault(); zone.classList.remove("drag-over"); handleFiles(e.dataTransfer.files); };
+}
+
+function handleFiles(files) {
+    if (!currentConsultation) return;
+    if (!currentConsultation.attachments) currentConsultation.attachments = [];
+    const maxSize = 20 * 1024 * 1024;
+
+    Array.from(files).forEach(file => {
+        if (file.size > maxSize) { showToast(`${file.name} supera el límite de 20 MB.`, "error"); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            currentConsultation.attachments.push({ id: Date.now() + Math.random(), name: file.name, type: file.type, size: file.size, data: e.target.result, uploadedAt: new Date().toISOString() });
+            saveConsultations();
+            renderAttachments();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderAttachments() {
+    const list = document.getElementById("attachmentsList");
+    if (!list || !currentConsultation) return;
+    const attachments = currentConsultation.attachments || [];
+
+    if (attachments.length === 0) { list.innerHTML = ""; return; }
+
+    list.innerHTML = attachments.map(a => {
+        const isImg = a.type?.startsWith("image/");
+        const isPdf = a.type === "application/pdf";
+        const icon = isImg ? "🖼" : isPdf ? "📄" : "📁";
+        const sizeMB = (a.size / 1024 / 1024).toFixed(2);
+        const canDelete = can("canWriteMedicalNotes");
+        return `<div class="attach-item">
+            <div class="attach-icon">${icon}</div>
+            <div class="attach-info">
+                <div class="attach-name">${a.name}</div>
+                <div class="attach-meta">${sizeMB} MB · ${formatDate(a.uploadedAt)}</div>
+            </div>
+            <div class="attach-actions">
+                ${isImg ? `<button class="attach-btn" onclick="previewAttachment('${a.id}')">Vista previa</button>` : ""}
+                <a class="attach-btn" href="${a.data}" download="${a.name}">Descargar</a>
+                ${canDelete ? `<button class="attach-btn attach-delete" onclick="deleteAttachment('${a.id}')">Eliminar</button>` : ""}
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function deleteAttachment(attachId) {
+    if (!currentConsultation) return;
+    currentConsultation.attachments = (currentConsultation.attachments||[]).filter(a => a.id != attachId);
+    saveConsultations();
+    renderAttachments();
+}
+
+function previewAttachment(attachId) {
+    const a = (currentConsultation?.attachments||[]).find(x => x.id == attachId);
+    if (!a) return;
+    const win = window.open("about:blank", "_blank");
+    if (!win) return;
+    win.document.write(`<img src="${a.data}" style="max-width:100%;height:auto;">`);
+}
+
+// =============================================
+//  EDITAR DATOS DEL PACIENTE
+// =============================================
+function openEditPatientModal() { return requireClinDataModule("patients").openEditPatientModal(); }
+function saveEditedPatient() { return requireClinDataModule("patients").saveEditedPatient(); }
 
 // =============================================
 //  TRIAGE
 // =============================================
+<<<<<<< HEAD
 function calcularTriage() {
     const name   = document.getElementById("triageName").value.trim();
     const age    = parseInt(document.getElementById("triageAge").value) || 0;
@@ -1319,18 +1876,41 @@ function calcularTriage() {
     const reason = document.getElementById("triageReason").value.trim();
     const notes  = document.getElementById("triageNotes").value.trim();
     if (!name || !age || !reason) { showToast("Completa nombre, edad y motivo.", "error"); return; }
+=======
+function calcularTriage() { return requireClinDataModule("triage").calcularTriage(); }
+function clearTriageForm() { return requireClinDataModule("triage").clearTriageForm(); }
+function renderTriageList() { return requireClinDataModule("triage").renderTriageList(); }
+function attendTriage(triageId) { return requireClinDataModule("triage").attendTriage(triageId); }
+function dismissTriage(triageId) { return requireClinDataModule("triage").dismissTriage(triageId); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
-    const vitals = {
-        FC:   parseInt(document.getElementById("triageFC").value)   || null,
-        FR:   parseInt(document.getElementById("triageFR").value)   || null,
-        TAS:  parseInt(document.getElementById("triageTAS").value)  || null,
-        TAD:  parseInt(document.getElementById("triageTAD").value)  || null,
-        temp: parseFloat(document.getElementById("triageTemp").value) || null,
-        spo2: parseInt(document.getElementById("triageSpo2").value) || null,
-        gluc: parseInt(document.getElementById("triageGluc").value) || null,
-        dolor: parseInt(document.getElementById("triageDolor").value) || 0
-    };
+// =============================================
+//  ADMIN DE USUARIOS
+// =============================================
+function renderUserTable() {
+    const container = document.getElementById("userTable");
+    if (!container) return;
+    const roleLabels = { medico:"Médico/a", enfermero:"Enfermero/a", recepcion:"Recepción", admin:"Administrador" };
+    const roleClasses = { medico:"role-medico-pill", enfermero:"role-enfermero-pill", recepcion:"role-recepcion-pill", admin:"role-admin-pill" };
+    container.innerHTML = `
+        <table class="user-table">
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Consultorio</th><th>Acciones</th></tr></thead>
+            <tbody>${systemUsers.map(u=>`
+                <tr>
+                    <td><code class="username-code">${u.username}</code></td>
+                    <td>${u.displayName}</td>
+                    <td><span class="role-pill ${roleClasses[u.role]||''}">${roleLabels[u.role]||u.role}</span></td>
+                    <td>${u.consultorio ? `<span class="consultorio-tag">${u.consultorio}</span>` : '<span style="color:var(--text-muted);font-size:12px">—</span>'}</td>
+                    <td class="table-actions">
+                        <button class="btn-table-edit" onclick="openEditUserModal(${u.id})">Editar</button>
+                        ${u.id!==currentUser?.id?`<button class="btn-table-delete" onclick="deleteUser(${u.id})">Eliminar</button>`:"<span class='self-label'>Tú</span>"}
+                    </td>
+                </tr>`).join("")}
+            </tbody>
+        </table>`;
+}
 
+<<<<<<< HEAD
     let score = 0; let flags = [];
     if (document.getElementById("sym_inconsciencia").checked) { score+=100; flags.push("Inconsciencia"); }
     if (document.getElementById("sym_paro").checked)          { score+=100; flags.push("Paro cardiorrespiratorio"); }
@@ -1468,6 +2048,82 @@ function dismissTriage(triageId) {
     const t=triageQueue.find(x=>x.id===triageId);
     if(t){t.active=false;saveTriageQueue();renderTriageList();}
 }
+=======
+function openAddUserModal() {
+    document.getElementById("modalTitle").textContent = "Nuevo Usuario";
+    document.getElementById("editUserId").value = "";
+    document.getElementById("modalDisplayName").value = "";
+    document.getElementById("modalUsername").value = "";
+    document.getElementById("modalPassword").value = "";
+    document.getElementById("modalRole").value = "";
+    const consultorioEl = document.getElementById("modalConsultorio");
+    if (consultorioEl) {
+        const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join("");
+        consultorioEl.innerHTML = `<option value="">Sin asignar</option>${opts}`;
+        consultorioEl.value = "";
+    }
+    document.getElementById("userModal").classList.remove("hidden");
+}
+
+function openEditUserModal(userId) {
+    const u = systemUsers.find(x=>x.id===userId);
+    if (!u) return;
+    document.getElementById("modalTitle").textContent = "Editar Usuario";
+    document.getElementById("editUserId").value = u.id;
+    document.getElementById("modalDisplayName").value = u.displayName;
+    document.getElementById("modalUsername").value = u.username;
+    document.getElementById("modalPassword").value = "";
+    document.getElementById("modalRole").value = u.role;
+    const consultorioEl = document.getElementById("modalConsultorio");
+    if (consultorioEl) {
+        // Populate options
+        const opts = consultorios.filter(c => c.activo).map(c => `<option value="${c.nombre}" ${u.consultorio === c.nombre ? 'selected' : ''}>${c.nombre}</option>`).join("");
+        consultorioEl.innerHTML = `<option value="">Sin asignar</option>${opts}`;
+        consultorioEl.value = u.consultorio || "";
+    }
+    document.getElementById("userModal").classList.remove("hidden");
+}
+
+function saveUserFromModal() {
+    const id = document.getElementById("editUserId").value;
+    const displayName = document.getElementById("modalDisplayName").value.trim();
+    const username    = document.getElementById("modalUsername").value.trim();
+    const password    = document.getElementById("modalPassword").value;
+    const role        = document.getElementById("modalRole").value;
+    const consultorio = document.getElementById("modalConsultorio")?.value || "";
+
+    if (!displayName||!username||!role) { showToast("Completa todos los campos obligatorios.", "error"); return; }
+    if (!id && !password) { showToast("La contraseña es obligatoria para un usuario nuevo.", "error"); return; }
+    if (password && password.length < 8) { showToast("La contraseña debe tener al menos 8 caracteres.", "error"); return; }
+
+    const duplicate = systemUsers.find(u => u.username===username && u.id != id);
+    if (duplicate) { showToast("Ese nombre de usuario ya existe.", "error"); return; }
+
+    if (id) {
+        const u = systemUsers.find(x=>x.id==id);
+        if (u) { u.displayName=displayName; u.username=username; u.role=role; u.consultorio=consultorio; if(password) u.password=password; }
+    } else {
+        systemUsers.push({ id: Date.now(), username, password, role, displayName, consultorio });
+    }
+    saveSystemUsers();
+    closeModal("userModal");
+    showToast("Usuario guardado.", "success");
+    renderUserTable();
+}
+
+function deleteUser(userId) {
+    if (userId === currentUser?.id) { showToast("No puedes eliminarte a ti mismo.", "error"); return; }
+    systemUsers = systemUsers.filter(u=>u.id!==userId);
+    saveSystemUsers();
+    renderUserTable();
+    showToast("Usuario eliminado.", "success");
+}
+
+// =============================================
+//  MODALES
+// =============================================
+function closeModal(id) { return requireClinDataModule("utils").closeModal(id); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  ADMIN DE USUARIOS
@@ -1597,6 +2253,7 @@ function getSuggestions(w){
 
 function applySuggestion(input,s){const w=input.value.split(" ");w.pop();w.push(s);input.value=w.join(" ")+" ";input.focus();}
 
+<<<<<<< HEAD
 function highlightText(text){
     return text.split(" ").map(token=>{
         const raw=token.trim();
@@ -1617,6 +2274,9 @@ function highlightText(text){
         return raw;
     }).join(" ");
 }
+=======
+function highlightText(text){ return requireClinDataModule("exporter").highlightText(text); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 function setupAbbreviationDetection() {
     const input=document.getElementById("diagnostico"), preview=document.getElementById("diagnosticoPreview");
@@ -1640,6 +2300,7 @@ function setupAbbreviationDetection() {
     input.addEventListener("input",input._abbrevHandler);
 }
 
+<<<<<<< HEAD
 function expandAbbreviations(text,mode="patient"){
     if(!text) return "";
     return text.split(" ").map(raw=>{
@@ -1649,9 +2310,51 @@ function expandAbbreviations(text,mode="patient"){
         }
         return raw;
     }).join(" ");
-}
+=======
+function expandAbbreviations(text,mode="patient"){ return requireClinDataModule("exporter").expandAbbreviations(text,mode); }
 
 // =============================================
+//  AUTOCOMPLETADO CIE-10 - DIAGNÓSTICOS
+// =============================================
+
+let cie10Cache = [];
+let cie10CacheLoaded = false;
+let currentAutocompleteTextarea = null;
+let currentDiagSuggestions = [];
+let diagAutocompleteClickBound = false;
+
+async function loadCie10Cache() { return requireClinDataModule("diagnostics").loadCie10Cache(); }
+function searchCie10Local(query) { return requireClinDataModule("diagnostics").searchCie10Local(query); }
+
+function escapeRegExp(text) { return requireClinDataModule("utils").escapeRegExp(text); }
+function escapeHtml(text) { return requireClinDataModule("utils").escapeHtml(text); }
+
+function ensureAutocompleteUI() { return requireClinDataModule("diagnostics").ensureAutocompleteUI(); }
+function getDiagSuggestionText(item) { return requireClinDataModule("diagnostics").getDiagSuggestionText(item); }
+function getDiagSearchQuery(input) { return requireClinDataModule("diagnostics").getDiagSearchQuery(input); }
+function upsertSelectedDiagnostico(item) { return requireClinDataModule("diagnostics").upsertSelectedDiagnostico(item); }
+function applyDiagSuggestion(index) { return requireClinDataModule("diagnostics").applyDiagSuggestion(index); }
+function getDiagSuggestionBox(input) { return requireClinDataModule("diagnostics").getDiagSuggestionBox(input); }
+function showDiagSuggestions(results, input) { return requireClinDataModule("diagnostics").showDiagSuggestions(results, input); }
+function initDiagnosticoAutocomplete() { return requireClinDataModule("diagnostics").initDiagnosticoAutocomplete(); }
+function renderDiagBadges() { return requireClinDataModule("diagnostics").renderDiagBadges(); }
+function removeDiag(idx) { return requireClinDataModule("diagnostics").removeDiag(idx); }
+function hideSuggestions(input = null) { return requireClinDataModule("diagnostics").hideSuggestions(input); }
+
+function debounceAutocomplete(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+>>>>>>> ExperimentalBranch_LanderLopez
+}
+
+function handleTextareaAutocompleteKey(e) { return requireClinDataModule("diagnostics").handleTextareaAutocompleteKey(e); }
+function debounce(func, wait) { return requireClinDataModule("diagnostics").debounce(func, wait); }
+
+// =============================================
+<<<<<<< HEAD
 //  AUTOCOMPLETADO CIE-10 - DIAGNÓSTICOS
 // =============================================
 
@@ -2059,15 +2762,187 @@ function exportPDF(type) {
         doc.text(`ClinData — NOM-004-SSA3-2012 — ${new Date().toLocaleDateString("es-MX")} — Página ${i}/${pages}`,pageW/2,290,{align:"center"});
     }
     doc.save(`expediente_${currentPatient.name.replace(/\s/g,"_")}_${tipoNota}_${type}.pdf`);
+=======
+//  EXPORTAR PDF  (NOM-004-SSA3-2012)
+// =============================================
+function exportPDF(type) { return requireClinDataModule("exporter").exportPDF(type); }
+
+function getExpandedPrintableText(text, type, replacements = {}) { return requireClinDataModule("exporter").getExpandedPrintableText(text, type, replacements); }
+
+function getPrintableSections(type = "patient", replacements = {}) { return requireClinDataModule("exporter").getPrintableSections(type, replacements); }
+
+function openPrintableRecord(type = "patient", extras = {}, replacements = {}) { return requireClinDataModule("exporter").openPrintableRecord(type, extras, replacements); }
+
+// =============================================
+//  CONSULTORIOS
+// =============================================
+let consultorios = JSON.parse(localStorage.getItem("cd_consultorios")) || [
+    { id: 1, nombre: "Consultorio 1", descripcion: "Medicina General", activo: true },
+    { id: 2, nombre: "Consultorio 2", descripcion: "Pediatría", activo: true },
+    { id: 3, nombre: "Consultorio 3", descripcion: "Ginecología", activo: true },
+];
+function saveConsultorios() { localStorage.setItem("cd_consultorios", JSON.stringify(consultorios)); }
+
+function renderNewPatientConsultorioSelect() { return requireClinDataModule("patients").renderNewPatientConsultorioSelect(); }
+
+function renderConsultorios() {
+    const container = document.getElementById("consultoriosSection");
+    if (!container) return;
+
+    const medicos = systemUsers.filter(u => u.role === "medico");
+    const allPatients = patients;
+
+    container.querySelector(".consultorios-content") && container.querySelector(".consultorios-content").remove();
+
+    const div = document.createElement("div");
+    div.className = "consultorios-content";
+    div.innerHTML = `
+        <div class="section-header">
+            <div>
+                <h2>Gestión de Consultorios</h2>
+                <p class="section-subtitle">Asigna médicos y pacientes a cada consultorio</p>
+            </div>
+            <button class="btn-primary" onclick="openAddConsultorioModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nuevo consultorio
+            </button>
+        </div>
+        <div class="consultorios-grid">
+            ${consultorios.filter(c => c.activo).map(c => {
+                const assignedMedicos = medicos.filter(m => m.consultorio === c.nombre);
+                const assignedPatients = allPatients.filter(p => p.consultorio === c.nombre);
+                return `
+                <div class="consultorio-card">
+                    <div class="consultorio-card-header">
+                        <div class="consultorio-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 15h6"/></svg>
+                        </div>
+                        <div class="consultorio-info">
+                            <div class="consultorio-nombre">${c.nombre}</div>
+                            <div class="consultorio-desc">${c.descripcion}</div>
+                        </div>
+                        <button class="btn-table-delete" onclick="eliminarConsultorio(${c.id})" title="Eliminar">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                        </button>
+                    </div>
+                    <div class="consultorio-section-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                        Médico(s) asignado(s)
+                    </div>
+                    <div class="consultorio-assign-area">
+                        ${assignedMedicos.length === 0 ? `<p class="consultorio-empty">Sin médico asignado</p>` : ""}
+                        ${assignedMedicos.map(m => `
+                            <div class="consultorio-assignee">
+                                <span class="consultorio-assignee-avatar">${m.displayName.charAt(0)}</span>
+                                <span>${m.displayName}</span>
+                                <button class="assignee-remove" onclick="desasignarMedicoConsultorio(${m.id})" title="Remover">×</button>
+                            </div>`).join("")}
+                        <select class="consultorio-select" onchange="asignarMedicoConsultorio(${c.id}, this.value); this.value=''">
+                            <option value="">+ Asignar médico...</option>
+                            ${medicos.filter(m => m.consultorio !== c.nombre).map(m => `<option value="${m.id}">${m.displayName}</option>`).join("")}
+                        </select>
+                    </div>
+                    <div class="consultorio-section-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        Pacientes asignados <span class="consult-count">${assignedPatients.length}</span>
+                    </div>
+                    <div class="consultorio-assign-area">
+                        ${assignedPatients.length === 0 ? `<p class="consultorio-empty">Sin pacientes asignados</p>` : ""}
+                        ${assignedPatients.slice(0,5).map(p => `
+                            <div class="consultorio-assignee">
+                                <span class="consultorio-assignee-avatar pat-av">${p.name.charAt(0)}</span>
+                                <span>${p.name}</span>
+                                <button class="assignee-remove" onclick="desasignarPacienteConsultorio(${p.id})" title="Remover">×</button>
+                            </div>`).join("")}
+                        ${assignedPatients.length > 5 ? `<p class="consultorio-empty">... y ${assignedPatients.length - 5} más</p>` : ""}
+                        <select class="consultorio-select" onchange="asignarPacienteConsultorio(${c.id}, this.value); this.value=''">
+                            <option value="">+ Asignar paciente...</option>
+                            ${allPatients.filter(p => p.consultorio !== c.nombre).map(p => `<option value="${p.id}">${p.name}</option>`).join("")}
+                        </select>
+                    </div>
+                </div>`;
+            }).join("")}
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function asignarMedicoConsultorio(consultorioId, userId) {
+    if (!userId) return;
+    const c = consultorios.find(x => x.id === consultorioId);
+    const u = systemUsers.find(x => x.id == userId);
+    if (!c || !u) return;
+    u.consultorio = c.nombre;
+    saveSystemUsers();
+    renderConsultorios();
+    showToast(`${u.displayName} asignado a ${c.nombre}`, "success");
+}
+
+function desasignarMedicoConsultorio(userId) {
+    const u = systemUsers.find(x => x.id == userId);
+    if (!u) return;
+    u.consultorio = "";
+    saveSystemUsers();
+    renderConsultorios();
+}
+
+function asignarPacienteConsultorio(consultorioId, patientId) {
+    if (!patientId) return;
+    const c = consultorios.find(x => x.id === consultorioId);
+    const p = patients.find(x => x.id == patientId);
+    if (!c || !p) return;
+    p.consultorio = c.nombre;
+    savePatients();
+    renderConsultorios();
+    showToast(`${p.name} asignado a ${c.nombre}`, "success");
+}
+
+function desasignarPacienteConsultorio(patientId) {
+    const p = patients.find(x => x.id == patientId);
+    if (!p) return;
+    p.consultorio = "";
+    savePatients();
+    renderConsultorios();
+}
+
+function openAddConsultorioModal() {
+    const nombre = prompt("Nombre del consultorio (ej: Consultorio 4):");
+    if (!nombre || !nombre.trim()) return;
+    const desc = prompt("Especialidad o descripción:") || "";
+    consultorios.push({ id: Date.now(), nombre: nombre.trim(), descripcion: desc.trim(), activo: true });
+    saveConsultorios();
+    renderConsultorios();
+    showToast("Consultorio agregado.", "success");
+}
+
+function eliminarConsultorio(id) {
+    const c = consultorios.find(x => x.id === id);
+    if (!c) return;
+    if (!confirm(`¿Eliminar ${c.nombre}? Se desasignarán médicos y pacientes.`)) return;
+    c.activo = false;
+    // Desasignar
+    systemUsers.filter(u => u.consultorio === c.nombre).forEach(u => u.consultorio = "");
+    patients.filter(p => p.consultorio === c.nombre).forEach(p => p.consultorio = "");
+    saveConsultorios(); saveSystemUsers(); savePatients();
+    renderConsultorios();
+    showToast("Consultorio eliminado.", "success");
+>>>>>>> ExperimentalBranch_LanderLopez
 }
 
 // =============================================
 //  UTILIDADES
 // =============================================
+<<<<<<< HEAD
 function formatDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"});}
 function formatDateFull(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("es-MX",{weekday:"short",day:"2-digit",month:"long",year:"numeric"});}
 function formatTime(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});}
 function showToast(message,type="info"){const ex=document.getElementById("toast");if(ex)ex.remove();const t=document.createElement("div");t.id="toast";t.className=`toast toast-${type}`;t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.classList.add("toast-show"),10);setTimeout(()=>{t.classList.remove("toast-show");setTimeout(()=>t.remove(),300);},3000);}
+=======
+function formatDate(iso){ return requireClinDataModule("utils").formatDate(iso); }
+function formatDateFull(iso){ return requireClinDataModule("utils").formatDateFull(iso); }
+function formatTime(iso){ return requireClinDataModule("utils").formatTime(iso); }
+function showToast(message,type="info"){ return requireClinDataModule("utils").showToast(message,type); }
+>>>>>>> ExperimentalBranch_LanderLopez
 
 // =============================================
 //  COLLAPSIBLE SECTIONS
@@ -2117,10 +2992,26 @@ function initializeCollapsibleSections() {
     });
 }
 
+<<<<<<< HEAD
+=======
+function renderExpediente() {
+    return requireClinDataModule('expediente').renderExpediente();
+}
+
+>>>>>>> ExperimentalBranch_LanderLopez
 // Inicializar cuando se renderiza el expediente
 const _origRenderMedicalRecord = window.renderMedicalRecord || function() {};
 window.renderMedicalRecord = function() {
     const result = _origRenderMedicalRecord.apply(this, arguments);
+<<<<<<< HEAD
     setTimeout(() => initializeCollapsibleSections(), 50);
     return result;
 };
+=======
+    setTimeout(() => {
+        initializeCollapsibleSections();
+        setupSelectableRadioCards();
+    }, 50);
+    return result;
+};
+>>>>>>> ExperimentalBranch_LanderLopez
