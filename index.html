@@ -1394,7 +1394,18 @@
                             Identificación del Paciente
                         </div>
                         <div class="form-grid">
-                            <div class="form-group full"><label>Nombre <span class="required">*</span></label><input type="text" id="triageName" placeholder="Nombre completo o anónimo"></div>
+                            <div class="form-group full">
+    <label>Nombre <span class="required">*</span></label>
+    <div style="position:relative;">
+        <input type="text" id="triageName" placeholder="Nombre completo o anónimo" autocomplete="off" oninput="buscarPacienteTriage(this.value)">
+        <div id="triageNameSugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--bg-surface);border:1px solid var(--border-medium);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+    </div>
+    <div id="triagePacienteVinculado" style="display:none;margin-top:6px;padding:8px 12px;background:var(--color-success-bg,#f0fdf4);border:1px solid var(--color-success,#22c55e);border-radius:var(--radius);font-size:12.5px;color:var(--color-success-text,#15803d);display:flex;align-items:center;gap:8px;">
+        <span>✅</span>
+        <span id="triagePacienteVinculadoTexto"></span>
+        <button type="button" onclick="desvincularPacienteTriage()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);line-height:1;" title="Desvincular">×</button>
+    </div>
+</div>
                             <div class="form-group"><label>Edad <span class="required">*</span></label><input type="number" id="triageAge" placeholder="Años" min="0"></div>
                             <div class="form-group"><label>Sexo</label><select id="triageSex"><option value="">Seleccionar...</option><option>Masculino</option><option>Femenino</option></select></div>
                             <div class="form-group full"><label>Motivo de consulta <span class="required">*</span></label><input type="text" id="triageReason" placeholder="¿Por qué acude a urgencias?"></div>
@@ -1530,7 +1541,19 @@
         </div>
         <div class="modal-body">
             <p class="modal-patient-name" id="queueModalPatientName"></p>
-            <div class="form-group"><label>Motivo de consulta de hoy <span class="required">*</span></label><input type="text" id="queueModalReason" placeholder="¿Por qué acude hoy?"></div>
+            <div class="form-group" style="margin-bottom:4px;">
+                <label style="font-size:12px;color:var(--text-muted);">Verificar identidad (opcional)</label>
+                <input type="text" id="queueModalVerificador"
+                    placeholder="Expediente, CURP, NSS o teléfono..."
+                    oninput="verificarIdentidadCola(this.value)"
+                    autocomplete="off"
+                    style="font-size:13px;">
+            </div>
+            <div id="queueModalVerificadorResult" style="display:none;margin-bottom:10px;padding:7px 12px;border-radius:var(--radius);font-size:12.5px;"></div>
+            <div class="form-group">
+                <label>Motivo de consulta de hoy <span class="required">*</span></label>
+                <input type="text" id="queueModalReason" placeholder="¿Por qué acude hoy?">
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('addToQueueModal')">Cancelar</button>

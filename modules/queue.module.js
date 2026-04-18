@@ -22,6 +22,10 @@
         document.getElementById("queueModalPatientName").textContent = patient.name;
         document.getElementById("queueModalReason").value = "";
         document.getElementById("addToQueueModal").classList.remove("hidden");
+        const verEl = document.getElementById("queueModalVerificador");
+        if (verEl) verEl.value = "";
+        const verResult = document.getElementById("queueModalVerificadorResult");
+        if (verResult) verResult.style.display = "none";
     }
 
     function confirmAddToQueue() {
@@ -122,5 +126,41 @@
         }
     }
 
-    registry.queue = { addPatientToQueue, openAddToQueueModal, confirmAddToQueue, renderConsultQueue, attendFromQueue, dismissFromConsultQueue };
+    function verificarIdentidadCola(query) {
+        const resultEl = document.getElementById("queueModalVerificadorResult");
+        if (!resultEl) return;
+        const q = query.trim().toLowerCase();
+        if (q.length < 3) { resultEl.style.display = "none"; return; }
+
+        const patient = app().patients.find(p =>
+            (p.expediente || "").toLowerCase() === q ||
+            (p.curp || "").toLowerCase() === q ||
+            (p.nss || "").toLowerCase() === q ||
+            (p.phone || "").replace(/\s/g, "").includes(q.replace(/\s/g, "")) ||
+            (p.phoneLocal || "").replace(/\s/g, "").includes(q.replace(/\s/g, ""))
+        );
+
+        if (patient && patient.id === app().addToQueuePatientId) {
+            resultEl.style.display = "block";
+            resultEl.style.background = "var(--color-success-bg, #f0fdf4)";
+            resultEl.style.border = "1px solid var(--color-success, #22c55e)";
+            resultEl.style.color = "var(--color-success-text, #15803d)";
+            resultEl.innerHTML = `✅ Identidad confirmada · ${patient.name} · ${patient.expediente || "Sin exp."} · ${patient.age} años`;
+        } else if (patient && patient.id !== app().addToQueuePatientId) {
+            resultEl.style.display = "block";
+            resultEl.style.background = "#fef9c3";
+            resultEl.style.border = "1px solid #ca8a04";
+            resultEl.style.color = "#854d0e";
+            resultEl.innerHTML = `⚠ El dato pertenece a otro paciente: <strong>${patient.name}</strong>`;
+        } else {
+            resultEl.style.display = "block";
+            resultEl.style.background = "var(--bg-surface-2)";
+            resultEl.style.border = "1px solid var(--border)";
+            resultEl.style.color = "var(--text-muted)";
+            resultEl.innerHTML = `Sin coincidencias para ese dato`;
+        }
+    }
+
+    registry.queue = { addPatientToQueue, openAddToQueueModal, confirmAddToQueue, renderConsultQueue, attendFromQueue, dismissFromConsultQueue, verificarIdentidadCola };
+    global.verificarIdentidadCola = (q) => verificarIdentidadCola(q);
 })(window);
