@@ -60,7 +60,10 @@
             const initials = patient.name.split(" ").slice(0, 2).map((chunk) => chunk[0]).join("").toUpperCase();
             const isNew = entry.isNewPatient ? `<span class="new-badge">Primera visita</span>` : `<span class="return-badge">Seguimiento</span>`;
             const consultorioBadge = patient.consultorio ? `<span class="consultorio-tag">🏥 ${patient.consultorio}</span>` : "";
-            const attendBtn = global.can("canWriteMedicalNotes") ? `<button class="btn-attend" onclick="attendFromQueue(${entry.id})">Atender</button>` : `<span class="waiting-tag">En espera</span>`;
+            const canAttend = global.can("canWriteMedicalNotes") || global.can("canWriteNursingNotes");
+            const attendBtn = canAttend
+                ? `<button class="btn-attend" onclick="attendFromQueue(${entry.id})">Atender</button>`
+                : `<span class="waiting-tag">En espera</span>`;
             const dismissBtn = global.can("canAddToQueue") || global.can("canWriteMedicalNotes") ? `<button class="btn-dismiss" onclick="dismissFromConsultQueue(${entry.id})">Retirar</button>` : "";
             return `<div class="consult-queue-card">
                 <div class="queue-number">${idx + 1}</div>
@@ -86,10 +89,17 @@
         if (!patient) return;
 
         app().currentPatient = patient;
+
+        // Determinar si es primera consulta para este paciente
+        const prevConsults = app().consultations.filter(c => c.patientId === patient.id);
+        const isPrimerConsulta = prevConsults.length === 0;
+        const tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+
         const consultation = global.createEmptyConsultation(patient.id, {
             createdBy: app().currentUser?.displayName || "Sistema",
             queueReason: queueEntry.reason,
-            isNewPatient: queueEntry.isNewPatient
+            isNewPatient: queueEntry.isNewPatient,
+            tipoNota: tipoNota
         });
         global.copyAntecedentsFromPreviousConsultation(consultation);
         app().consultations.push(consultation);

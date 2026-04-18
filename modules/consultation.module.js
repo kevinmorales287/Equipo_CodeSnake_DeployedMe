@@ -213,6 +213,26 @@
         const enfImcEl = document.getElementById("enf_sv_imc");
         if (enfImcEl) enfImcEl.value = consultation.enf_sv_imc || "";
 
+        // Pre-cargar datos del paciente en Historia Clínica (solo si el campo está vacío)
+        const patient = app().currentPatient;
+        if (patient && consultation.tipoNota === "historia") {
+            const ocupacionEl = document.getElementById("pnp-ocu");
+            if (ocupacionEl && !ocupacionEl.value && patient.occupation) {
+                ocupacionEl.value = patient.occupation.toUpperCase();
+                if (!consultation["pnp-ocu"]) consultation["pnp-ocu"] = patient.occupation.toUpperCase();
+            }
+            const ecEl = document.getElementById("pnp-ec");
+            if (ecEl && !ecEl.value && patient.maritalStatus) {
+                ecEl.value = patient.maritalStatus.toUpperCase();
+                if (!consultation["pnp-ec"]) consultation["pnp-ec"] = patient.maritalStatus.toUpperCase();
+            }
+            const alergiasEl = document.getElementById("app_alergias");
+            if (alergiasEl && !alergiasEl.value && patient.allergies) {
+                alergiasEl.value = patient.allergies.toUpperCase();
+                if (!consultation["app_alergias"]) consultation["app_alergias"] = patient.allergies.toUpperCase();
+            }
+        }
+
         app().selectedDiagnosticos = (consultation.diagnosticos_cie10 || []).map((diagnostico) => ({ ...diagnostico }));
         global.renderDiagBadges();
 
@@ -535,6 +555,27 @@
         if (tipoEl) consultation.firma_tipo = tipoEl.value;
         consultation.diagnosticos_cie10 = [...(app().selectedDiagnosticos || [])];
         consultation.tipoNota = app().currentTab;
+
+        // Forzar uppercase al guardar en todos los campos clínicos
+        ALL_RECORD_FIELDS.forEach((field) => {
+            if (consultation[field] && typeof consultation[field] === "string") {
+                // Solo campos de texto libre, no numéricos
+                const el = document.getElementById(field);
+                if (el && el.type !== "number" && !el.readOnly) {
+                    consultation[field] = consultation[field].toUpperCase();
+                }
+            }
+        });
+        // Lo mismo para campos de enfermería
+        const nursingTextFields = [
+            "enf_evolucion_clinica","enf_sv_habitus",
+            "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
+            "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
+            "enf_observaciones","enf_procedimientos","enf_nota_imp"
+        ];
+        nursingTextFields.forEach((field) => {
+            if (consultation[field]) consultation[field] = consultation[field].toUpperCase();
+        });
     }
 
     function saveRecord() {
@@ -590,7 +631,10 @@
         const consultation = app().currentConsultation;
         const currentUser = app().currentUser;
         if (!consultation || !currentUser) return;
-        if (!consultation.tratamiento && !consultation.diagnostico) {
+
+        // Para historia clínica se requiere diagnóstico; para nota médica no
+        const tipoNota = consultation.tipoNota || "historia";
+        if (tipoNota === "historia" && !consultation.tratamiento && !consultation.diagnostico) {
             global.showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
             return;
         }

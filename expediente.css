@@ -382,3 +382,23 @@
     .exp-hist-table th:nth-child(3),
     .exp-hist-table td:nth-child(3) { display: none; }
 }
+
+/* ── Mayúsculas en todos los campos clínicos ─────────────────── */
+#tab-historia input[type="text"],
+#tab-historia textarea,
+#tab-nota input[type="text"],
+#tab-nota textarea,
+#tab-evolucion input[type="text"],
+#tab-evolucion textarea {
+    text-transform: uppercase;
+}
+
+/* Excluir campos numéricos y de solo lectura del uppercase */
+#tab-historia input[type="number"],
+#tab-nota input[type="number"],
+#tab-evolucion input[type="number"],
+#tab-historia input[readonly],
+#tab-nota input[readonly],
+#tab-evolucion input[readonly] {
+    text-transform: none;
+}

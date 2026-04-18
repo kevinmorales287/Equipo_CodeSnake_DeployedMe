@@ -115,7 +115,7 @@
                 </div>
                 <div class="triage-queue-right">
                     <div class="triage-queue-time">${global.formatTime(entry.timestamp)}</div>
-                    ${global.can("canWriteMedicalNotes") ? `<button class="btn-attend" onclick="attendTriage(${entry.id})">Atender</button>` : ""}
+                    ${(global.can("canWriteMedicalNotes") || global.can("canWriteNursingNotes")) ? `<button class="btn-attend" onclick="attendTriage(${entry.id})">Atender</button>` : ""}
                     <button class="btn-dismiss" onclick="dismissTriage(${entry.id})">Alta</button>
                 </div>
             </div>`).join("");
