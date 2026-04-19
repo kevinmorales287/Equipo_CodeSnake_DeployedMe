@@ -141,35 +141,44 @@
             summaryBar.classList.add("hidden");
         }
 
-        // Determinar qué tab mostrar según rol y si ya existe tipoNota guardado
-        let tipoNota = consultation.tipoNota;
+        // ── Determinar qué tab mostrar ─────────────────────────────────────
+        // El rol del usuario tiene prioridad sobre el tipoNota guardado:
+        // el enfermero siempre ve su tab sin importar qué guardó el médico,
+        // y el médico nunca ve el tab de enfermería.
+        let tipoNota;
 
-        if (!tipoNota) {
-            // Primera vez que se abre esta consulta — decidir por rol y por historial
-            if (global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes")) {
-                // Enfermero siempre va a su tab
-                tipoNota = "evolucion";
-            } else if (global.can("canWriteMedicalNotes")) {
-                // Médico: historia clínica si es primera consulta, nota médica si no
+        const esEnfermero = global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes");
+
+        if (esEnfermero) {
+            // Enfermero → siempre nota de enfermería.
+            // NO sobreescribimos consultation.tipoNota para no alterar el registro del médico.
+            tipoNota = "evolucion";
+        } else if (global.can("canWriteMedicalNotes")) {
+            // Médico → usar el tipoNota guardado en la consulta, o calcularlo si es nueva.
+            if (consultation.tipoNota && consultation.tipoNota !== "evolucion") {
+                // Ya tiene un tipo médico guardado, respetar.
+                tipoNota = consultation.tipoNota;
+            } else {
+                // Es nueva o solo tenía el tab de enfermería → calcular.
                 const prevConsults = app().consultations.filter(
                     c => c.patientId === patient.id && c.id !== consultation.id
                 );
                 tipoNota = prevConsults.length === 0 ? "historia" : "nota-medica";
-            } else {
-                tipoNota = "historia";
+                consultation.tipoNota = tipoNota;
             }
-            consultation.tipoNota = tipoNota;
+        } else {
+            // Cualquier otro rol (recepción, admin): solo lectura, mostrar historia.
+            tipoNota = consultation.tipoNota || "historia";
         }
 
         app().currentTab = tipoNota;
 
-        // Ocultar todos los tabs
+        // Ocultar todos los tabs y mostrar el correcto
         document.querySelectorAll(".record-tab-content").forEach((tab) => {
             tab.style.display = "none";
             tab.classList.remove("active");
         });
 
-        // Mostrar el tab correcto
         const tabEl = document.getElementById("tab-" + tipoNota);
         if (tabEl) {
             tabEl.style.display = "block";

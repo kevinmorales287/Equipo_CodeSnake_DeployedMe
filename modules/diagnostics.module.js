@@ -231,7 +231,13 @@
     }
 
     function initDiagnosticoAutocomplete() {
-        const fields = ["diagnostico", "diagnostico_secundario"];
+        // Campos de historia clínica Y nota médica
+        const fields = [
+            "diagnostico",
+            "diagnostico_secundario",
+            "nota_diagnostico",
+            "nota_diagnostico_secundario"
+        ];
 
         loadCie10Cache();
 
@@ -275,7 +281,9 @@
 
         if (!state.clickBound) {
             document.addEventListener("click", (event) => {
-                const activeBox = state.currentAutocompleteTextarea ? getDiagSuggestionBox(state.currentAutocompleteTextarea) : null;
+                const activeBox = state.currentAutocompleteTextarea
+                    ? getDiagSuggestionBox(state.currentAutocompleteTextarea)
+                    : null;
                 if (!activeBox) return;
                 if (!activeBox.contains(event.target) && event.target !== state.currentAutocompleteTextarea) {
                     hideSuggestions();
