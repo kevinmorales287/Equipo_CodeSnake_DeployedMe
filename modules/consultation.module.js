@@ -20,10 +20,19 @@
         "evolucion_resultados","evolucion_diagnostico","evolucion_tratamiento","evolucion_nota",
         "urg_tas","urg_tad","urg_fc","urg_fr","urg_temp","urg_spo2","urg_glucemia","urg_glasgow",
         "urg_motivo","urg_exploracion","urg_estudios","urg_diagnostico","urg_tratamiento",
-        "nota_sv_tas","nota_sv_tad","nota_sv_fc","nota_sv_fr","nota_sv_temp","nota_sv_spo2","nota_sv_glucemia","nota_sv_peso","nota_sv_talla","nota_sv_dolor","nota_sv_habitus",
-        "nota_problemas","nota_subjetivos","nota_objetivos","nota_analisis",
-        "nota_tratamiento","nota_indicaciones_reposo","nota_indicaciones_dieta","nota_indicaciones_cita","nota_indicaciones_referencia",
+        "nota_sv_tas","nota_sv_tad","nota_sv_fc","nota_sv_fr","nota_sv_temp","nota_sv_spo2",
+        "nota_sv_glucemia","nota_sv_peso","nota_sv_talla","nota_sv_dolor","nota_sv_habitus",
+        "nota_motivo_consulta",
+        "nota_padecimiento_inicio","nota_padecimiento_sintomas",
+        "nota_sis_cardiovascular","nota_sis_respiratorio","nota_sis_digestivo",
+        "nota_sis_neurologico","nota_sis_urinario","nota_sis_musculoesqueletico",
+        "nota_sis_piel","nota_sis_endocrino","nota_sis_genitoreproductivo","nota_sis_psiquiatrico",
+        "nota_exp_cabeza","nota_exp_torax","nota_exp_abdomen","nota_exp_extremidades",
+        "nota_exp_neurologico","nota_exp_genitourinario","nota_exp_otros",
+        "nota_estudios_previos","nota_estudios_imagen","nota_estudios_solicitados",
         "nota_diagnostico","nota_diagnostico_secundario","nota_pronostico_detalle",
+        "nota_tratamiento","nota_indicaciones_reposo","nota_indicaciones_dieta",
+        "nota_indicaciones_cita","nota_indicaciones_referencia",
         "nota_notaImportante","nota_evolucion_nota",
         "notaImportante"
     ];
@@ -132,13 +141,35 @@
             summaryBar.classList.add("hidden");
         }
 
-        const tipoNota = consultation.tipoNota || "historia";
+        // Determinar qué tab mostrar según rol y si ya existe tipoNota guardado
+        let tipoNota = consultation.tipoNota;
+
+        if (!tipoNota) {
+            // Primera vez que se abre esta consulta — decidir por rol y por historial
+            if (global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes")) {
+                // Enfermero siempre va a su tab
+                tipoNota = "evolucion";
+            } else if (global.can("canWriteMedicalNotes")) {
+                // Médico: historia clínica si es primera consulta, nota médica si no
+                const prevConsults = app().consultations.filter(
+                    c => c.patientId === patient.id && c.id !== consultation.id
+                );
+                tipoNota = prevConsults.length === 0 ? "historia" : "nota-medica";
+            } else {
+                tipoNota = "historia";
+            }
+            consultation.tipoNota = tipoNota;
+        }
+
         app().currentTab = tipoNota;
-        
-        // Ocultar todas las secciones primero
-        document.querySelectorAll(".record-tab-content").forEach((tab) => tab.style.display = "none");
-        
-        // Mostrar solo la sección correspondiente
+
+        // Ocultar todos los tabs
+        document.querySelectorAll(".record-tab-content").forEach((tab) => {
+            tab.style.display = "none";
+            tab.classList.remove("active");
+        });
+
+        // Mostrar el tab correcto
         const tabEl = document.getElementById("tab-" + tipoNota);
         if (tabEl) {
             tabEl.style.display = "block";
@@ -230,6 +261,15 @@
             if (alergiasEl && !alergiasEl.value && patient.allergies) {
                 alergiasEl.value = patient.allergies.toUpperCase();
                 if (!consultation["app_alergias"]) consultation["app_alergias"] = patient.allergies.toUpperCase();
+            }
+        }
+
+        // Precargar motivo de consulta desde la cola si el campo está vacío
+        if (consultation.tipoNota === "nota-medica") {
+            const motivoEl = document.getElementById("nota_motivo_consulta");
+            if (motivoEl && !motivoEl.value && consultation.queueReason) {
+                motivoEl.value = consultation.queueReason.toUpperCase();
+                consultation["nota_motivo_consulta"] = motivoEl.value;
             }
         }
 
@@ -556,25 +596,27 @@
         consultation.diagnosticos_cie10 = [...(app().selectedDiagnosticos || [])];
         consultation.tipoNota = app().currentTab;
 
-        // Forzar uppercase al guardar en todos los campos clínicos
+        // Forzar uppercase al guardar en todos los campos de texto clínico
         ALL_RECORD_FIELDS.forEach((field) => {
             if (consultation[field] && typeof consultation[field] === "string") {
-                // Solo campos de texto libre, no numéricos
                 const el = document.getElementById(field);
-                if (el && el.type !== "number" && !el.readOnly) {
+                if (el && el.type !== "number" && !el.readOnly && !el.disabled) {
                     consultation[field] = consultation[field].toUpperCase();
                 }
             }
         });
-        // Lo mismo para campos de enfermería
-        const nursingTextFields = [
+
+        // Campos de enfermería también en uppercase
+        const enfTextFields = [
             "enf_evolucion_clinica","enf_sv_habitus",
             "enf_exp_cabeza","enf_exp_torax","enf_exp_abdomen","enf_exp_extremidades",
             "enf_exp_neurologico","enf_exp_genitourinario","enf_exp_otros",
             "enf_observaciones","enf_procedimientos","enf_nota_imp"
         ];
-        nursingTextFields.forEach((field) => {
-            if (consultation[field]) consultation[field] = consultation[field].toUpperCase();
+        enfTextFields.forEach((field) => {
+            if (consultation[field] && typeof consultation[field] === "string") {
+                consultation[field] = consultation[field].toUpperCase();
+            }
         });
     }
 
@@ -593,6 +635,14 @@
         if (app().currentPatient && consultation.tratamiento) {
             app().currentPatient.currentTreatment = consultation.tratamiento;
             global.savePatients();
+        }
+        // Si la consulta estaba ligada a una entrada de cola, asegurarse de que quede como attended
+        if (consultation.queueEntryId) {
+            const queueEntry = app().consultQueue.find(e => e.id === consultation.queueEntryId);
+            if (queueEntry) {
+                queueEntry.status = "attended";
+                global.saveConsultQueue();
+            }
         }
         global.saveConsultations();
         global.showToast("Consulta cerrada — paciente marcado como atendido.", "success");

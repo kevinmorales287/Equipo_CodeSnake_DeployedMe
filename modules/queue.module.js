@@ -94,24 +94,43 @@
 
         app().currentPatient = patient;
 
-        // Determinar si es primera consulta para este paciente
-        const prevConsults = app().consultations.filter(c => c.patientId === patient.id);
-        const isPrimerConsulta = prevConsults.length === 0;
-        const tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+        const isNurse = global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes");
 
-        const consultation = global.createEmptyConsultation(patient.id, {
-            createdBy: app().currentUser?.displayName || "Sistema",
-            queueReason: queueEntry.reason,
-            isNewPatient: queueEntry.isNewPatient,
-            tipoNota: tipoNota
-        });
-        global.copyAntecedentsFromPreviousConsultation(consultation);
-        app().consultations.push(consultation);
-        global.saveConsultations();
+        // Buscar si ya hay una consulta activa abierta para este paciente en esta entrada de cola
+        // (para que enfermero y médico accedan a la misma consulta)
+        let consultation = app().consultations.find(c =>
+            c.patientId === patient.id &&
+            c.queueEntryId === queueEntry.id &&
+            c.status === "active"
+        );
+
+        if (!consultation) {
+            // No existe aún — crearla (normalmente la crea el médico o el primero en atender)
+            const prevConsults = app().consultations.filter(c => c.patientId === patient.id);
+            const isPrimerConsulta = prevConsults.length === 0;
+            const tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+
+            consultation = global.createEmptyConsultation(patient.id, {
+                createdBy: app().currentUser?.displayName || "Sistema",
+                queueReason: queueEntry.reason,
+                isNewPatient: queueEntry.isNewPatient,
+                tipoNota: tipoNota,
+                queueEntryId: queueEntry.id
+            });
+            global.copyAntecedentsFromPreviousConsultation(consultation);
+            app().consultations.push(consultation);
+            global.saveConsultations();
+        }
+
         app().currentConsultation = consultation;
 
-        queueEntry.status = "attended";
-        global.saveConsultQueue();
+        // Solo el médico marca la entrada como "attended" (quitando al paciente de la fila).
+        // El enfermero la deja en "waiting" para que el médico la siga viendo.
+        if (!isNurse) {
+            queueEntry.status = "attended";
+            global.saveConsultQueue();
+        }
+
         app().selectedDiagnosticos = [];
         global.navigate("medicalRecord");
         global.renderMedicalRecord();

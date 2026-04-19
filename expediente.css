@@ -386,19 +386,23 @@
 /* ── Mayúsculas en todos los campos clínicos ─────────────────── */
 #tab-historia input[type="text"],
 #tab-historia textarea,
-#tab-nota input[type="text"],
-#tab-nota textarea,
+#tab-nota-medica input[type="text"],
+#tab-nota-medica textarea,
 #tab-evolucion input[type="text"],
-#tab-evolucion textarea {
+#tab-evolucion textarea,
+#tab-urgencias input[type="text"],
+#tab-urgencias textarea {
     text-transform: uppercase;
 }
 
 /* Excluir campos numéricos y de solo lectura del uppercase */
 #tab-historia input[type="number"],
-#tab-nota input[type="number"],
+#tab-nota-medica input[type="number"],
 #tab-evolucion input[type="number"],
+#tab-urgencias input[type="number"],
 #tab-historia input[readonly],
-#tab-nota input[readonly],
-#tab-evolucion input[readonly] {
+#tab-nota-medica input[readonly],
+#tab-evolucion input[readonly],
+#tab-urgencias input[readonly] {
     text-transform: none;
 }
