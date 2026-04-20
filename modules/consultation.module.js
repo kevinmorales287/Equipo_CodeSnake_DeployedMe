@@ -200,6 +200,13 @@
         global.setupAbbreviationDetection();
         renderMedicamentos();
         renderMedicamentosNota();
+        // Insertar bloque de documentos clínicos (si el médico tiene permisos)
+        if (global.can("canWriteMedicalNotes")) {
+            const docsBlock = document.getElementById("consultaDocsBlock");
+            if (docsBlock && global.ClinDataModules?.documents) {
+                docsBlock.innerHTML = global.ClinDataModules.documents.buildConsultaDocsBlock(consultation);
+            }
+        }
         global.initDiagnosticoAutocomplete();
         if (typeof global.abrevInit === "function") global.abrevInit();
         if (!isReadOnly) {
@@ -285,35 +292,54 @@
         app().selectedDiagnosticos = (consultation.diagnosticos_cie10 || []).map((diagnostico) => ({ ...diagnostico }));
         global.renderDiagBadges();
 
-        const medEl = document.getElementById("firma_medico");
-        if (medEl) medEl.value = consultation.firma_medico || "";
+        // ── Firma compacta ────────────────────────────────────────────────
+        const user = app().currentUser;
+        const avatarSm = document.getElementById("firmaAvatarSm");
+        const avatarSmS = document.getElementById("firmaAvatarSmSigned");
+        const nameEl = document.getElementById("firmaAuthorName");
+        const nameSignedEl = document.getElementById("firmaAuthorNameSigned");
+        const displayName = user?.displayName || "—";
+        const initials = displayName.split(" ").slice(0,2).map(w => w[0]).join("").toUpperCase();
+
+        if (avatarSm) avatarSm.textContent = initials;
+        if (avatarSmS) avatarSmS.textContent = initials;
+        if (nameEl) nameEl.textContent = displayName;
+        if (nameSignedEl) nameSignedEl.textContent = displayName;
+
+        // Campo oculto legacy
+        const medHidden = document.getElementById("firma_medico");
+        if (medHidden) medHidden.value = consultation.firma_medico || "";
+
+        // Cédula editable
         const cedulaEl = document.getElementById("firma_cedula");
         if (cedulaEl) cedulaEl.value = consultation.firma_cedula || "";
+
+        // Tipo de firma
         const tipoEl = document.getElementById("firma_tipo");
         if (tipoEl) tipoEl.value = consultation.firma_tipo || "electronica";
-        const fechaEl = document.getElementById("firma_fecha");
-        if (fechaEl) fechaEl.value = consultation.firma_fecha || "";
 
-        const firmaInfo = document.getElementById("firmaInfo");
-        const btnFirmar = document.querySelector("button[onclick='firmarExpediente()']");
+        const isSigned = !!(consultation.firma_medico && consultation.firma_fecha);
+        const stripInner = document.getElementById("firmaStripInner");
+        const stripSigned = document.getElementById("firmaStripSigned");
+        const btnFirmar = document.getElementById("btnFirmarCompact");
         const btnLimpiar = document.getElementById("btnLimpiarFirma");
-        if (consultation.firma_medico && consultation.firma_fecha) {
-            if (firmaInfo) {
-                firmaInfo.style.display = "block";
-                const infoText = document.getElementById("firmaInfoText");
-                if (infoText) {
-                    infoText.innerHTML = `<div>Médico: ${consultation.firma_medico}</div><div>Firma: ${consultation.firma_tipo || "electrónica"}</div><div>Fecha: ${consultation.firma_fecha}</div>`;
-                }
-            }
-            if (btnFirmar) btnFirmar.style.display = "none";
+
+        if (stripInner) stripInner.style.display = isSigned ? "none" : "";
+        if (stripSigned) stripSigned.style.display = isSigned ? "" : "none";
+
+        if (isSigned) {
+            const cedulaS = document.getElementById("firma_cedula_signed");
+            const tipoS = document.getElementById("firma_tipo_signed");
+            const fechaS = document.getElementById("firma_fecha_display");
+            if (cedulaS) cedulaS.value = consultation.firma_cedula || "";
+            if (tipoS) tipoS.value = (consultation.firma_tipo || "electrónica");
+            if (fechaS) fechaS.value = consultation.firma_fecha || "";
             if (btnLimpiar) btnLimpiar.style.display = "block";
         } else {
-            if (firmaInfo) firmaInfo.style.display = "none";
-            if (btnFirmar) btnFirmar.style.display = "block";
             if (btnLimpiar) btnLimpiar.style.display = "none";
         }
     }
-
+    
     function setRecordReadOnly(isReadOnly) {
         ALL_RECORD_FIELDS.forEach((field) => {
             const el = document.getElementById(field);

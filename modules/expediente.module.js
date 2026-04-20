@@ -217,14 +217,11 @@
             </div>
 
             <!-- Documentación clínica -->
-            <div class="exp-sec-card">
-                <div class="exp-sec-head">
-                    <span class="exp-sec-title">Documentación clínica y órdenes</span>
-                    ${perms.canAddDocs ? buildAddButton('expDdDocs', buildDocsMenu()) : ''}
-                </div>
-                <div class="exp-sec-body">
-                    <div class="exp-empty">Sin documentos registrados.</div>
-                </div>
+            <div id="expDocsSection">
+                ${global.ClinDataModules?.documents
+                    ? global.ClinDataModules.documents.buildExpedienteDocsSection(patient, perms)
+                    : `<div class="exp-sec-card"><div class="exp-sec-head"><span class="exp-sec-title">Documentación clínica y órdenes</span></div><div class="exp-sec-body"><div class="exp-empty">Módulo de documentos no disponible.</div></div></div>`
+                }
             </div>
 
             <!-- Pagos -->
