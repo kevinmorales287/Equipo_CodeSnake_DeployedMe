@@ -141,6 +141,8 @@
             summaryBar.classList.add("hidden");
         }
 
+        updateIdentificationCard(consultation, patient);
+
         // ── Determinar qué tab mostrar ─────────────────────────────────────
         // El rol del usuario tiene prioridad sobre el tipoNota guardado:
         // el enfermero siempre ve su tab sin importar qué guardó el médico,
@@ -340,6 +342,31 @@
         }
     }
     
+    function updateIdentificationCard(consultation, patient) {
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = value ? String(value) : "—";
+        };
+
+        const motivo = (consultation.queueReason || consultation.nota_motivo_consulta || "").trim();
+        const fechaNacimiento = global.formatDate(patient.dob);
+
+        setText("ident_name", patient.name);
+        setText("ident_nss", patient.nss);
+        setText("ident_hemotipo", patient.hemotype);
+        setText("ident_curp", patient.curp);
+        setText("ident_sexo", patient.sex);
+        setText("ident_edad", patient.age);
+        setText("ident_fecha_nacimiento", fechaNacimiento);
+        setText("ident_lugar_nacimiento", patient.birthPlace);
+        setText("ident_escolaridad", consultation["pnp-esc"] || "");
+        setText("ident_ocupacion", patient.occupation);
+        setText("ident_estado_civil", patient.maritalStatus);
+        setText("ident_religion", patient.religion);
+        setText("ident_motivo_consulta", motivo.toUpperCase());
+    }
+
     function setRecordReadOnly(isReadOnly) {
         ALL_RECORD_FIELDS.forEach((field) => {
             const el = document.getElementById(field);

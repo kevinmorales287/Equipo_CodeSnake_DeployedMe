@@ -434,6 +434,11 @@ main{flex:1;overflow-y:auto;padding:28px 32px;}
 .record-block-title{font-size:14px;font-weight:700;color:var(--text-primary);}
 .record-block-subtitle{font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--mono);}
 .record-block-body{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.ident-table{display:grid;gap:0;}
+.ident-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.ident-row-full{grid-template-columns:1fr;}
+.ident-row-label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;}
+.ident-row-value{display:block;font-size:14px;color:var(--text-primary);}
 .diagnostico-block,
 .diagnostico-block .record-block-body,
 .diagnostico-card,

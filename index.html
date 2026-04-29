@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="expediente.css">
 </head>
 <body>
-
 <!-- ===== LOGIN ===== -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
@@ -141,7 +140,9 @@
                             <div class="form-group full"><label>Nombre completo <span class="required">*</span></label><input type="text" id="name" placeholder="Apellido Paterno, Apellido Materno, Nombre(s)"></div>
                             <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="dob"></div>
                             <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="birthPlace" placeholder="Ciudad, estado, país"></div>
+                            <div class="form-group"><label>Hemotipo</label><input type="text" id="hemotype" placeholder="Ej: A+, O-, B-"></div>
                             <div class="form-group"><label>Nacionalidad</label><input type="text" id="nationality" placeholder="Ej: Mexicana"></div>
+                            <div class="form-group"><label>Religión</label><input type="text" id="religion" placeholder="Ej: Católica, Evangélica, Sin religión"></div>
                             <div class="form-group"><label>CURP</label><input type="text" id="curp" placeholder="18 caracteres"></div>
                             <div class="form-group"><label>RFC</label><input type="text" id="rfc" placeholder="13 caracteres"></div>
                             <div class="form-group"><label>NSS</label><input type="text" id="nss" placeholder="Número de seguridad social"></div>
@@ -358,6 +359,86 @@
                 <div id="recordSummaryBar" class="record-summary-bar hidden"></div>
 
                 <div class="record-form-wrap" id="recordFormWrap">
+
+                    <div class="record-block">
+                        <div class="record-block-header">
+                            <span class="record-block-icon">🪪</span>
+                            <div>
+                                <div class="record-block-title">Ficha de Identificación</div>
+                                <div class="record-block-subtitle">Datos clave del paciente y motivo de consulta</div>
+                            </div>
+                        </div>
+                        <div class="record-block-body">
+                            <div class="ident-table">
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Nombre completo</span>
+                                        <span id="ident_name" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">NSS</span>
+                                        <span id="ident_nss" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Hemotipo</span>
+                                        <span id="ident_hemotipo" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">CURP</span>
+                                        <span id="ident_curp" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Sexo</span>
+                                        <span id="ident_sexo" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Edad</span>
+                                        <span id="ident_edad" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Fecha de nacimiento</span>
+                                        <span id="ident_fecha_nacimiento" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Lugar de nacimiento</span>
+                                        <span id="ident_lugar_nacimiento" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Escolaridad</span>
+                                        <span id="ident_escolaridad" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Ocupación</span>
+                                        <span id="ident_ocupacion" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Estado civil</span>
+                                        <span id="ident_estado_civil" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Religión</span>
+                                        <span id="ident_religion" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row ident-row-full">
+                                    <div>
+                                        <span class="ident-row-label">Motivo de consulta</span>
+                                        <span id="ident_motivo_consulta" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- ═══════════════════════════════════════
                          TAB: HISTORIA CLÍNICA / NOTA DE INGRESO
@@ -1018,26 +1099,7 @@
                          ═══════════════════════════════════════ -->
                     <div id="tab-nota-medica" class="record-tab-content">
 
-                        <!-- BLOQUE 1: MOTIVO DE CONSULTA -->
-                        <div class="record-block">
-                            <div class="record-block-header">
-                                <span class="record-block-icon">🗣</span>
-                                <div>
-                                    <div class="record-block-title">Motivo de Consulta</div>
-                                    <div class="record-block-subtitle">Numeral 7.1.1 · NOM-004-SSA3-2012</div>
-                                </div>
-                            </div>
-                            <div class="record-block-body">
-                                <div class="record-section-card">
-                                    <div class="record-section-title">
-                                        <span class="record-icon">🗣</span>Motivo de Consulta de Hoy
-                                    </div>
-                                    <textarea id="nota_motivo_consulta" style="min-height:70px;" placeholder="Razón por la que el paciente acude a esta consulta de seguimiento..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- BLOQUE 2: PADECIMIENTO ACTUAL / EVOLUCIÓN -->
+                            <!-- BLOQUE 2: PADECIMIENTO ACTUAL / EVOLUCIÓN -->
                         <div class="record-block">
                             <div class="record-block-header">
                                 <span class="record-block-icon">🩺</span>
@@ -1678,7 +1740,9 @@
                 <div class="form-group"><label>Sexo</label><select id="editSex"><option value="">—</option><option>Masculino</option><option>Femenino</option></select></div>
                 <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="editDob"></div>
                 <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="editBirthPlace"></div>
+                <div class="form-group"><label>Hemotipo</label><input type="text" id="editHemotype"></div>
                 <div class="form-group"><label>Nacionalidad</label><input type="text" id="editNationality"></div>
+                <div class="form-group"><label>Religión</label><input type="text" id="editReligion" placeholder="Ej: Católica, Evangélica, Sin religión"></div>
                 <div class="form-group"><label>CURP</label><input type="text" id="editCurp"></div>
                 <div class="form-group"><label>RFC</label><input type="text" id="editRfc"></div>
                 <div class="form-group"><label>NSS</label><input type="text" id="editNss"></div>
@@ -1804,7 +1868,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 <script src="Principal_abr.js"></script>
 <script src="database/conceptos-index.js"></script>
-<script src="script.js"></script>
 <script src="modules/utils.module.js"></script>
 <script src="modules/auth.module.js"></script>
 <script src="modules/patients.module.js"></script>
@@ -1815,5 +1878,6 @@
 <script src="modules/export.module.js"></script>
 <script src="modules/documents.module.js"></script>
 <script src="modules/expediente.module.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

@@ -46,7 +46,9 @@
         const phoneLocal        = phoneLocalRaw ? `${phoneLocalPrefix} ${phoneLocalRaw}` : "";
         const dob = document.getElementById("dob").value;
         const birthPlace = document.getElementById("birthPlace")?.value.trim() || "";
+        const hemotype = (document.getElementById("hemotype")?.value || "").trim().toUpperCase();
         const nationality = document.getElementById("nationality")?.value.trim() || "";
+        const religion = document.getElementById("religion")?.value.trim() || "";
         const curp = (document.getElementById("curp")?.value || "").trim().toUpperCase();
         const rfc = (document.getElementById("rfc")?.value || "").trim().toUpperCase();
         const nss = (document.getElementById("nss")?.value || "").trim();
@@ -84,6 +86,8 @@
             dob,
             birthPlace,
             nationality,
+            religion,
+            hemotype,
             curp,
             rfc,
             nss,
@@ -112,7 +116,7 @@
         global.addPatientToQueue(patient.id, reason, true);
         global.showToast(`Paciente registrado con expediente ${expediente} y agregado a la fila de consulta.`, "success");
 
-        ["name","age","sex","address","phone","phoneLocal","dob","birthPlace","nationality","curp","rfc","nss","email","occupation","emergencyContact","emergencyPhone","ethnicGroup","generalNotes","allergies","chronicConditions","consultReason"].forEach((id) => {
+        ["name","age","sex","address","phone","phoneLocal","dob","birthPlace","hemotype","nationality","religion","curp","rfc","nss","email","occupation","emergencyContact","emergencyPhone","ethnicGroup","generalNotes","allergies","chronicConditions","consultReason"].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.value = "";
         });
@@ -341,6 +345,7 @@
         document.getElementById("editDob").value = patient.dob || "";
         document.getElementById("editBirthPlace").value = patient.birthPlace || "";
         document.getElementById("editNationality").value = patient.nationality || "";
+        document.getElementById("editHemotype").value = patient.hemotype || "";
         document.getElementById("editCurp").value = patient.curp || "";
         document.getElementById("editRfc").value = patient.rfc || "";
         document.getElementById("editNss").value = patient.nss || "";
@@ -386,9 +391,10 @@
         patient.phoneLocal    = editLocalRaw ? `${editLocalPrefix} ${editLocalRaw}` : "";
         patient.dob = document.getElementById("editDob").value;
         patient.birthPlace = document.getElementById("editBirthPlace").value.trim();
+        patient.hemotype = document.getElementById("editHemotype").value.trim().toUpperCase();
         patient.nationality = document.getElementById("editNationality").value.trim();
+        patient.religion = document.getElementById("editReligion").value.trim();
         patient.curp = document.getElementById("editCurp").value.trim().toUpperCase();
-        patient.rfc = document.getElementById("editRfc").value.trim().toUpperCase();
         patient.nss = document.getElementById("editNss").value.trim();
         patient.email = document.getElementById("editEmail").value.trim();
         patient.occupation = document.getElementById("editOccupation").value.trim();
