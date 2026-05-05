@@ -1,0 +1,321 @@
+// modules/freecapture.module.js — Captura libre del médico
+// Tab #tab-libre-medico: textarea narrativo + diagnósticos CIE-10 + checklist NOM-004.
+
+(function initFreecaptureModule(global) {
+  const registry = global.ClinDataModules || (global.ClinDataModules = {});
+  const app = () => global.ClinDataApp;
+
+  // Items del checklist NOM-004. El item "diagnostico" se evalúa por array,
+  // no por regex (los demás se prenden si la regex matchea el texto libre).
+  const CHECKLIST = [
+    { id: "motivo",       label: "Motivo de consulta",
+      regex: /\b(acude|consulta|motivo|refiere|presenta)\b/i },
+    { id: "padecimiento", label: "Padecimiento actual",
+      regex: /\b(dolor|síntoma|sintoma|inicio|evolución|días|horas|semanas)\b/i },
+    { id: "vitales",      label: "Signos vitales",
+      regex: /\b(TA|FC|FR|SatO2|sato2|temp|peso|talla|°C)\b/i },
+    { id: "exploracion",  label: "Exploración física",
+      regex: /\b(EF|abdomen|tórax|torax|cardiopulmonar|extremidades|consciente|exploración)\b/i },
+    { id: "diagnostico",  label: "Diagnóstico (CIE-10)",
+      regex: null }, // Especial: se prende por array de diagnósticos
+    { id: "pronostico",   label: "Pronóstico",
+      regex: /\b(pronóstico|pronostico|favorable|reservado|grave)\b/i },
+    { id: "plan",         label: "Plan / Tratamiento",
+      regex: /\b(tx|tratamiento|continúa|continua|inicio|suspender|mg|c\/\d+)\b/i },
+    { id: "indicaciones", label: "Indicaciones / Cita",
+      regex: /\b(cita|seguimiento|reposo|dieta|referencia|control)\b/i },
+  ];
+
+  // ── Render del checklist ────────────────────────────────────────────
+  function renderChecklist() {
+    const ul = document.getElementById("libre_checklist_items");
+    if (!ul) return;
+    ul.innerHTML = CHECKLIST.map(item => `
+      <li id="chk_${item.id}" class="chk-item chk-pending">
+        <span class="chk-mark">○</span><span class="chk-label">${item.label}</span>
+      </li>
+    `).join("");
+  }
+
+  // ── Render de badges de diagnósticos ────────────────────────────────
+  function renderDxBadges() {
+    const container = document.getElementById("libre_dx_badges");
+    if (!container) return;
+    const consultation = app().currentConsultation;
+    const dxList = (consultation && consultation.diagnosticos_libre) || [];
+
+    container.innerHTML = dxList.map((dx, idx) => `
+      <span class="libre-dx-badge">
+        <span class="libre-dx-code">${escapeHtml(dx.codigo || "")}</span>
+        <span class="libre-dx-desc">${escapeHtml(dx.descripcion || "")}</span>
+        <span class="libre-dx-remove" onclick="freecaptureRemoveDx(${idx})">✕</span>
+      </span>
+    `).join("");
+
+    updateChecklist();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // ── Agregar diagnóstico al array ────────────────────────────────────
+  function addDx(item) {
+    const consultation = app().currentConsultation;
+    if (!consultation) return;
+    if (!consultation.diagnosticos_libre) consultation.diagnosticos_libre = [];
+
+    const codigo = item.codigo || item.cie10_code || "";
+    const descripcion = item.descripcion || item.termino || "";
+
+    // Evitar duplicados por código
+    if (consultation.diagnosticos_libre.some(d => d.codigo === codigo)) return;
+
+    consultation.diagnosticos_libre.push({ codigo, descripcion });
+
+    renderDxBadges();
+    saveDebounced();
+
+    const input = document.getElementById("libre_dx_input");
+    if (input) input.value = "";
+    hideDxSuggestions();
+  }
+
+  function removeDx(idx) {
+    const consultation = app().currentConsultation;
+    if (!consultation || !consultation.diagnosticos_libre) return;
+    consultation.diagnosticos_libre.splice(idx, 1);
+    renderDxBadges();
+    saveDebounced();
+  }
+
+  // ── Autocompletado CIE-10 ───────────────────────────────────────────
+  let dxSearchTimer = null;
+  function setupDxAutocomplete() {
+    const input = document.getElementById("libre_dx_input");
+    const sugBox = document.getElementById("libre_dx_suggestions");
+    if (!input || !sugBox) return;
+
+    const diag = registry.diagnostics;
+    if (!diag) {
+      console.warn("freecapture: registry.diagnostics no disponible");
+      return;
+    }
+
+    diag.loadCie10Cache();
+
+    // Limpiar listeners previos por si el tab se renderiza varias veces
+    if (input._freecaptureBound) return;
+    input._freecaptureBound = true;
+
+    input.addEventListener("input", () => {
+      clearTimeout(dxSearchTimer);
+      const query = input.value.trim();
+      if (query.length < 2) { hideDxSuggestions(); return; }
+      dxSearchTimer = setTimeout(async () => {
+        let results = diag.searchCie10Local(query);
+        if (!results.length && window.location.protocol !== "file:") {
+          try {
+            const r = await fetch(`/api/conceptos?q=${encodeURIComponent(query)}`);
+            if (r.ok) results = await r.json();
+          } catch (e) { /* silencioso */ }
+        }
+        showDxSuggestions(results);
+      }, 180);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      const items = sugBox.querySelectorAll(".libre-dx-sug-item");
+      if (!items.length) return;
+      const active = sugBox.querySelector(".libre-dx-sug-item.active");
+      let idx = active ? Array.from(items).indexOf(active) : -1;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+        items.forEach(i => i.classList.remove("active"));
+        items[idx].classList.add("active");
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+        items.forEach(i => i.classList.remove("active"));
+        items[idx].classList.add("active");
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const target = active || items[0];
+        if (target) target.click();
+      } else if (e.key === "Escape") {
+        hideDxSuggestions();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(() => hideDxSuggestions(), 200);
+    });
+  }
+
+  function showDxSuggestions(results) {
+    const sugBox = document.getElementById("libre_dx_suggestions");
+    if (!sugBox || !results || !results.length) { hideDxSuggestions(); return; }
+    sugBox.innerHTML = results.map((item, idx) => {
+      const codigo = item.codigo || item.cie10_code || "";
+      const desc = item.descripcion || item.termino || "";
+      const payload = JSON.stringify({ codigo, descripcion: desc });
+      return `
+        <div class="libre-dx-sug-item ${idx === 0 ? 'active' : ''}"
+             data-dx-payload="${escapeHtml(payload)}">
+          <div class="libre-dx-sug-text">${escapeHtml(desc)}</div>
+          <div class="libre-dx-sug-code">${escapeHtml(codigo)}</div>
+        </div>
+      `;
+    }).join("");
+
+    sugBox.querySelectorAll(".libre-dx-sug-item").forEach(el => {
+      el.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        try {
+          const data = JSON.parse(el.getAttribute("data-dx-payload"));
+          addDx(data);
+        } catch (err) { /* silencioso */ }
+      });
+    });
+
+    sugBox.style.display = "block";
+  }
+
+  function hideDxSuggestions() {
+    const sugBox = document.getElementById("libre_dx_suggestions");
+    if (sugBox) sugBox.style.display = "none";
+  }
+
+  // ── Manejo del textarea ─────────────────────────────────────────────
+  function onInput() {
+    const ta = document.getElementById("notas_libre_medico");
+    if (!ta) return;
+    const text = ta.value;
+
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const wcEl = document.getElementById("libre_wordcount");
+    if (wcEl) wcEl.textContent = `${words} palabras`;
+
+    const consultation = app().currentConsultation;
+    if (consultation) {
+      consultation.notas_libre_medico = text;
+      saveDebounced();
+    }
+
+    updateChecklist();
+
+    const btn = document.querySelector(".libre-bottombar .btn-primary");
+    if (btn) btn.disabled = words < 50;
+  }
+
+  function updateChecklist() {
+    const ta = document.getElementById("notas_libre_medico");
+    const text = ta ? ta.value : "";
+    const consultation = app().currentConsultation;
+    const dxCount = (consultation && consultation.diagnosticos_libre)
+      ? consultation.diagnosticos_libre.length : 0;
+
+    let covered = 0;
+    CHECKLIST.forEach(item => {
+      const li = document.getElementById(`chk_${item.id}`);
+      if (!li) return;
+      let isDone = false;
+      const labelEl = li.querySelector(".chk-label");
+      if (item.id === "diagnostico") {
+        isDone = dxCount > 0;
+        if (labelEl) {
+          labelEl.textContent = isDone
+            ? `Diagnóstico (${dxCount} CIE-10)`
+            : item.label;
+        }
+      } else if (item.regex) {
+        isDone = item.regex.test(text);
+      }
+      li.className = `chk-item ${isDone ? 'chk-done' : 'chk-pending'}`;
+      const markEl = li.querySelector(".chk-mark");
+      if (markEl) markEl.textContent = isDone ? "✓" : "○";
+      if (isDone) covered++;
+    });
+
+    const progEl = document.getElementById("libre_progress");
+    if (progEl) progEl.textContent = `${covered}/${CHECKLIST.length}`;
+    const fillEl = document.getElementById("libre_progress_fill");
+    if (fillEl) fillEl.style.width = `${(covered / CHECKLIST.length) * 100}%`;
+  }
+
+  // ── Guardado debounced ──────────────────────────────────────────────
+  let saveTimer = null;
+  function saveDebounced() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (typeof global.saveConsultations === "function") {
+        global.saveConsultations();
+        const el = document.getElementById("libre_autosave");
+        if (el) el.textContent = "● Guardado " +
+          new Date().toLocaleTimeString("es-MX");
+      }
+    }, 800);
+  }
+
+  // ── Carga inicial cuando se renderiza el tab ────────────────────────
+  function load() {
+    renderChecklist();
+    setupDxAutocomplete();
+
+    const consultation = app().currentConsultation;
+    const ta = document.getElementById("notas_libre_medico");
+    if (ta && consultation) {
+      ta.value = consultation.notas_libre_medico || "";
+    }
+    renderDxBadges();
+    onInput();
+  }
+
+  // ── Stubs (Sprint 2/3 los implementan) ──────────────────────────────
+  function structure() { alert("Estructuración con IA — Sprint 2."); }
+  function preview()   { alert("Vista previa NOM-004 — Sprint 3."); }
+  function loadTemplate() { alert("Plantillas — pendiente."); }
+
+  // El cierre real exige diagnóstico/tratamiento estructurados.
+  // En Sprint 1 advertimos al médico antes de invocar closeConsultation.
+  function signAndClose() {
+    const consultation = app().currentConsultation;
+    if (!consultation) return;
+    const hasDx = (consultation.diagnosticos_libre || []).length > 0;
+    const hasNotes = (consultation.notas_libre_medico || "").trim().length > 0;
+    if (!hasDx || !hasNotes) {
+      alert("Para firmar y cerrar necesitas al menos un diagnóstico CIE-10 y notas de la consulta.");
+      return;
+    }
+    if (!consultation.tratamiento && !consultation.diagnostico) {
+      const ok = confirm(
+        "Aún no has estructurado las notas con IA (Sprint 2 pendiente).\n\n" +
+        "¿Cerrar de todos modos? La consulta se guardará pero el formato " +
+        "estructurado NOM-004 quedará vacío."
+      );
+      if (!ok) return;
+      // Espejo mínimo para que closeConsultation no rechace el cierre
+      consultation.diagnostico = (consultation.diagnosticos_libre || [])
+        .map(d => `${d.descripcion} (${d.codigo})`).join("; ");
+      consultation.tratamiento = "[Pendiente de estructurar — captura libre]";
+    }
+    if (typeof global.firmarExpediente === "function") global.firmarExpediente();
+    if (typeof global.closeConsultation === "function") global.closeConsultation();
+  }
+
+  // ── Registro y exposición global ────────────────────────────────────
+  registry.freecapture = {
+    load, onInput, renderDxBadges, addDx, removeDx, updateChecklist
+  };
+  global.freecaptureOnInput = onInput;
+  global.freecaptureLoad = load;
+  global.freecaptureStructure = structure;
+  global.freecapturePreview = preview;
+  global.freecaptureLoadTemplate = loadTemplate;
+  global.freecaptureSignAndClose = signAndClose;
+  global.freecaptureSelectDx = addDx;
+  global.freecaptureRemoveDx = removeDx;
+})(window);

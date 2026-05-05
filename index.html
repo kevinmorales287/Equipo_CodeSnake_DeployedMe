@@ -441,6 +441,73 @@
                     </div>
 
                     <!-- ═══════════════════════════════════════
+                         TAB: CAPTURA LIBRE (MÉDICO)
+                         Cuadro narrativo + checklist NOM-004 + CIE-10
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-libre-medico" class="record-tab-content">
+                      <div class="libre-grid">
+                        <div class="libre-main">
+
+                          <div class="libre-section">
+                            <p class="libre-section-label">
+                              Diagnósticos
+                              <span class="libre-section-hint">— autocompletado CIE-10</span>
+                            </p>
+                            <div id="libre_dx_box" class="libre-dx-box">
+                              <div id="libre_dx_badges" class="libre-dx-badges"></div>
+                              <input type="text"
+                                     id="libre_dx_input"
+                                     class="libre-dx-input"
+                                     placeholder="+ buscar diagnóstico CIE-10..."
+                                     autocomplete="off">
+                            </div>
+                            <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
+                          </div>
+
+                          <div class="libre-section">
+                            <div class="libre-section-header">
+                              <p class="libre-section-label">
+                                Notas de la consulta
+                                <span class="libre-section-hint">— escribe libre, IA estructura</span>
+                              </p>
+                              <button type="button" onclick="freecaptureLoadTemplate()" class="libre-btn-mini">📋 Plantilla</button>
+                            </div>
+                            <textarea id="notas_libre_medico"
+                                      class="libre-textarea"
+                                      placeholder="Escribe la consulta como hablarías. La IA estructurará al final..."
+                                      oninput="freecaptureOnInput()"></textarea>
+                            <div class="libre-meta">
+                              <span id="libre_autosave">● Listo</span>
+                              <span id="libre_wordcount">0 palabras</span>
+                            </div>
+                          </div>
+
+                          <div class="libre-bottombar">
+                            <button type="button" class="btn-primary" onclick="freecaptureStructure()" disabled>
+                              🤖 Estructurar con IA
+                            </button>
+                            <button type="button" onclick="freecapturePreview()">👁 Vista previa NOM-004</button>
+                            <button type="button" onclick="freecaptureSignAndClose()" class="libre-btn-end">
+                              ✓ Firmar y cerrar
+                            </button>
+                          </div>
+
+                        </div>
+
+                        <aside class="libre-checklist">
+                          <div class="libre-checklist-header">
+                            <span>Cobertura NOM-004</span>
+                            <span id="libre_progress">0/8</span>
+                          </div>
+                          <div class="libre-progress-bar">
+                            <div id="libre_progress_fill"></div>
+                          </div>
+                          <ul id="libre_checklist_items"></ul>
+                        </aside>
+                      </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════
                          TAB: HISTORIA CLÍNICA / NOTA DE INGRESO
                          ═══════════════════════════════════════ -->
                     <div id="tab-historia" class="record-tab-content active">
@@ -1878,6 +1945,7 @@
 <script src="modules/export.module.js"></script>
 <script src="modules/documents.module.js"></script>
 <script src="modules/expediente.module.js"></script>
+<script src="modules/freecapture.module.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

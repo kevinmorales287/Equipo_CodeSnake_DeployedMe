@@ -406,3 +406,188 @@
 #tab-urgencias input[readonly] {
     text-transform: none;
 }
+
+/* ══════════════════════════════════════════════════════════
+   CAPTURA LIBRE DEL MÉDICO — Sprint 1
+   ══════════════════════════════════════════════════════════ */
+
+.libre-grid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 16px;
+  padding: 16px;
+}
+
+.libre-section { margin-bottom: 14px; position: relative; }
+.libre-section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.libre-section-label {
+  margin: 0 0 6px; font-size: 13px; font-weight: 500;
+  color: var(--text-primary);
+}
+.libre-section-hint {
+  font-size: 11px; color: var(--text-muted);
+  font-weight: 400; margin-left: 4px;
+}
+.libre-btn-mini { font-size: 12px; padding: 4px 10px; }
+
+/* ── Zona de diagnósticos ─────────────────────────── */
+.libre-dx-box {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface-1);
+  min-height: 38px;
+  transition: border-color .15s;
+}
+.libre-dx-box:focus-within { border-color: var(--primary); }
+.libre-dx-badges { display: contents; }
+
+.libre-dx-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 8px 4px 10px;
+  background: rgba(59,130,246,0.12);
+  color: #1e40af;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.libre-dx-code {
+  font-family: var(--mono, monospace);
+  font-size: 11px; opacity: 0.85;
+}
+.libre-dx-remove {
+  cursor: pointer; opacity: 0.6;
+  font-size: 10px; padding: 0 2px;
+}
+.libre-dx-remove:hover { opacity: 1; }
+
+.libre-dx-input {
+  flex: 1; min-width: 200px;
+  border: none !important;
+  background: transparent !important;
+  padding: 4px !important;
+  font-size: 13px !important;
+  height: 28px !important;
+  outline: none !important;
+  text-transform: none !important;
+}
+
+/* ── Sugerencias CIE-10 ────────────────────────────── */
+#libre_dx_suggestions {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.libre-dx-sug-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.libre-dx-sug-item:last-child { border-bottom: none; }
+.libre-dx-sug-item:hover,
+.libre-dx-sug-item.active { background: var(--bg-surface-2); }
+.libre-dx-sug-text { flex: 1; color: var(--text-primary); }
+.libre-dx-sug-code {
+  font-family: var(--mono, monospace);
+  font-size: 11px; color: var(--text-muted);
+  margin-left: 12px;
+}
+
+/* ── Textarea de notas libres ─────────────────────── */
+.libre-textarea {
+  width: 100%;
+  min-height: 280px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.65;
+  text-transform: none !important; /* override de mayúsculas globales */
+  resize: vertical;
+}
+.libre-meta {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text-muted);
+  margin: 6px 0 0;
+}
+
+/* ── Bottom bar ──────────────────────────────────── */
+.libre-bottombar {
+  display: flex; gap: 8px;
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.libre-bottombar .btn-primary {
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+}
+.libre-bottombar .btn-primary:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.libre-btn-end { margin-left: auto; }
+
+/* ── Checklist lateral ───────────────────────────── */
+.libre-checklist {
+  background: var(--bg-surface-2);
+  border-radius: var(--radius);
+  padding: 14px;
+  align-self: start;
+  position: sticky;
+  top: 16px;
+}
+.libre-checklist-header {
+  display: flex; justify-content: space-between;
+  font-size: 13px; font-weight: 500;
+  margin-bottom: 10px;
+}
+.libre-progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+#libre_progress_fill {
+  height: 100%; width: 0;
+  background: #16a34a;
+  transition: width .3s;
+}
+.libre-checklist ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.chk-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: background .2s, color .2s;
+}
+.chk-pending {
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+}
+.chk-done {
+  background: rgba(22,163,74,0.12);
+  color: #166534;
+  border: 1px solid transparent;
+}
+.chk-mark {
+  font-size: 11px;
+  width: 12px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .libre-grid { grid-template-columns: 1fr; }
+  .libre-checklist { position: static; }
+}

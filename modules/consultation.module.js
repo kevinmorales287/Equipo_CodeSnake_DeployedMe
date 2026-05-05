@@ -69,6 +69,9 @@
             urg_motivo: "", urg_exploracion: "", urg_estudios: "",
             urg_diagnostico: "", urg_tratamiento: "",
             notaImportante: "", evolucion_nota: "",
+            useFreeCapture: true,
+            diagnosticos_libre: [],
+            notas_libre_medico: "",
             triageLevel: null, triageData: null, status: "active", attachments: []
         }, overrides);
     }
@@ -173,6 +176,16 @@
             tipoNota = consultation.tipoNota || "historia";
         }
 
+        // Modo captura libre: si el médico tiene useFreeCapture activado y no
+        // estamos en urgencias, usar el tab libre-medico.
+        if (
+            consultation.useFreeCapture &&
+            global.can("canWriteMedicalNotes") &&
+            tipoNota !== "urgencias"
+        ) {
+            tipoNota = "libre-medico";
+        }
+
         app().currentTab = tipoNota;
 
         // Ocultar todos los tabs y mostrar el correcto
@@ -214,6 +227,9 @@
         if (!isReadOnly) {
             startAutoSave();
             setupAutoSaveEvents();
+        }
+        if (tipoNota === "libre-medico" && registry.freecapture) {
+            registry.freecapture.load();
         }
     }
 
