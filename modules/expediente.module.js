@@ -74,6 +74,7 @@
         consultations.forEach(c => {
             const tipo = c.tipoNota === 'evolucion' ? 'Nota de enfermería'
                 : c.tipoNota === 'urgencias' ? 'Nota de urgencias'
+                : c.tipoNota === 'nota-medica' ? 'Nota Médica'
                 : 'Historia clínica';
             const rol = (c.tipoNota === 'evolucion') ? 'enfermero' : 'medico';
             items.push({
@@ -84,7 +85,7 @@
                 fecha: c.date || '',
                 desc: c.diagnostico
                     ? 'Dx: ' + c.diagnostico.substring(0, 60)
-                    : (c.urg_motivo || c.enf_evolucion_clinica || 'Sin descripción').substring(0, 60),
+                    : (c.nota_diagnostico || c.urg_motivo || c.enf_evolucion_clinica || 'Sin descripción').substring(0, 60),
                 consultId: c.id,
             });
         });
@@ -200,7 +201,7 @@
                     ${perms.canAddRegistro ? buildAddButton('expDdRegistro', buildRegistroMenu(role)) : ''}
                 </div>
                 <div class="exp-sec-body" id="expMiniRegistro">
-                    ${buildMiniHist(histItems, userName, ['Historia clínica','Nota de enfermería','Nota de urgencias','Nota médica'])}
+                    ${buildMiniHist(histItems, userName, ['Historia clínica','Nota de enfermería','Nota de urgencias','Nota Médica'])}
                 </div>
             </div>
 
@@ -216,14 +217,11 @@
             </div>
 
             <!-- Documentación clínica -->
-            <div class="exp-sec-card">
-                <div class="exp-sec-head">
-                    <span class="exp-sec-title">Documentación clínica y órdenes</span>
-                    ${perms.canAddDocs ? buildAddButton('expDdDocs', buildDocsMenu()) : ''}
-                </div>
-                <div class="exp-sec-body">
-                    <div class="exp-empty">Sin documentos registrados.</div>
-                </div>
+            <div id="expDocsSection">
+                ${global.ClinDataModules?.documents
+                    ? global.ClinDataModules.documents.buildExpedienteDocsSection(patient, perms)
+                    : `<div class="exp-sec-card"><div class="exp-sec-head"><span class="exp-sec-title">Documentación clínica y órdenes</span></div><div class="exp-sec-body"><div class="exp-empty">Módulo de documentos no disponible.</div></div></div>`
+                }
             </div>
 
             <!-- Pagos -->
@@ -252,6 +250,7 @@
         const isEnf = role === 'enfermero';
         return `<div class="exp-dd-head">Nota clínica</div>
             ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('historia')">Historia clínica</div>` : ''}
+            ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('nota')">Nota médica</div>` : ''}
             ${isEnf ? `<div class="exp-dd-item" onclick="expOpenFormPanel('enfermeria')">Nota de enfermería</div>` : ''}
             ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('urgencias')">Nota de urgencias</div>` : ''}`;
     }
@@ -269,6 +268,7 @@
             <div class="exp-dd-item" onclick="showExpWip('Consentimiento informado')">Consentimiento informado</div>
             <div class="exp-dd-item" onclick="showExpWip('Nota postoperatoria')">Nota postoperatoria</div>
             <div class="exp-dd-head">Administrativos</div>
+            <div class="exp-dd-item" onclick="showExpWip('Aseguradoras')">Aseguradoras</div>
             <div class="exp-dd-item" onclick="showExpWip('Informe médico')">Informe médico</div>
             <div class="exp-dd-item" onclick="showExpWip('Imagenología')">Imagenología</div>
             <div class="exp-dd-head">Órdenes médicas</div>
@@ -338,17 +338,19 @@
     function expOpenFormPanel(tipo) {
         closeAllExpDropdowns();
         app().previousSection = 'expediente';
-        // Reutilizamos los paneles existentes del sistema
-        if (tipo === 'historia') {
-            switchRecordTab('historia', document.querySelector('.record-tab[data-tab="historia"]'));
-        } else if (tipo === 'enfermeria') {
-            switchRecordTab('evolucion', document.querySelector('.record-tab[data-tab="evolucion"]'));
-        } else if (tipo === 'urgencias') {
-            switchRecordTab('urgencias', document.querySelector('.record-tab[data-tab="urgencias"]'));
-        }
-        // Si no hay consulta activa, crear una nueva
+        // Si no hay consulta activa, crear una nueva con el tipo correcto
         if (!app().currentConsultation) {
-            global.createNewConsultation();
+            if (tipo === 'historia') {
+                global.createNewConsultation('historia');
+            } else if (tipo === 'nota') {
+                global.createNewConsultation('nota-medica');
+            } else if (tipo === 'enfermeria') {
+                global.createNewConsultation('evolucion');
+            } else if (tipo === 'urgencias') {
+                global.createNewConsultation('urgencias');
+            } else {
+                global.createNewConsultation();
+            }
         } else {
             global.navigate('medicalRecord');
         }

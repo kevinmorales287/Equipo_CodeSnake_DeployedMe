@@ -397,10 +397,8 @@ function collectRecordFieldsSafe() {
 function switchRecordTab(tabName, btn) {
     currentTab = tabName;
     document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
     const tabEl = document.getElementById("tab-" + tabName);
     if (tabEl) tabEl.classList.add("active");
-    if (btn) btn.classList.add("active");
     // Store tab selection in consultation
     if (currentConsultation) {
         currentConsultation.tipoNota = tabName;
@@ -437,7 +435,7 @@ function renderConsultationHistory() { return requireClinDataModule("patients").
 function renderPatientFullCard() { return requireClinDataModule("patients").renderPatientFullCard(); }
 
 function createEmptyConsultation(patientId, overrides = {}) { return requireClinDataModule("consultation").createEmptyConsultation(patientId, overrides); }
-function createNewConsultation() { return requireClinDataModule("consultation").createNewConsultation(); }
+function createNewConsultation(tipoNotaOverride) { return requireClinDataModule("consultation").createNewConsultation(tipoNotaOverride); }
 
 function openConsultation(consultId) { return requireClinDataModule("consultation").openConsultation(consultId); }
 
@@ -495,15 +493,19 @@ function renderMedicalRecord() {
         summaryBar.classList.add("hidden");
     }
 
-    // Restore tab
+    // Restore tab - mostrar solo la sección correspondiente al tipoNota
     const tipoNota = currentConsultation.tipoNota || "historia";
     currentTab = tipoNota;
-    document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
+    
+    // Ocultar todas las secciones primero
+    document.querySelectorAll(".record-tab-content").forEach(t => t.style.display = "none");
+    
+    // Mostrar solo la sección correspondiente
     const tabEl = document.getElementById("tab-" + tipoNota);
-    if (tabEl) tabEl.classList.add("active");
-    const tabBtn = document.querySelector(`.record-tab[data-tab="${tipoNota}"]`);
-    if (tabBtn) tabBtn.classList.add("active");
+    if (tabEl) {
+        tabEl.style.display = "block";
+        tabEl.classList.add("active");
+    }
 
     // Fill all fields
     fillRecordFields();
@@ -516,6 +518,7 @@ function renderMedicalRecord() {
 
     // IMC auto-calc
     setupIMCCalc();
+    setupNotaIMCCalc();
     setupNursingIMCCalc();
     setupRecordActions();
     renderAttachments();
@@ -558,6 +561,12 @@ const ALL_RECORD_FIELDS = [
     // Urgencias
     "urg_tas","urg_tad","urg_fc","urg_fr","urg_temp","urg_spo2","urg_glucemia","urg_glasgow",
     "urg_motivo","urg_exploracion","urg_estudios","urg_diagnostico","urg_tratamiento",
+    // Nota médica (SOAP)
+    "nota_sv_tas","nota_sv_tad","nota_sv_fc","nota_sv_fr","nota_sv_temp","nota_sv_spo2","nota_sv_glucemia","nota_sv_peso","nota_sv_talla","nota_sv_dolor","nota_sv_habitus",
+    "nota_problemas","nota_subjetivos","nota_objetivos","nota_analisis",
+    "nota_tratamiento","nota_indicaciones_reposo","nota_indicaciones_dieta","nota_indicaciones_cita","nota_indicaciones_referencia",
+    "nota_diagnostico","nota_diagnostico_secundario","nota_pronostico_detalle",
+    "nota_notaImportante","nota_evolucion_nota",
     // Notas adicionales
     "notaImportante"
 ];
@@ -578,6 +587,11 @@ function fillRecordFields() {
         const r = document.querySelector(`input[name="pronostico"][value="${currentConsultation.pronostico_radio}"]`);
         if (r) r.checked = true;
     }
+    // Radio pronóstico nota médica
+    if (currentConsultation.nota_pronostico_radio) {
+        const r = document.querySelector(`input[name="nota_pronostico"][value="${currentConsultation.nota_pronostico_radio}"]`);
+        if (r) r.checked = true;
+    }
     // Radio destino urgencias
     if (currentConsultation.destino_urg) {
         const r = document.querySelector(`input[name="destino_urg"][value="${currentConsultation.destino_urg}"]`);
@@ -593,6 +607,7 @@ function fillRecordFields() {
     });
     // IMC
     calcIMC();
+    calcNotaIMC();
     
     // Fill nursing fields
     const nursingFields = [
@@ -610,27 +625,6 @@ function fillRecordFields() {
     const enfImcEl = document.getElementById("enf_sv_imc");
     if (enfImcEl) enfImcEl.value = currentConsultation.enf_sv_imc || "";
 
-    // Show/hide tabs based on role
-    const tabHistoria = document.querySelector('.record-tab[data-tab="historia"]');
-    const tabEvolucion = document.querySelector('.record-tab[data-tab="evolucion"]');
-    const tabUrgencias = document.querySelector('.record-tab[data-tab="urgencias"]');
-    if (tabEvolucion) {
-        // Nursing tab always visible, but only enfermero navigates there by default
-        tabEvolucion.style.display = "";
-    }
-    if (tabHistoria && tabUrgencias) {
-        // Enfermero can still VIEW other tabs (read-only), but starts on enfermería
-        if (can("canWriteNursingNotes") && !can("canWriteMedicalNotes")) {
-            // Switch to nursing tab by default
-            document.querySelectorAll(".record-tab-content").forEach(t => t.classList.remove("active"));
-            document.querySelectorAll(".record-tab").forEach(b => b.classList.remove("active"));
-            const tab = document.getElementById("tab-evolucion");
-            if (tab) tab.classList.add("active");
-            if (tabEvolucion) tabEvolucion.classList.add("active");
-            currentTab = "evolucion";
-        }
-    }
-    
     // Cargar diagnósticos CIE-10 seleccionados
     selectedDiagnosticos = (currentConsultation.diagnosticos_cie10 || []).map(d => ({...d}));
     renderDiagBadges();
@@ -732,6 +726,19 @@ function setupNursingIMCCalc() {
     talla.addEventListener("input", handler);
 }
 
+function setupNotaIMCCalc() {
+    const peso = document.getElementById("nota_sv_peso");
+    const talla = document.getElementById("nota_sv_talla");
+    if (!peso || !talla) return;
+    const handler = () => calcNotaIMC();
+    peso.removeEventListener("input", peso._notaImcHandler);
+    talla.removeEventListener("input", talla._notaImcHandler);
+    peso._notaImcHandler = handler;
+    talla._notaImcHandler = handler;
+    peso.addEventListener("input", handler);
+    talla.addEventListener("input", handler);
+}
+
 function calcIMC() {
     const peso = parseFloat(document.getElementById("sv_peso")?.value);
     const talla = parseFloat(document.getElementById("sv_talla")?.value);
@@ -748,6 +755,28 @@ function calcIMC() {
         imcEl.value = `${imc} (${cat})`;
     } else {
         imcEl.value = "";
+    }
+}
+
+function calcNotaIMC() {
+    const peso = parseFloat(document.getElementById("nota_sv_peso")?.value);
+    const talla = parseFloat(document.getElementById("nota_sv_talla")?.value);
+    const imcDisplay = document.getElementById("nota_sv_imc_display");
+    const imcClasif = document.getElementById("nota_sv_imc_clasif");
+    if (!imcDisplay || !imcClasif) return;
+    if (peso && talla) {
+        const tallaM = talla / 100;
+        const imc = (peso / (tallaM * tallaM)).toFixed(1);
+        let cat = "";
+        if (imc < 18.5) cat = "Bajo peso";
+        else if (imc < 25) cat = "Normal";
+        else if (imc < 30) cat = "Sobrepeso";
+        else cat = "Obesidad";
+        imcDisplay.textContent = imc;
+        imcClasif.textContent = cat;
+    } else {
+        imcDisplay.textContent = "—";
+        imcClasif.textContent = "";
     }
 }
 
@@ -1008,6 +1037,10 @@ function agregarMedicamento() { return requireClinDataModule("consultation").agr
 function renderMedicamentos() { return requireClinDataModule("consultation").renderMedicamentos(); }
 function updateMedicamento(id, field, value) { return requireClinDataModule("consultation").updateMedicamento(id, field, value); }
 function eliminarMedicamento(id) { return requireClinDataModule("consultation").eliminarMedicamento(id); }
+function agregarMedicamentoNota() { return requireClinDataModule("consultation").agregarMedicamentoNota(); }
+function renderMedicamentosNota() { return requireClinDataModule("consultation").renderMedicamentosNota(); }
+function updateMedicamentoNota(id, field, value) { return requireClinDataModule("consultation").updateMedicamentoNota(id, field, value); }
+function eliminarMedicamentoNota(id) { return requireClinDataModule("consultation").eliminarMedicamentoNota(id); }
 function setupRecordActions() { return requireClinDataModule("consultation").setupRecordActions(); }
 function collectRecordFields() { return requireClinDataModule("consultation").collectRecordFields(); }
 function saveRecord() { return requireClinDataModule("consultation").saveRecord(); }

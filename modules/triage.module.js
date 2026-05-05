@@ -2,6 +2,9 @@
     const registry = global.ClinDataModules || (global.ClinDataModules = {});
     const app = () => global.ClinDataApp;
 
+    // Variable para guardar el paciente vinculado en triage
+    let triagePatientId = null;
+
     function calcularTriage() {
         const name = document.getElementById("triageName").value.trim();
         const age = parseInt(document.getElementById("triageAge").value, 10) || 0;
@@ -55,7 +58,10 @@
         else if (score >= 10) nivel = { number: 4, label: "Urgencia menor", color: "verde", icon: "🟢", wait: "≤ 60 minutos", description: "Condición no urgente. Puede esperar sin riesgo." };
         else nivel = { number: 5, label: "No urgente", color: "azul", icon: "🔵", wait: "≤ 120 minutos", description: "Sin urgencia. Puede ser referido a consulta externa." };
 
-        const entry = { id: Date.now(), name, age, sex, reason, notes, vitals, level: nivel.number, levelLabel: nivel.label, levelColor: nivel.color, score, flags, timestamp: new Date().toISOString(), registeredBy: app().currentUser?.displayName || "Enfermero/a", active: true };
+        const entry = { id: Date.now(), name, age, sex, reason, notes, vitals, level: nivel.number, levelLabel: nivel.label, levelColor: nivel.color, score, flags, timestamp: new Date().toISOString(), registeredBy: app().currentUser?.displayName || "Enfermero/a", active: true, patientId: triagePatientId || null   // ← vinculación al expediente
+        };
+        // Resetear la vinculación para el siguiente triage
+        triagePatientId = null;
         app().triageQueue.push(entry);
         global.saveTriageQueue();
 
@@ -95,6 +101,11 @@
         document.querySelectorAll(".symptom-check input").forEach((checkbox) => { checkbox.checked = false; });
         document.getElementById("triageResult").classList.add("hidden");
         window.scrollTo({ top: 0, behavior: "smooth" });
+        triagePatientId = null;
+        const badge = document.getElementById("triagePacienteVinculado");
+        if (badge) badge.style.display = "none";
+        const box = document.getElementById("triageNameSugerencias");
+        if (box) box.style.display = "none";
     }
 
     function renderTriageList() {
@@ -115,7 +126,7 @@
                 </div>
                 <div class="triage-queue-right">
                     <div class="triage-queue-time">${global.formatTime(entry.timestamp)}</div>
-                    ${global.can("canWriteMedicalNotes") ? `<button class="btn-attend" onclick="attendTriage(${entry.id})">Atender</button>` : ""}
+                    ${(global.can("canWriteMedicalNotes") || global.can("canWriteNursingNotes")) ? `<button class="btn-attend" onclick="attendTriage(${entry.id})">Atender</button>` : ""}
                     <button class="btn-dismiss" onclick="dismissTriage(${entry.id})">Alta</button>
                 </div>
             </div>`).join("");
@@ -124,7 +135,15 @@
     function attendTriage(triageId) {
         const entry = app().triageQueue.find((item) => item.id === triageId);
         if (!entry) return;
-        let patient = app().patients.find((candidate) => candidate.name.toLowerCase() === entry.name.toLowerCase());
+
+        // Buscar primero por patientId vinculado, luego por nombre exacto, si no → nuevo
+        let patient = null;
+        if (entry.patientId) {
+            patient = app().patients.find(p => p.id === entry.patientId);
+        }
+        if (!patient) {
+            patient = app().patients.find(p => p.name.toLowerCase() === entry.name.toLowerCase());
+        }
         if (!patient) {
             patient = {
                 id: Date.now(),
@@ -133,21 +152,10 @@
                 age: entry.age,
                 sex: entry.sex || "No especificado",
                 address: "Urgencias",
-                phone: "",
-                dob: "",
-                birthPlace: "",
-                nationality: "",
-                curp: "",
-                rfc: "",
-                nss: "",
-                email: "",
-                occupation: "",
-                emergencyContact: "",
-                ethnicGroup: "",
-                allergies: "",
-                chronicConditions: "",
-                alerts: "",
-                currentTreatment: "",
+                phone: "", dob: "", birthPlace: "", nationality: "",
+                curp: "", rfc: "", nss: "", email: "", occupation: "",
+                emergencyContact: "", ethnicGroup: "", allergies: "",
+                chronicConditions: "", alerts: "", currentTreatment: "",
                 createdAt: new Date().toISOString(),
                 createdBy: app().currentUser?.username
             };
@@ -188,5 +196,81 @@
         }
     }
 
-    registry.triage = { calcularTriage, clearTriageForm, renderTriageList, attendTriage, dismissTriage };
+    function buscarPacienteTriage(query) {
+        const box = document.getElementById("triageNameSugerencias");
+        if (!box) return;
+        const q = query.trim().toLowerCase();
+        if (q.length < 2) { box.style.display = "none"; return; }
+
+        const matches = app().patients.filter(p =>
+            p.name.toLowerCase().includes(q) ||
+            (p.expediente || "").toLowerCase().includes(q) ||
+            (p.curp || "").toLowerCase().includes(q)
+        ).slice(0, 6);
+
+        if (matches.length === 0) { box.style.display = "none"; return; }
+
+        box.style.display = "block";
+        box.innerHTML = matches.map(p => {
+            const consults = app().consultations.filter(c => c.patientId === p.id).length;
+            const dob = p.dob ? ` · ${p.dob.substring(0,4)}` : "";
+            return `<div onclick="seleccionarPacienteTriage(${p.id})"
+                style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:2px;"
+                onmouseenter="this.style.background='var(--bg-surface-2)'"
+                onmouseleave="this.style.background=''">
+                <div style="font-weight:600;font-size:13.5px;">${p.name}</div>
+                <div style="font-size:11.5px;color:var(--text-muted);">
+                    ${p.expediente || "Sin exp."} · ${p.age} años · ${p.sex}${dob}
+                    ${p.allergies ? `<span style="color:#ef4444;margin-left:6px;">⚠ ${p.allergies}</span>` : ""}
+                </div>
+                <div style="font-size:11px;color:var(--text-secondary);">${consults} consulta${consults !== 1 ? "s" : ""} registrada${consults !== 1 ? "s" : ""}</div>
+            </div>`;
+        }).join("");
+    }
+
+    function seleccionarPacienteTriage(patientId) {
+        const patient = app().patients.find(p => p.id === patientId);
+        if (!patient) return;
+
+        triagePatientId = patientId;
+
+        // Llenar campos con datos del paciente
+        const nameEl = document.getElementById("triageName");
+        if (nameEl) nameEl.value = patient.name;
+
+        const ageEl = document.getElementById("triageAge");
+        if (ageEl) ageEl.value = patient.age;
+
+        const sexEl = document.getElementById("triageSex");
+        if (sexEl) sexEl.value = patient.sex || "";
+
+        // Cerrar sugerencias
+        const box = document.getElementById("triageNameSugerencias");
+        if (box) box.style.display = "none";
+
+        // Mostrar badge de vinculación
+        const badge = document.getElementById("triagePacienteVinculado");
+        const texto = document.getElementById("triagePacienteVinculadoTexto");
+        if (badge && texto) {
+            const consults = app().consultations.filter(c => c.patientId === patientId).length;
+            texto.textContent = `Expediente vinculado: ${patient.name} · ${patient.expediente || "Sin exp."} · ${consults} consulta${consults !== 1 ? "s" : ""} previa${consults !== 1 ? "s" : ""}`;
+            badge.style.display = "flex";
+        }
+    }
+
+    function desvincularPacienteTriage() {
+        triagePatientId = null;
+        const badge = document.getElementById("triagePacienteVinculado");
+        if (badge) badge.style.display = "none";
+        const nameEl = document.getElementById("triageName");
+        if (nameEl) { nameEl.value = ""; nameEl.focus(); }
+    }
+
+    registry.triage = { calcularTriage, clearTriageForm, renderTriageList, attendTriage, dismissTriage,
+        buscarPacienteTriage, seleccionarPacienteTriage, desvincularPacienteTriage };
+
+    // Y exponer globalmente las tres funciones nuevas:
+    global.buscarPacienteTriage      = (q)  => buscarPacienteTriage(q);
+    global.seleccionarPacienteTriage = (id) => seleccionarPacienteTriage(id);
+    global.desvincularPacienteTriage = ()   => desvincularPacienteTriage();
 })(window);
