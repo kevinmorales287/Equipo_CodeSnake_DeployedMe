@@ -249,8 +249,7 @@
         const isMed = role === 'medico';
         const isEnf = role === 'enfermero';
         return `<div class="exp-dd-head">Nota clínica</div>
-            ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('historia')">Historia clínica</div>` : ''}
-            ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('nota')">Nota médica</div>` : ''}
+            ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('libre-medico')">📝 Captura libre (con IA)</div>` : ''}
             ${isEnf ? `<div class="exp-dd-item" onclick="expOpenFormPanel('enfermeria')">Nota de enfermería</div>` : ''}
             ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('urgencias')">Nota de urgencias</div>` : ''}`;
     }
@@ -340,7 +339,9 @@
         app().previousSection = 'expediente';
         // Si no hay consulta activa, crear una nueva con el tipo correcto
         if (!app().currentConsultation) {
-            if (tipo === 'historia') {
+            if (tipo === 'libre-medico') {
+                global.createNewConsultation('libre-medico');
+            } else if (tipo === 'historia') {
                 global.createNewConsultation('historia');
             } else if (tipo === 'nota') {
                 global.createNewConsultation('nota-medica');

@@ -108,7 +108,15 @@
             // No existe aún — crearla (normalmente la crea el médico o el primero en atender)
             const prevConsults = app().consultations.filter(c => c.patientId === patient.id);
             const isPrimerConsulta = prevConsults.length === 0;
-            const tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+            // Médico (no enfermero) → arranca en captura libre.
+            // Enfermero → "evolucion" (renderMedicalRecord lo override igual).
+            // Si por algún motivo no hay médico ni enfermero → fallback al cálculo legacy.
+            let tipoNota;
+            if (!isNurse && global.can("canWriteMedicalNotes")) {
+                tipoNota = "libre-medico";
+            } else {
+                tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+            }
 
             consultation = global.createEmptyConsultation(patient.id, {
                 createdBy: app().currentUser?.displayName || "Sistema",
