@@ -7,6 +7,7 @@ const path    = require('path');
 
 const abreviaturasRouter = require('./api/abreviaturas');
 const conceptosRouter = require('./api/conceptos');
+const structureRouter = require('./api/structure');
 
 const app  = express();
 const PORT = 3000;
@@ -21,6 +22,7 @@ app.use(express.static(__dirname));
 // Rutas de la API
 app.use('/api/abreviaturas', abreviaturasRouter);
 app.use('/api/conceptos', conceptosRouter);
+app.use('/api/structure', structureRouter);
 
 // Inicia el servidor
 app.listen(PORT, () => {

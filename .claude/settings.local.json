@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell *)"
+      "Bash(powershell *)",
+      "Bash(dir /a \"C:\\\\Users\\\\Lande\\\\OneDrive\\\\Escritorio\\\\Proyectos personales\\\\ClinData\\\\Repositorio\\\\Equipo_CodeSnake_DeployedMe\")",
+      "Bash(findstr /i \"git ignore env\")",
+      "Bash(dir C:\\\\Users\\\\Lande\\\\OneDrive\\\\Escritorio\\\\Proyectos personales\\\\ClinData\\\\Repositorio\\\\Equipo_CodeSnake_DeployedMe\\\\api *)",
+      "Bash(npm install *)",
+      "PowerShell(npm install *)",
+      "PowerShell(Get-Command *)"
     ]
   }
 }

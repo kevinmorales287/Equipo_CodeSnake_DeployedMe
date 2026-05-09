@@ -274,9 +274,21 @@
     onInput();
   }
 
-  // ── Stubs (Sprint 2/3 los implementan) ──────────────────────────────
-  function structure() { alert("Estructuración con IA — Sprint 2."); }
-  function preview()   { alert("Vista previa NOM-004 — Sprint 3."); }
+  // ── Estructuración con IA + Vista previa ────────────────────────────
+  function structure() {
+    if (registry.aiStructure && typeof registry.aiStructure.structure === 'function') {
+      registry.aiStructure.structure();
+    } else {
+      alert('Módulo de IA no disponible.');
+    }
+  }
+  function preview() {
+    if (registry.preview && typeof registry.preview.show === 'function') {
+      registry.preview.show();
+    } else {
+      alert('Aún no has estructurado con IA.');
+    }
+  }
   function loadTemplate() { alert("Plantillas — pendiente."); }
 
   // El cierre real exige diagnóstico/tratamiento estructurados.
