@@ -1,0 +1,193 @@
+(function initQueueModule(global) {
+    const registry = global.ClinDataModules || (global.ClinDataModules = {});
+    const app = () => global.ClinDataApp;
+
+    function addPatientToQueue(patientId, reason, isNew = false) {
+        app().consultQueue.push({
+            id: Date.now(),
+            patientId,
+            reason,
+            isNewPatient: isNew,
+            addedAt: new Date().toISOString(),
+            addedBy: app().currentUser?.displayName,
+            status: "waiting"
+        });
+        global.saveConsultQueue();
+    }
+
+    function openAddToQueueModal(patientId) {
+        const patient = app().patients.find((entry) => entry.id === patientId);
+        if (!patient) return;
+        app().addToQueuePatientId = patientId;
+        document.getElementById("queueModalPatientName").textContent = patient.name;
+        document.getElementById("queueModalReason").value = "";
+        document.getElementById("addToQueueModal").classList.remove("hidden");
+        const verEl = document.getElementById("queueModalVerificador");
+        if (verEl) verEl.value = "";
+        const verResult = document.getElementById("queueModalVerificadorResult");
+        if (verResult) verResult.style.display = "none";
+    }
+
+    function confirmAddToQueue() {
+        const reason = document.getElementById("queueModalReason").value.trim();
+        if (!reason) {
+            global.showToast("Ingresa el motivo de consulta.", "error");
+            return;
+        }
+        addPatientToQueue(app().addToQueuePatientId, reason, false);
+        global.closeModal("addToQueueModal");
+        global.showToast("Paciente agregado a la fila de consulta.", "success");
+    }
+
+    function renderConsultQueue() {
+        const container = document.getElementById("consultQueue");
+        if (!container) return;
+
+        const actions = document.getElementById("consultQueueActions");
+        if (actions && global.can("canAddToQueue")) {
+            actions.innerHTML = `<button class="btn-secondary" onclick="navigate('patients')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar paciente existente</button>`;
+        }
+
+        const waiting = app().consultQueue.filter((entry) => entry.status === "waiting").sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt));
+        if (waiting.length === 0) {
+            container.innerHTML = `<div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <p>No hay pacientes en la fila de consulta</p>
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = waiting.map((entry, idx) => {
+            const patient = app().patients.find((item) => item.id === entry.patientId) || { name: "Paciente", age: "—", sex: "—" };
+            const initials = patient.name.split(" ").slice(0, 2).map((chunk) => chunk[0]).join("").toUpperCase();
+            const isNew = entry.isNewPatient ? `<span class="new-badge">Primera visita</span>` : `<span class="return-badge">Seguimiento</span>`;
+            const consultorioBadge = patient.consultorio ? `<span class="consultorio-tag">🏥 ${patient.consultorio}</span>` : "";
+            const canAttend = global.can("canWriteMedicalNotes") || global.can("canWriteNursingNotes");
+            const attendBtn = canAttend
+                ? `<button class="btn-attend" onclick="attendFromQueue(${entry.id})">Atender</button>`
+                : `<span class="waiting-tag">En espera</span>`;
+            const dismissBtn = global.can("canAddToQueue") || global.can("canWriteMedicalNotes") ? `<button class="btn-dismiss" onclick="dismissFromConsultQueue(${entry.id})">Retirar</button>` : "";
+            return `<div class="consult-queue-card">
+                <div class="queue-number">${idx + 1}</div>
+                <div class="queue-patient-avatar">${initials}</div>
+                <div class="queue-body">
+                    <div class="queue-name">${patient.name}</div>
+                    <div class="queue-meta">${patient.age} años · ${patient.sex} · ${isNew} ${consultorioBadge}</div>
+                    <div class="queue-reason">${entry.reason}</div>
+                </div>
+                <div class="queue-right">
+                    <div class="queue-time">${global.formatTime(entry.addedAt)}</div>
+                    ${attendBtn}
+                    ${dismissBtn}
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    function attendFromQueue(queueId) {
+        const queueEntry = app().consultQueue.find((entry) => entry.id === queueId);
+        if (!queueEntry) return;
+        const patient = app().patients.find((entry) => entry.id === queueEntry.patientId);
+        if (!patient) return;
+
+        app().currentPatient = patient;
+
+        const isNurse = global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes");
+
+        // Buscar si ya hay una consulta activa abierta para este paciente en esta entrada de cola
+        // (para que enfermero y médico accedan a la misma consulta)
+        let consultation = app().consultations.find(c =>
+            c.patientId === patient.id &&
+            c.queueEntryId === queueEntry.id &&
+            c.status === "active"
+        );
+
+        if (!consultation) {
+            // No existe aún — crearla (normalmente la crea el médico o el primero en atender)
+            const prevConsults = app().consultations.filter(c => c.patientId === patient.id);
+            const isPrimerConsulta = prevConsults.length === 0;
+            // Médico (no enfermero) → arranca en captura libre.
+            // Enfermero → "evolucion" (renderMedicalRecord lo override igual).
+            // Si por algún motivo no hay médico ni enfermero → fallback al cálculo legacy.
+            let tipoNota;
+            if (!isNurse && global.can("canWriteMedicalNotes")) {
+                tipoNota = "libre-medico";
+            } else {
+                tipoNota = isPrimerConsulta ? "historia" : "nota-medica";
+            }
+
+            consultation = global.createEmptyConsultation(patient.id, {
+                createdBy: app().currentUser?.displayName || "Sistema",
+                queueReason: queueEntry.reason,
+                isNewPatient: queueEntry.isNewPatient,
+                tipoNota: tipoNota,
+                queueEntryId: queueEntry.id
+            });
+            global.copyAntecedentsFromPreviousConsultation(consultation);
+            app().consultations.push(consultation);
+            global.saveConsultations();
+        }
+
+        app().currentConsultation = consultation;
+
+        // Solo el médico marca la entrada como "attended" (quitando al paciente de la fila).
+        // El enfermero la deja en "waiting" para que el médico la siga viendo.
+        if (!isNurse) {
+            queueEntry.status = "attended";
+            global.saveConsultQueue();
+        }
+
+        app().selectedDiagnosticos = [];
+        global.navigate("medicalRecord");
+        global.renderMedicalRecord();
+    }
+
+    function dismissFromConsultQueue(queueId) {
+        const entry = app().consultQueue.find((item) => item.id === queueId);
+        if (entry) {
+            entry.status = "dismissed";
+            global.saveConsultQueue();
+            renderConsultQueue();
+        }
+    }
+
+    function verificarIdentidadCola(query) {
+        const resultEl = document.getElementById("queueModalVerificadorResult");
+        if (!resultEl) return;
+        const q = query.trim().toLowerCase();
+        if (q.length < 3) { resultEl.style.display = "none"; return; }
+
+        const patient = app().patients.find(p =>
+            (p.expediente || "").toLowerCase() === q ||
+            (p.curp || "").toLowerCase() === q ||
+            (p.nss || "").toLowerCase() === q ||
+            (p.phone || "").replace(/\s/g, "").includes(q.replace(/\s/g, "")) ||
+            (p.phoneLocal || "").replace(/\s/g, "").includes(q.replace(/\s/g, ""))
+        );
+
+        if (patient && patient.id === app().addToQueuePatientId) {
+            resultEl.style.display = "block";
+            resultEl.style.background = "var(--color-success-bg, #f0fdf4)";
+            resultEl.style.border = "1px solid var(--color-success, #22c55e)";
+            resultEl.style.color = "var(--color-success-text, #15803d)";
+            resultEl.innerHTML = `✅ Identidad confirmada · ${patient.name} · ${patient.expediente || "Sin exp."} · ${patient.age} años`;
+        } else if (patient && patient.id !== app().addToQueuePatientId) {
+            resultEl.style.display = "block";
+            resultEl.style.background = "#fef9c3";
+            resultEl.style.border = "1px solid #ca8a04";
+            resultEl.style.color = "#854d0e";
+            resultEl.innerHTML = `⚠ El dato pertenece a otro paciente: <strong>${patient.name}</strong>`;
+        } else {
+            resultEl.style.display = "block";
+            resultEl.style.background = "var(--bg-surface-2)";
+            resultEl.style.border = "1px solid var(--border)";
+            resultEl.style.color = "var(--text-muted)";
+            resultEl.innerHTML = `Sin coincidencias para ese dato`;
+        }
+    }
+
+    registry.queue = { addPatientToQueue, openAddToQueueModal, confirmAddToQueue, renderConsultQueue, attendFromQueue, dismissFromConsultQueue, verificarIdentidadCola };
+    global.verificarIdentidadCola = (q) => verificarIdentidadCola(q);
+})(window);

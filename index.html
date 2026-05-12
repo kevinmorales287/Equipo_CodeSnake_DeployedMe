@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinData — Sistema de Expediente Clínico</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="expediente.css">
+</head>
+<body>
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <div class="login-brand">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                <rect width="36" height="36" rx="8" fill="#0ea5e9"/>
+                <path d="M10 18h16M18 10v16M13 13l10 10M23 13L13 23" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <div><h1>ClinData</h1><p>Sistema de Expediente Clínico</p></div>
+        </div>
+        <div class="login-form-wrap">
+            <h2>Iniciar Sesión</h2>
+            <p class="login-subtitle">Ingresa tus credenciales para acceder al sistema</p>
+            <div id="loginError" class="login-error hidden">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Usuario o contraseña incorrectos
+            </div>
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" id="loginUser" placeholder="Ingresa tu usuario" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-password-wrap">
+                    <input type="password" id="loginPass" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+                    <button type="button" class="toggle-pass" onclick="togglePassword()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+            </div>
+            <button class="btn-login" onclick="handleLogin()">Ingresar al sistema</button>
+            <div class="login-demo-info">
+                <div class="demo-title">Usuarios para demo:</div>
+                <div class="demo-row"><span class="demo-role role-medico-pill">Médico</span><code>dr.garcia / Medico#2026</code></div>
+                <div class="demo-row"><span class="demo-role role-enfermero-pill">Enfermero/a</span><code>enf.lopez / Enfermero#2026</code></div>
+                <div class="demo-row"><span class="demo-role role-recepcion-pill">Recepción</span><code>recep.ruiz / Recepcion#2026</code></div>
+                <div class="demo-row"><span class="demo-role role-admin-pill">Admin</span><code>admin.sys / Admin#2026</code></div>
+            </div>
+        </div>
+    </div>
+    <div class="login-bg-art">
+        <div class="bg-circle c1"></div>
+        <div class="bg-circle c2"></div>
+        <div class="bg-circle c3"></div>
+    </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="appShell" class="app-shell hidden">
+
+    <header class="navbar">
+        <div class="navbar-brand">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+                <rect width="36" height="36" rx="8" fill="#0ea5e9"/>
+                <path d="M10 18h16M18 10v16M13 13l10 10M23 13L13 23" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="brand-name">ClinData</span>
+            <span class="brand-tagline">Expediente Clínico Electrónico · NOM-004-SSA3-2012</span>
+        </div>
+        <div class="navbar-right">
+            <div class="user-badge">
+                <div class="user-avatar" id="userAvatar">M</div>
+                <div class="user-info">
+                    <span id="userDisplayName">Usuario</span>
+                    <span id="userRoleBadge" class="role-badge">Rol</span>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Salir
+            </button>
+        </div>
+    </header>
+
+    <div class="app-body">
+        <aside class="sidebar">
+            <nav class="sidebar-nav" id="sidebarNav"></nav>
+            <div class="sidebar-footer">
+                <div class="auto-save-indicator" id="autoSaveIndicator">
+                    <span class="save-dot"></span>
+                    <span id="autoSaveText">Guardado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main id="app">
+            <section id="expedienteSection" class="section">
+                <!-- El contenido se renderiza dinámicamente por expediente.module.js -->
+            </section>
+
+            <!-- PACIENTES -->
+            <section id="patientsSection" class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Pacientes Registrados</h2>
+                        <p class="section-subtitle">Gestión y acceso a expedientes clínicos</p>
+                    </div>
+                    <div class="header-actions" id="patientsHeaderActions"></div>
+                </div>
+                <div class="search-bar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="search" placeholder="Buscar por nombre, edad o sexo...">
+                </div>
+                <div id="patientList" class="patient-list"></div>
+            </section>
+
+            <!-- NUEVO PACIENTE -->
+            <section id="newPatientSection" class="section">
+                <div class="section-header">
+                    <div>
+                        <button class="btn-back" onclick="navigate('patients')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            Volver
+                        </button>
+                        <h2>Registro de Paciente</h2>
+                        <p class="section-subtitle">Ficha de identificación · NOM-004-SSA3-2012</p>
+                    </div>
+                </div>
+                <div class="form-card">
+                    <div class="form-card-body">
+                        <div class="nom-section-label">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Datos de Identificación
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Número de expediente</label><input type="text" id="patientFileNumberPreview" class="readonly-field" placeholder="Se generará automáticamente" readonly></div>
+                            <div class="form-group full"><label>Nombre completo <span class="required">*</span></label><input type="text" id="name" placeholder="Apellido Paterno, Apellido Materno, Nombre(s)"></div>
+                            <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="dob"></div>
+                            <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="birthPlace" placeholder="Ciudad, estado, país"></div>
+                            <div class="form-group"><label>Hemotipo</label><input type="text" id="hemotype" placeholder="Ej: A+, O-, B-"></div>
+                            <div class="form-group"><label>Nacionalidad</label><input type="text" id="nationality" placeholder="Ej: Mexicana"></div>
+                            <div class="form-group"><label>Religión</label><input type="text" id="religion" placeholder="Ej: Católica, Evangélica, Sin religión"></div>
+                            <div class="form-group"><label>CURP</label><input type="text" id="curp" placeholder="18 caracteres"></div>
+                            <div class="form-group"><label>RFC</label><input type="text" id="rfc" placeholder="13 caracteres"></div>
+                            <div class="form-group"><label>NSS</label><input type="text" id="nss" placeholder="Número de seguridad social"></div>
+                            <div class="form-group"><label>Edad <span class="required">*</span></label><input type="number" id="age" placeholder="Años" min="0" max="130"></div>
+                            <div class="form-group"><label>Sexo <span class="required">*</span></label>
+                                <select id="sex"><option value="">Seleccionar...</option><option>Masculino</option><option>Femenino</option></select>
+                            </div>
+                            <div class="form-group"><label>Ocupación</label><input type="text" id="occupation" placeholder="Ej: Estudiante, Comerciante..."></div>
+                            <div class="form-group full"><label>Domicilio <span class="required">*</span></label><input type="text" id="address" placeholder="Calle, número, colonia, ciudad, C.P."></div>
+                            <div class="form-group"><label>Grupo étnico</label><input type="text" id="ethnicGroup" placeholder="Opcional"></div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12 19.79 19.79 0 0 1 1.62 3.38 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.13 1 .36 1.97.72 2.91a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.16 6.16l.91-.91a2 2 0 0 1 2.11-.45c.94.36 1.91.59 2.91.72A2 2 0 0 1 21.73 16.92z"/></svg>
+                            Comunicación
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Teléfono celular</label>
+                                <div style="display:flex;">
+                                    <select id="phonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="phone" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono local / fijo</label>
+                                <div style="display:flex;">
+                                    <select id="phoneLocalPrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="phoneLocal" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                            <div class="form-group"><label>Correo electrónico</label><input type="email" id="email" placeholder="correo@ejemplo.com"></div>
+                            <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="emergencyContact" placeholder="Nombre completo"></div>
+                            <div class="form-group">
+                                <label>Teléfono de emergencia</label>
+                                <div style="display:flex;">
+                                    <select id="emergencyPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                                        <option value="+52">🇲🇽 +52</option>
+                                        <option value="+1">🇺🇸 +1</option>
+                                        <option value="+34">🇪🇸 +34</option>
+                                        <option value="+57">🇨🇴 +57</option>
+                                        <option value="+54">🇦🇷 +54</option>
+                                        <option value="+56">🇨🇱 +56</option>
+                                        <option value="+51">🇵🇪 +51</option>
+                                        <option value="otro">Otro...</option>
+                                    </select>
+                                    <input type="tel" id="emergencyPhone" placeholder="10 dígitos" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Perfil Social y Programa
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Estado civil</label>
+                                <select id="maritalStatus">
+                                    <option value="">Seleccionar...</option>
+                                    <option>Soltero/a</option>
+                                    <option>Casado/a</option>
+                                    <option>Unión libre</option>
+                                    <option>Divorciado/a</option>
+                                    <option>Viudo/a</option>
+                                    <option>Separado/a</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de paciente</label>
+                                <select id="patientType">
+                                    <option value="">Seleccionar...</option>
+                                    <option>Primera vez</option>
+                                    <option>Subsecuente</option>
+                                    <option>Urgencia</option>
+                                    <option>Referido externo</option>
+                                    <option>Interconsulta</option>
+                                </select>
+                            </div>
+                            <div class="form-group full">
+                                <label>Programa médico / social</label>
+                                <select id="socialProgram">
+                                    <option value="">Ninguno / particular</option>
+                                    <option>IMSS</option>
+                                    <option>ISSSTE</option>
+                                    <option>ISSSTE Estatal</option>
+                                    <option>Seguro Popular / INSABI</option>
+                                    <option>IMSS Bienestar</option>
+                                    <option>PEMEX</option>
+                                    <option>SEDENA / SEMAR</option>
+                                    <option>Cruz Roja</option>
+                                    <option>DIF</option>
+                                    <option>Seguro privado</option>
+                                    <option>Otro programa social</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Seguros y Anotaciones
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div>
+                                <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Aseguradoras vinculadas</label>
+                                <div id="insurerList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+                                <div style="display:flex;gap:8px;">
+                                    <input type="text" id="newInsurerInput" placeholder="Nombre de aseguradora y/o número de póliza" style="flex:1;">
+                                    <button type="button" class="btn-secondary" onclick="addInsurer()" style="white-space:nowrap;">+ Agregar</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Anotaciones generales</label>
+                                <textarea id="generalNotes" placeholder="Notas administrativas, observaciones sobre cobertura u otro contexto relevante..." style="min-height:80px;resize:vertical;"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="nom-section-label" style="margin-top:18px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Datos Clínicos Iniciales
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group full"><label>Alergias conocidas</label><input type="text" id="allergies" placeholder="Ej: Penicilina, AINEs, Látex... o 'Ninguna conocida'"></div>
+                            <div class="form-group full"><label>Padecimientos crónicos conocidos</label><input type="text" id="chronicConditions" placeholder="Ej: Diabetes tipo 2, HTA, Hipotiroidismo..."></div>
+                            <div class="form-group full"><label>Motivo de consulta de hoy <span class="required">*</span></label><input type="text" id="consultReason" placeholder="¿Por qué acude hoy?"></div>
+                            <div class="form-group"><label>Asignar consultorio</label>
+                                <select id="newPatientConsultorio">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-card-footer">
+                        <button class="btn-secondary" onclick="navigate('patients')">Cancelar</button>
+                        <button class="btn-primary" onclick="submitPatient()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Registrar y agregar a cola
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FILA DE CONSULTA -->
+            <section id="consultQueueSection" class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Fila de Consulta</h2>
+                        <p class="section-subtitle">Pacientes en espera de atención médica</p>
+                    </div>
+                    <div class="header-actions" id="consultQueueActions"></div>
+                </div>
+                <div id="consultQueue" class="consult-queue-list"></div>
+            </section>
+
+            <!-- HISTORIAL DE CONSULTAS -->
+            <section id="consultationHistorySection" class="section">
+                <div class="section-header">
+                    <div>
+                        <button class="btn-back" id="historyBackBtn" onclick="navigate('patients')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            Volver
+                        </button>
+                        <h2 id="historyPatientName">Expediente</h2>
+                        <p class="section-subtitle" id="historyPatientInfo"></p>
+                    </div>
+                    <div class="header-actions" id="historyHeaderActions"></div>
+                </div>
+                <div class="patient-full-card" id="patientFullCard"></div>
+                <div class="consultations-header">
+                    <h3>Historial de consultas</h3>
+                    <span class="consult-count" id="consultCount">0 consultas</span>
+                </div>
+                <div id="consultationList" class="consultation-list"></div>
+            </section>
+
+            <!-- =============================================
+                 EXPEDIENTE / CONSULTA  (NOM-004-SSA3-2012)
+                 ============================================= -->
+            <section id="medicalRecordSection" class="section">
+                <div class="section-header">
+                    <div>
+                        <button class="btn-back" onclick="goBackFromRecord()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            Volver al expediente
+                        </button>
+                        <h2 id="patientName">Consulta</h2>
+                        <p class="section-subtitle" id="consultationDateLabel"></p>
+                    </div>
+                    <div class="header-actions" id="recordHeaderActions"></div>
+                </div>
+
+                <!-- Triage Banner -->
+                <div id="triageAlertBanner" class="triage-alert-banner hidden"></div>
+
+                <!-- Summary Bar (Pacientes con historial) -->
+                <div id="recordSummaryBar" class="record-summary-bar hidden"></div>
+
+                <div class="record-form-wrap" id="recordFormWrap">
+
+                    <div class="record-block">
+                        <div class="record-block-header">
+                            <span class="record-block-icon">🪪</span>
+                            <div>
+                                <div class="record-block-title">Ficha de Identificación</div>
+                                <div class="record-block-subtitle">Datos clave del paciente y motivo de consulta</div>
+                            </div>
+                        </div>
+                        <div class="record-block-body">
+                            <div class="ident-table">
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Nombre completo</span>
+                                        <span id="ident_name" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">NSS</span>
+                                        <span id="ident_nss" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Hemotipo</span>
+                                        <span id="ident_hemotipo" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">CURP</span>
+                                        <span id="ident_curp" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Sexo</span>
+                                        <span id="ident_sexo" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Edad</span>
+                                        <span id="ident_edad" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Fecha de nacimiento</span>
+                                        <span id="ident_fecha_nacimiento" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Lugar de nacimiento</span>
+                                        <span id="ident_lugar_nacimiento" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Escolaridad</span>
+                                        <span id="ident_escolaridad" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Ocupación</span>
+                                        <span id="ident_ocupacion" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row">
+                                    <div>
+                                        <span class="ident-row-label">Estado civil</span>
+                                        <span id="ident_estado_civil" class="ident-row-value">—</span>
+                                    </div>
+                                    <div>
+                                        <span class="ident-row-label">Religión</span>
+                                        <span id="ident_religion" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                                <div class="ident-row ident-row-full">
+                                    <div>
+                                        <span class="ident-row-label">Motivo de consulta</span>
+                                        <span id="ident_motivo_consulta" class="ident-row-value">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: CAPTURA LIBRE (MÉDICO)
+                         Cuadro narrativo + checklist NOM-004 + CIE-10
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-libre-medico" class="record-tab-content">
+                      <div class="libre-grid">
+                        <div class="libre-main">
+
+                          <div class="libre-section">
+                            <p class="libre-section-label">
+                              Diagnósticos
+                              <span class="libre-section-hint">— autocompletado CIE-10</span>
+                            </p>
+                            <div id="libre_dx_box" class="libre-dx-box">
+                              <div id="libre_dx_badges" class="libre-dx-badges"></div>
+                              <input type="text"
+                                     id="libre_dx_input"
+                                     class="libre-dx-input"
+                                     placeholder="+ buscar diagnóstico CIE-10..."
+                                     autocomplete="off">
+                            </div>
+                            <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
+                          </div>
+
+                          <div class="libre-section">
+                            <div class="libre-section-header">
+                              <p class="libre-section-label">
+                                Notas de la consulta
+                                <span class="libre-section-hint">— escribe libre, IA estructura</span>
+                              </p>
+                              <button type="button" onclick="freecaptureLoadTemplate()" class="libre-btn-mini">📋 Plantilla</button>
+                            </div>
+                            <textarea id="notas_libre_medico"
+                                      class="libre-textarea"
+                                      placeholder="Escribe la consulta como hablarías. La IA estructurará al final..."
+                                      oninput="freecaptureOnInput()"></textarea>
+                            <div class="libre-meta">
+                              <span id="libre_autosave">● Listo</span>
+                              <span id="libre_wordcount">0 palabras</span>
+                            </div>
+                          </div>
+
+                          <div class="libre-bottombar">
+                            <button type="button" class="btn-primary" onclick="freecaptureStructure()" disabled>
+                              🤖 Estructurar con IA
+                            </button>
+                            <button type="button" onclick="freecapturePreview()">👁 Vista previa NOM-004</button>
+                            <button type="button" onclick="freecaptureSignAndClose()" class="libre-btn-end">
+                              ✓ Firmar y cerrar
+                            </button>
+                          </div>
+
+                        </div>
+
+                        <aside class="libre-checklist">
+                          <div class="libre-checklist-header">
+                            <span>Cobertura NOM-004</span>
+                            <span id="libre_progress">0/8</span>
+                          </div>
+                          <div class="libre-progress-bar">
+                            <div id="libre_progress_fill"></div>
+                          </div>
+                          <ul id="libre_checklist_items"></ul>
+                        </aside>
+                      </div>
+                    </div>
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: VISTA PREVIA NOM-004 (post-IA)
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-preview" class="record-tab-content"></div>
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: HISTORIA CLÍNICA / NOTA DE INGRESO
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-historia" class="record-tab-content active">
+
+                        <!-- BLOQUE 1: ANTECEDENTES -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🏥</span>
+                                <div>
+                                    <div class="record-block-title">Antecedentes</div>
+                                    <div class="record-block-subtitle">Numeral 6.1.1 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+
+                                <!-- Antecedentes Heredofamiliares -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧬</span>Antecedentes Heredofamiliares
+                                        <span class="nom-tag">AHF</span>
+                                    </div>
+                                    <div class="rec-sub-body" style="padding:14px 18px 16px;">
+                                        <div class="rec-grid2">
+                                            <div class="rec-field"><label>Madre</label><input type="text" id="hf-madre" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Padre</label><input type="text" id="hf-padre" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuelo paterno</label><input type="text" id="hf-abp" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuela paterna</label><input type="text" id="hf-abpa" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuelo materno</label><input type="text" id="hf-abm" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Abuela materna</label><input type="text" id="hf-abma" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Hijos/as</label><input type="text" id="hf-hijos" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Hermanos/as</label><input type="text" id="hf-herm" placeholder="No refiere"></div>
+                                        </div>
+                                        <div class="rec-field" style="margin-top:8px;"><label>Otros (tíos, pareja, etc.)</label><input type="text" id="hf-otros" placeholder="No refiere"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Antecedentes Personales No Patológicos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🏃</span>Antecedentes Personales No Patológicos
+                                        <span class="nom-tag">APNP</span>
+                                    </div>
+                                    <div class="apnp-grid" style="padding:14px 18px 8px;">
+                                        <div class="apnp-item">
+                                            <label class="apnp-label">Tabaquismo</label>
+                                            <div class="apnp-radios">
+                                                <label><input type="radio" name="tabaquismo" value="Positivo"> Positivo</label>
+                                                <label><input type="radio" name="tabaquismo" value="Negativo" checked> Negativo</label>
+                                                <label><input type="radio" name="tabaquismo" value="Exfumador"> Exfumador</label>
+                                            </div>
+                                            <input type="text" id="tabaquismo_detalle" class="apnp-detail" placeholder="Cantidad, años, índice tabáquico...">
+                                        </div>
+                                        <div class="apnp-item">
+                                            <label class="apnp-label">Alcoholismo</label>
+                                            <div class="apnp-radios">
+                                                <label><input type="radio" name="alcoholismo" value="Positivo"> Positivo</label>
+                                                <label><input type="radio" name="alcoholismo" value="Negativo" checked> Negativo</label>
+                                                <label><input type="radio" name="alcoholismo" value="Ocasional"> Ocasional</label>
+                                            </div>
+                                            <input type="text" id="alcoholismo_detalle" class="apnp-detail" placeholder="Frecuencia, cantidad, tipo...">
+                                        </div>
+                                        <div class="apnp-item">
+                                            <label class="apnp-label">Toxicomanías</label>
+                                            <div class="apnp-radios">
+                                                <label><input type="radio" name="toxicomanias" value="Positivo"> Positivo</label>
+                                                <label><input type="radio" name="toxicomanias" value="Negativo" checked> Negativo</label>
+                                            </div>
+                                            <input type="text" id="toxicomanias_detalle" class="apnp-detail" placeholder="Tipo, frecuencia...">
+                                        </div>
+                                        <div class="apnp-item">
+                                            <label class="apnp-label">Actividad física</label>
+                                            <div class="apnp-radios">
+                                                <label><input type="radio" name="actfisica" value="Regular"> Regular</label>
+                                                <label><input type="radio" name="actfisica" value="Sedentario" checked> Sedentario</label>
+                                                <label><input type="radio" name="actfisica" value="Intensa"> Intensa</label>
+                                            </div>
+                                            <input type="text" id="actfisica_detalle" class="apnp-detail" placeholder="Tipo, frecuencia semanal...">
+                                        </div>
+                                    </div>
+                                    <div class="rec-sub-body" style="padding:4px 18px 14px;">
+                                        <div class="rec-grid3">
+                                            <div class="rec-field"><label>Ocupación</label><input type="text" id="pnp-ocu" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Escolaridad</label><input type="text" id="pnp-esc" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Estado civil</label><input type="text" id="pnp-ec" placeholder="No refiere"></div>
+                                        </div>
+                                        <div class="rec-grid3" style="margin-top:8px;">
+                                            <div class="rec-field"><label>Embarazos (G P C A)</label><input type="text" id="pnp-emb" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Anticonceptivo</label><input type="text" id="pnp-mac" placeholder="No refiere"></div>
+                                            <div class="rec-field"><label>Vacunación</label><input type="text" id="pnp-vac" placeholder="Esquema completo"></div>
+                                        </div>
+                                        <div class="rec-field" style="margin-top:8px;"><label>Otros (alimentación, higiene, vivienda)</label>
+                                            <textarea id="apnp_otros" style="min-height:60px;" placeholder="Tipo de dieta, condiciones de vivienda, riesgos laborales..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Antecedentes Personales Patológicos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🏥</span>Antecedentes Personales Patológicos
+                                        <span class="nom-tag">APP</span>
+                                    </div>
+                                    <div class="app-grid">
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. inflamatorias / infecciosas</label>
+                                            <textarea id="app_enfermedades" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. degenerativas (DM, HTA...)</label>
+                                            <textarea id="pp-deg" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. neoplásicas</label>
+                                            <textarea id="pp-neo" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Cirugías / Hospitalizaciones</label>
+                                            <textarea id="app_cirugias" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Traumatismos</label>
+                                            <textarea id="app_traumatismos" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Alergias y reacciones adversas</label>
+                                            <textarea id="app_alergias" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Transfusiones</label>
+                                            <textarea id="app_transfusiones" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Enf. de transmisión sexual</label>
+                                            <textarea id="pp-ets" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Medicamentos actuales</label>
+                                            <textarea id="app_medicamentos" style="min-height:60px;" placeholder="No refiere"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Padecimiento Actual -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🩺</span>Padecimiento Actual
+                                    </div>
+                                    <div class="padecimiento-grid">
+                                        <div class="form-group">
+                                            <label class="apnp-label">Inicio y cronología</label>
+                                            <textarea id="padecimiento_inicio" style="min-height:70px;" placeholder="Fecha de inicio, forma de instalación (súbita/gradual), evolución temporal..."></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Síntomas principales</label>
+                                            <textarea id="padecimiento_sintomas" style="min-height:70px;" placeholder="Descripción detallada: localización, intensidad, irradiación, factores que agravan/alivian..."></textarea>
+                                        </div>
+                                        <div class="form-group full-col">
+                                            <label class="apnp-label">Revisión por aparatos y sistemas</label>
+                                            <div class="sistemas-grid">
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Cardiovascular</span>
+                                                    <input type="text" id="sis_cardiovascular" placeholder="Disnea, palpitaciones, edema, síncope...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Respiratorio</span>
+                                                    <input type="text" id="sis_respiratorio" placeholder="Tos, expectoración, disnea, hemoptisis...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Digestivo</span>
+                                                    <input type="text" id="sis_digestivo" placeholder="Náuseas, vómito, dolor abdominal, cambios en evacuaciones...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Neurológico</span>
+                                                    <input type="text" id="sis_neurologico" placeholder="Cefalea, mareo, convulsiones, déficit motor/sensitivo...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Urinario</span>
+                                                    <input type="text" id="sis_urinario" placeholder="Disuria, hematuria, poliuria, oliguria...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Musculoesquelético</span>
+                                                    <input type="text" id="sis_musculoesqueletico" placeholder="Dolor articular/muscular, rigidez, limitación funcional...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Piel y tegumentos</span>
+                                                    <input type="text" id="sis_piel" placeholder="Erupciones, prurito, cambios de coloración, heridas...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Endocrino</span>
+                                                    <input type="text" id="sis_endocrino" placeholder="Cambios de peso, polidipsia, polifagia, intolerancia a temperaturas...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Genitorreproductivo</span>
+                                                    <input type="text" id="sis_genitoreproductivo" placeholder="Ciclo menstrual, ITS, disfunción sexual, embarazo...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Psiquiátrico / Emocional</span>
+                                                    <input type="text" id="sis_psiquiatrico" placeholder="Ansiedad, depresión, insomnio, cambios de humor...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 2: EXPLORACIÓN FÍSICA -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🔬</span>
+                                <div>
+                                    <div class="record-block-title">Exploración Física</div>
+                                    <div class="record-block-subtitle">Numeral 6.1.2 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <!-- Signos Vitales -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📊</span>Signos Vitales y Somatometría
+                                    </div>
+                                    <div class="vitales-grid">
+                                        <div class="vital-item">
+                                            <label>T.A. sistólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="sv_tas" placeholder="120">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>T.A. diastólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="sv_tad" placeholder="80">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Cardiaca <span class="vital-unit">lpm</span></label>
+                                            <input type="number" id="sv_fc" placeholder="60–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Respiratoria <span class="vital-unit">rpm</span></label>
+                                            <input type="number" id="sv_fr" placeholder="12–20">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Temperatura <span class="vital-unit">°C</span></label>
+                                            <input type="number" id="sv_temp" placeholder="36.5" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>SpO₂ <span class="vital-unit">%</span></label>
+                                            <input type="number" id="sv_spo2" placeholder="95–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Glucemia <span class="vital-unit">mg/dL</span></label>
+                                            <input type="number" id="sv_glucemia" placeholder="70–110">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Peso <span class="vital-unit">kg</span></label>
+                                            <input type="number" id="sv_peso" placeholder="70.0" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Talla <span class="vital-unit">cm</span></label>
+                                            <input type="number" id="sv_talla" placeholder="170">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>IMC <span class="vital-unit">kg/m²</span></label>
+                                            <input type="text" id="sv_imc" placeholder="Auto-calculado" readonly class="imc-field">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Dolor <span class="vital-unit">0–10</span></label>
+                                            <input type="number" id="sv_dolor" min="0" max="10" placeholder="EVA">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Habitus exterior</label>
+                                            <input type="text" id="sv_habitus" placeholder="BAEG, cooperador, orientado...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Exploración por segmentos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧑‍⚕️</span>Exploración por Segmentos
+                                    </div>
+                                    <div class="exploracion-segmentos">
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Cabeza y cuello</label>
+                                            <textarea id="exp_cabeza" style="min-height:60px;" placeholder="Normocéfalo, cráneo sin alteraciones, pupilas isocóricas, mucosas, tiroides, ganglios..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Tórax y cardiopulmonar</label>
+                                            <textarea id="exp_torax" style="min-height:60px;" placeholder="Simétrico, campos pulmonares limpios, ruidos cardiacos rítmicos, sin soplos..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Abdomen</label>
+                                            <textarea id="exp_abdomen" style="min-height:60px;" placeholder="Blando, depresible, sin dolor a la palpación, peristalsis presente, sin masas..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Extremidades</label>
+                                            <textarea id="exp_extremidades" style="min-height:60px;" placeholder="Sin edema, pulsos periféricos presentes, movilidad conservada, fuerza muscular 5/5..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Neurológico</label>
+                                            <textarea id="exp_neurologico" style="min-height:60px;" placeholder="Consciente, orientado en tiempo, lugar y persona, Glasgow, reflejos, pares craneales..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Genitourinario / Ginecológico</label>
+                                            <textarea id="exp_genitourinario" style="min-height:60px;" placeholder="Según corresponda — puño-percusión, tacto vaginal, testicular, CUFI..."></textarea>
+                                        </div>
+                                        <div class="segmento-item full-col">
+                                            <label class="segmento-label">Piel y tegumentos / Otros hallazgos</label>
+                                            <textarea id="exp_otros" style="min-height:60px;" placeholder="Coloración, hidratación, turgencia, lesiones, cicatrices, otros hallazgos relevantes..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 3: RESULTADOS DE ESTUDIOS -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🧪</span>
+                                <div>
+                                    <div class="record-block-title">Estudios de Laboratorio y Gabinete</div>
+                                    <div class="record-block-subtitle">Numeral 6.1.3 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📋</span>Resultados de Estudios Previos y Actuales
+                                    </div>
+                                    <textarea id="estudios_previos" style="min-height:80px;" placeholder="BH, QS, EGO, perfil tiroideo, cultivos — anotar valores relevantes con fecha del estudio..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🖼</span>Estudios de Imagen
+                                    </div>
+                                    <textarea id="estudios_imagen" style="min-height:70px;" placeholder="Radiografías, US, TAC, RMN — descripción e interpretación de hallazgos relevantes..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🩸</span>Estudios Solicitados en Esta Consulta
+                                    </div>
+                                    <textarea id="estudios_solicitados" style="min-height:60px;" placeholder="Estudios ordenados hoy: nombre, justificación clínica..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 4: DIAGNÓSTICO Y PRONÓSTICO -->
+                        <div class="record-block diagnostico-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🧾</span>
+                                <div>
+                                    <div class="record-block-title">Diagnóstico y Pronóstico</div>
+                                    <div class="record-block-subtitle">Numeral 6.1.4 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card diagnostico-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧾</span>Diagnóstico
+                                        <span class="tag-cie">CIE-10</span>
+                                    </div>
+                                    <div class="diagnostico-tipos">
+                                        <div class="form-group" style="position: relative;">
+                                            <label class="apnp-label">Diagnóstico principal (definitivo o presuntivo)</label>
+                                            <textarea id="diagnostico" placeholder="Diagnóstico principal con código CIE-10 si se conoce..."></textarea>
+                                            <div id="diagnosticoSugerencias" class="diagnostico-suggestions" style="display:none;"></div>
+                                            <div id="diagnosticoPreview" class="preview-box" style="display:none;"></div>
+                                        </div>
+                                        <div id="diagnosticosSeleccionados" class="diagnosticos-badges"></div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Diagnósticos secundarios / diferenciales</label>
+                                            <textarea id="diagnostico_secundario" style="min-height:60px;" placeholder="Diagnósticos diferenciales o condicionantes secundarios..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📈</span>Pronóstico
+                                    </div>
+                                    <div class="pronostico-wrap">
+                                        <div class="pronostico-radios">
+                                            <label class="pronostico-opt opt-bueno"><input type="radio" name="pronostico" value="Bueno"> Bueno</label>
+                                            <label class="pronostico-opt opt-reservado"><input type="radio" name="pronostico" value="Reservado"> Reservado</label>
+                                            <label class="pronostico-opt opt-grave"><input type="radio" name="pronostico" value="Grave"> Grave</label>
+                                            <label class="pronostico-opt opt-critico"><input type="radio" name="pronostico" value="Crítico"> Crítico</label>
+                                        </div>
+                                        <textarea id="pronostico_detalle" style="min-height:55px;" placeholder="Descripción del pronóstico, factores condicionantes, expectativa clínica..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 5: PLAN TERAPÉUTICO -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">💊</span>
+                                <div>
+                                    <div class="record-block-title">Plan Terapéutico</div>
+                                    <div class="record-block-subtitle">Numeral 6.1.5 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <!-- Medicamentos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">💊</span>Medicamentos Prescritos
+                                        <button class="btn-add-med" onclick="agregarMedicamento()" id="btnAgregarMed">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Agregar medicamento
+                                        </button>
+                                    </div>
+                                    <div id="medicamentosList" class="medicamentos-list">
+                                        <!-- Medicamentos se agregan dinámicamente -->
+                                    </div>
+                                    <div class="tratamiento-libre-wrap">
+                                        <div class="record-section-title" style="background:transparent;border-top:1px solid var(--border);padding:10px 18px 6px;font-size:11.5px;color:var(--text-muted);">
+                                            O bien, texto libre del tratamiento:
+                                        </div>
+                                        <textarea id="tratamiento" placeholder="Descripción libre del plan de tratamiento, medicamentos, dosis, indicaciones..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Indicaciones -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📌</span>Otras Indicaciones al Paciente
+                                    </div>
+                                    <div class="indicaciones-grid">
+                                        <div class="form-group">
+                                            <label class="apnp-label">Reposo y actividad</label>
+                                            <input type="text" id="indicaciones_reposo" placeholder="Reposo relativo / absoluto, días, restricciones...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Dieta</label>
+                                            <input type="text" id="indicaciones_dieta" placeholder="Sin restricciones / hiposódica / hipocalórica...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Cita de seguimiento</label>
+                                            <input type="text" id="indicaciones_cita" placeholder="En X días, semanas, condiciones para regresar...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Referencia / Interconsulta</label>
+                                            <input type="text" id="indicaciones_referencia" placeholder="Especialidad, motivo de referencia...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nota Importante -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🚨</span>Nota Importante
+                                        <span class="field-hint">(visible en la próxima consulta)</span>
+                                    </div>
+                                    <textarea id="notaImportante" placeholder="Alertas, seguimiento crítico, datos que el médico debe conocer en la siguiente consulta..."></textarea>
+                                </div>
+
+                                <!-- Nota de Evolución -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📝</span>Nota de Evolución
+                                        <span class="field-hint">(actualizar si el paciente continúa tratamiento)</span>
+                                    </div>
+                                    <textarea id="evolucion_nota" style="min-height:80px;" placeholder="Evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /tab-historia -->
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: NOTA DE ENFERMERÍA
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-evolucion" class="record-tab-content">
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🩺</span>
+                                <div>
+                                    <div class="record-block-title">Nota de Enfermería</div>
+                                    <div class="record-block-subtitle">Valoración y seguimiento por enfermería</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+
+                                <!-- Signos vitales completos -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📊</span>Signos Vitales y Somatometría
+                                        <span class="nom-tag">ENF</span>
+                                    </div>
+                                    <div class="vitales-grid">
+                                        <div class="vital-item">
+                                            <label>T.A. sistólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tas" placeholder="120">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>T.A. diastólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="enf_sv_tad" placeholder="80">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Cardiaca <span class="vital-unit">lpm</span></label>
+                                            <input type="number" id="enf_sv_fc" placeholder="60–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Respiratoria <span class="vital-unit">rpm</span></label>
+                                            <input type="number" id="enf_sv_fr" placeholder="12–20">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Temperatura <span class="vital-unit">°C</span></label>
+                                            <input type="number" id="enf_sv_temp" placeholder="36.5" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>SpO₂ <span class="vital-unit">%</span></label>
+                                            <input type="number" id="enf_sv_spo2" placeholder="95–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Glucemia <span class="vital-unit">mg/dL</span></label>
+                                            <input type="number" id="enf_sv_glucemia" placeholder="70–110">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Peso <span class="vital-unit">kg</span></label>
+                                            <input type="number" id="enf_sv_peso" placeholder="70.0" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Talla <span class="vital-unit">cm</span></label>
+                                            <input type="number" id="enf_sv_talla" placeholder="170">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>IMC <span class="vital-unit">kg/m²</span></label>
+                                            <input type="text" id="enf_sv_imc" placeholder="Auto-calculado" readonly class="imc-field">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Dolor <span class="vital-unit">0–10</span></label>
+                                            <input type="number" id="enf_sv_dolor" min="0" max="10" placeholder="EVA">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Habitus exterior</label>
+                                            <input type="text" id="enf_sv_habitus" placeholder="BAEG, cooperador...">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Exploración por segmentos (enfermería) -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧑‍⚕️</span>Valoración por Segmentos
+                                    </div>
+                                    <div class="exploracion-segmentos">
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Cabeza y cuello</label>
+                                            <textarea id="enf_exp_cabeza" style="min-height:60px;" placeholder="Observaciones de cabeza y cuello..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Tórax y cardiopulmonar</label>
+                                            <textarea id="enf_exp_torax" style="min-height:60px;" placeholder="Observaciones torácicas..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Abdomen</label>
+                                            <textarea id="enf_exp_abdomen" style="min-height:60px;" placeholder="Observaciones abdominales..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Extremidades</label>
+                                            <textarea id="enf_exp_extremidades" style="min-height:60px;" placeholder="Observaciones de extremidades, accesos venosos..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Neurológico</label>
+                                            <textarea id="enf_exp_neurologico" style="min-height:60px;" placeholder="Estado neurológico, nivel de consciencia..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Genitourinario</label>
+                                            <textarea id="enf_exp_genitourinario" style="min-height:60px;" placeholder="Diuresis, sonda, otros..."></textarea>
+                                        </div>
+                                        <div class="segmento-item full-col">
+                                            <label class="segmento-label">Piel y tegumentos / Otros hallazgos</label>
+                                            <textarea id="enf_exp_otros" style="min-height:60px;" placeholder="Coloración, úlceras, heridas, drenajes, otros hallazgos..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Evolución y observaciones -->
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">📋</span>Evolución y Observaciones de Enfermería</div>
+                                    <textarea id="enf_evolucion_clinica" style="min-height:100px;" placeholder="Descripción de la evolución del paciente, cambios observados, respuesta al tratamiento desde la perspectiva de enfermería..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">💉</span>Procedimientos y Cuidados Realizados</div>
+                                    <textarea id="enf_procedimientos" style="min-height:80px;" placeholder="Medicamentos administrados, procedimientos de enfermería, curación de heridas, instalación de accesos, nebulizaciones..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🚨</span>Nota Importante <span class="field-hint">(visible en la próxima consulta)</span></div>
+                                    <textarea id="enf_nota_imp" style="min-height:60px;" placeholder="Alertas o datos críticos para el siguiente encuentro clínico..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /tab-evolucion -->
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: NOTA DE URGENCIAS
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-urgencias" class="record-tab-content">
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🚨</span>
+                                <div>
+                                    <div class="record-block-title">Nota Inicial de Urgencias</div>
+                                    <div class="record-block-subtitle">Numeral 7.1 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">⚡</span>Signos vitales al ingreso</div>
+                                    <div class="vitales-grid compact">
+                                        <div class="vital-item"><label>T.A. sistólica <span class="vital-unit">mmHg</span></label><input type="number" id="urg_tas" placeholder="120"></div>
+                                        <div class="vital-item"><label>T.A. diastólica <span class="vital-unit">mmHg</span></label><input type="number" id="urg_tad" placeholder="80"></div>
+                                        <div class="vital-item"><label>FC <span class="vital-unit">lpm</span></label><input type="number" id="urg_fc" placeholder="80"></div>
+                                        <div class="vital-item"><label>FR <span class="vital-unit">rpm</span></label><input type="number" id="urg_fr" placeholder="16"></div>
+                                        <div class="vital-item"><label>Temp <span class="vital-unit">°C</span></label><input type="number" id="urg_temp" placeholder="36.5" step="0.1"></div>
+                                        <div class="vital-item"><label>SpO₂ <span class="vital-unit">%</span></label><input type="number" id="urg_spo2" placeholder="97"></div>
+                                        <div class="vital-item"><label>Glucemia <span class="vital-unit">mg/dL</span></label><input type="number" id="urg_glucemia" placeholder="90"></div>
+                                        <div class="vital-item"><label>Glasgow</label><input type="number" id="urg_glasgow" placeholder="15" min="3" max="15"></div>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">❗</span>Motivo de atención en urgencias</div>
+                                    <textarea id="urg_motivo" style="min-height:70px;" placeholder="Descripción del problema que trae al paciente a urgencias, tiempo de evolución, circunstancias de aparición..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🩺</span>Resumen de interrogatorio y exploración</div>
+                                    <textarea id="urg_exploracion" style="min-height:100px;" placeholder="Estado de consciencia, hallazgos físicos relevantes, síntomas principales encontrados en la evaluación inicial..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🧪</span>Resultados de estudios iniciales</div>
+                                    <textarea id="urg_estudios" style="min-height:70px;" placeholder="Estudios realizados en triage o urgencias y sus resultados..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🧾</span>Diagnóstico en urgencias</div>
+                                    <textarea id="urg_diagnostico" style="min-height:60px;" placeholder="Diagnóstico o problemas clínicos identificados en urgencias..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">💊</span>Tratamiento y pronóstico inicial</div>
+                                    <textarea id="urg_tratamiento" style="min-height:80px;" placeholder="Procedimientos y medicamentos administrados en urgencias, respuesta inicial, pronóstico..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title"><span class="record-icon">🔀</span>Destino del paciente</div>
+                                    <div class="destino-radios">
+                                        <label class="pronostico-opt"><input type="radio" name="destino_urg" value="Alta"> Alta a domicilio</label>
+                                        <label class="pronostico-opt"><input type="radio" name="destino_urg" value="Observación"> Observación</label>
+                                        <label class="pronostico-opt"><input type="radio" name="destino_urg" value="Hospitalización"> Hospitalización</label>
+                                        <label class="pronostico-opt"><input type="radio" name="destino_urg" value="Referencia"> Referencia</label>
+                                        <label class="pronostico-opt"><input type="radio" name="destino_urg" value="UCI"> UCI / UTI</label>
+                                    </div>
+                                    <input type="text" id="urg_destino_detalle" style="margin:0 18px 14px;width:calc(100% - 36px);" placeholder="Detalles del destino, servicio, médico receptor, motivo de referencia...">
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /tab-urgencias -->
+
+                    <!-- ═══════════════════════════════════════
+                         TAB: NOTA MÉDICA (CONSULTA SUBSECUENTE)
+                         NOM-004-SSA3-2012 · Numeral 7.1
+                         ═══════════════════════════════════════ -->
+                    <div id="tab-nota-medica" class="record-tab-content">
+
+                            <!-- BLOQUE 2: PADECIMIENTO ACTUAL / EVOLUCIÓN -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🩺</span>
+                                <div>
+                                    <div class="record-block-title">Padecimiento Actual y Evolución</div>
+                                    <div class="record-block-subtitle">Numeral 7.1.2 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📈</span>Evolución desde la Última Consulta
+                                    </div>
+                                    <div class="padecimiento-grid">
+                                        <div class="form-group">
+                                            <label class="apnp-label">Inicio y cronología de síntomas actuales</label>
+                                            <textarea id="nota_padecimiento_inicio" style="min-height:70px;" placeholder="Fecha de inicio o cambio, forma de instalación, evolución desde última visita..."></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Síntomas principales actuales</label>
+                                            <textarea id="nota_padecimiento_sintomas" style="min-height:70px;" placeholder="Descripción detallada: localización, intensidad, irradiación, factores que agravan o alivian..."></textarea>
+                                        </div>
+                                        <div class="form-group full-col">
+                                            <label class="apnp-label">Revisión por aparatos y sistemas</label>
+                                            <div class="sistemas-grid">
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Cardiovascular</span>
+                                                    <input type="text" id="nota_sis_cardiovascular" placeholder="Disnea, palpitaciones, edema, síncope...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Respiratorio</span>
+                                                    <input type="text" id="nota_sis_respiratorio" placeholder="Tos, expectoración, disnea, hemoptisis...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Digestivo</span>
+                                                    <input type="text" id="nota_sis_digestivo" placeholder="Náuseas, vómito, dolor abdominal, cambios en evacuaciones...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Neurológico</span>
+                                                    <input type="text" id="nota_sis_neurologico" placeholder="Cefalea, mareo, convulsiones, déficit motor/sensitivo...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Urinario</span>
+                                                    <input type="text" id="nota_sis_urinario" placeholder="Disuria, hematuria, poliuria, oliguria...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Musculoesquelético</span>
+                                                    <input type="text" id="nota_sis_musculoesqueletico" placeholder="Dolor articular/muscular, rigidez, limitación funcional...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Piel y tegumentos</span>
+                                                    <input type="text" id="nota_sis_piel" placeholder="Erupciones, prurito, cambios de coloración, heridas...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Endocrino</span>
+                                                    <input type="text" id="nota_sis_endocrino" placeholder="Cambios de peso, polidipsia, polifagia...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Genitorreproductivo</span>
+                                                    <input type="text" id="nota_sis_genitoreproductivo" placeholder="Ciclo menstrual, ITS, embarazo...">
+                                                </div>
+                                                <div class="sistema-item">
+                                                    <span class="sistema-label">Psiquiátrico / Emocional</span>
+                                                    <input type="text" id="nota_sis_psiquiatrico" placeholder="Ansiedad, depresión, insomnio, cambios de humor...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 3: EXPLORACIÓN FÍSICA -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🔬</span>
+                                <div>
+                                    <div class="record-block-title">Exploración Física</div>
+                                    <div class="record-block-subtitle">Numeral 7.1.3 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📊</span>Signos Vitales y Somatometría
+                                    </div>
+                                    <div class="vitales-grid">
+                                        <div class="vital-item">
+                                            <label>T.A. sistólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="nota_sv_tas" placeholder="120">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>T.A. diastólica <span class="vital-unit">mmHg</span></label>
+                                            <input type="number" id="nota_sv_tad" placeholder="80">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Cardiaca <span class="vital-unit">lpm</span></label>
+                                            <input type="number" id="nota_sv_fc" placeholder="60–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Frec. Respiratoria <span class="vital-unit">rpm</span></label>
+                                            <input type="number" id="nota_sv_fr" placeholder="12–20">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Temperatura <span class="vital-unit">°C</span></label>
+                                            <input type="number" id="nota_sv_temp" placeholder="36.5" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>SpO₂ <span class="vital-unit">%</span></label>
+                                            <input type="number" id="nota_sv_spo2" placeholder="95–100">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Glucemia <span class="vital-unit">mg/dL</span></label>
+                                            <input type="number" id="nota_sv_glucemia" placeholder="70–110">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Peso <span class="vital-unit">kg</span></label>
+                                            <input type="number" id="nota_sv_peso" placeholder="70.0" step="0.1">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Talla <span class="vital-unit">cm</span></label>
+                                            <input type="number" id="nota_sv_talla" placeholder="170">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>IMC <span class="vital-unit">kg/m²</span></label>
+                                            <input type="text" id="nota_sv_imc_display" placeholder="Auto-calculado" readonly class="imc-field">
+                                            <span id="nota_sv_imc_clasif" style="font-size:11px;color:var(--text-secondary);margin-top:2px;"></span>
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Dolor <span class="vital-unit">0–10 EVA</span></label>
+                                            <input type="number" id="nota_sv_dolor" min="0" max="10" placeholder="EVA">
+                                        </div>
+                                        <div class="vital-item">
+                                            <label>Habitus exterior</label>
+                                            <input type="text" id="nota_sv_habitus" placeholder="BAEG, cooperador, orientado...">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧑‍⚕️</span>Exploración por Segmentos
+                                    </div>
+                                    <div class="exploracion-segmentos">
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Cabeza y cuello</label>
+                                            <textarea id="nota_exp_cabeza" style="min-height:60px;" placeholder="Normocéfalo, cráneo sin alteraciones, pupilas isocóricas, mucosas, tiroides, ganglios..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Tórax y cardiopulmonar</label>
+                                            <textarea id="nota_exp_torax" style="min-height:60px;" placeholder="Simétrico, campos pulmonares limpios, ruidos cardiacos rítmicos, sin soplos..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Abdomen</label>
+                                            <textarea id="nota_exp_abdomen" style="min-height:60px;" placeholder="Blando, depresible, sin dolor a la palpación, peristalsis presente, sin masas..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Extremidades</label>
+                                            <textarea id="nota_exp_extremidades" style="min-height:60px;" placeholder="Sin edema, pulsos periféricos presentes, movilidad conservada, fuerza muscular 5/5..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Neurológico</label>
+                                            <textarea id="nota_exp_neurologico" style="min-height:60px;" placeholder="Consciente, orientado en tiempo, lugar y persona, Glasgow, reflejos, pares craneales..."></textarea>
+                                        </div>
+                                        <div class="segmento-item">
+                                            <label class="segmento-label">Genitourinario / Ginecológico</label>
+                                            <textarea id="nota_exp_genitourinario" style="min-height:60px;" placeholder="Según corresponda — puño-percusión, tacto vaginal, testicular, CUFI..."></textarea>
+                                        </div>
+                                        <div class="segmento-item full-col">
+                                            <label class="segmento-label">Piel y tegumentos / Otros hallazgos</label>
+                                            <textarea id="nota_exp_otros" style="min-height:60px;" placeholder="Coloración, hidratación, turgencia, lesiones, cicatrices, otros hallazgos relevantes..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 4: RESULTADOS DE ESTUDIOS -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🧪</span>
+                                <div>
+                                    <div class="record-block-title">Estudios de Laboratorio y Gabinete</div>
+                                    <div class="record-block-subtitle">Numeral 7.1.4 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📋</span>Resultados de Estudios Previos y Actuales
+                                    </div>
+                                    <textarea id="nota_estudios_previos" style="min-height:80px;" placeholder="BH, QS, EGO, perfil tiroideo — anotar valores relevantes con fecha del estudio..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🖼</span>Estudios de Imagen
+                                    </div>
+                                    <textarea id="nota_estudios_imagen" style="min-height:70px;" placeholder="Radiografías, US, TAC, RMN — descripción e interpretación de hallazgos relevantes..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🩸</span>Estudios Solicitados en Esta Consulta
+                                    </div>
+                                    <textarea id="nota_estudios_solicitados" style="min-height:60px;" placeholder="Estudios ordenados hoy: nombre, justificación clínica..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 5: DIAGNÓSTICO Y PRONÓSTICO -->
+                        <div class="record-block diagnostico-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">🧾</span>
+                                <div>
+                                    <div class="record-block-title">Diagnóstico y Pronóstico</div>
+                                    <div class="record-block-subtitle">Numeral 7.1.5 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card diagnostico-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🧾</span>Diagnóstico
+                                        <span class="tag-cie">CIE-10</span>
+                                    </div>
+                                    <div class="diagnostico-tipos">
+                                        <div class="form-group" style="position:relative;">
+                                            <label class="apnp-label">Diagnóstico principal (definitivo o presuntivo)</label>
+                                            <textarea id="nota_diagnostico" placeholder="Diagnóstico principal confirmado, modificado o nuevo con código CIE-10..."></textarea>
+                                            <div id="nota_diagnosticoSugerencias" class="diagnostico-suggestions" style="display:none;"></div>
+                                            <div id="nota_diagnosticoPreview" class="preview-box" style="display:none;"></div>
+                                        </div>
+                                        <div id="nota_diagnosticosSeleccionados" class="diagnosticos-badges"></div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Diagnósticos secundarios / diferenciales</label>
+                                            <textarea id="nota_diagnostico_secundario" style="min-height:60px;" placeholder="Condiciones secundarias o diagnósticos diferenciales activos..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📈</span>Pronóstico
+                                    </div>
+                                    <div class="pronostico-wrap">
+                                        <div class="pronostico-radios">
+                                            <label class="pronostico-opt opt-bueno"><input type="radio" name="nota_pronostico" value="Bueno"> Bueno</label>
+                                            <label class="pronostico-opt opt-reservado"><input type="radio" name="nota_pronostico" value="Reservado"> Reservado</label>
+                                            <label class="pronostico-opt opt-grave"><input type="radio" name="nota_pronostico" value="Grave"> Grave</label>
+                                            <label class="pronostico-opt opt-critico"><input type="radio" name="nota_pronostico" value="Crítico"> Crítico</label>
+                                        </div>
+                                        <textarea id="nota_pronostico_detalle" style="min-height:55px;margin-top:12px;" placeholder="Descripción del pronóstico, factores condicionantes, expectativa clínica..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 6: PLAN TERAPÉUTICO -->
+                        <div class="record-block">
+                            <div class="record-block-header">
+                                <span class="record-block-icon">💊</span>
+                                <div>
+                                    <div class="record-block-title">Plan Terapéutico</div>
+                                    <div class="record-block-subtitle">Numeral 7.1.6 · NOM-004-SSA3-2012</div>
+                                </div>
+                            </div>
+                            <div class="record-block-body">
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">💊</span>Medicamentos Prescritos
+                                        <button class="btn-add-med" onclick="agregarMedicamentoNota()" id="btnAgregarMedNota">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Agregar medicamento
+                                        </button>
+                                    </div>
+                                    <div id="medicamentosNotaList" class="medicamentos-list"></div>
+                                    <div class="tratamiento-libre-wrap">
+                                        <div class="record-section-title" style="background:transparent;border-top:1px solid var(--border);padding:10px 18px 6px;font-size:11.5px;color:var(--text-muted);">
+                                            O bien, texto libre del tratamiento:
+                                        </div>
+                                        <textarea id="nota_tratamiento" placeholder="Descripción libre del plan de tratamiento, medicamentos, dosis, indicaciones..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📌</span>Otras Indicaciones al Paciente
+                                    </div>
+                                    <div class="indicaciones-grid">
+                                        <div class="form-group">
+                                            <label class="apnp-label">Reposo y actividad</label>
+                                            <input type="text" id="nota_indicaciones_reposo" placeholder="Reposo relativo / absoluto, días, restricciones...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Dieta</label>
+                                            <input type="text" id="nota_indicaciones_dieta" placeholder="Sin restricciones / hiposódica / hipocalórica...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Cita de seguimiento</label>
+                                            <input type="text" id="nota_indicaciones_cita" placeholder="En X días, semanas, condiciones para regresar...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="apnp-label">Referencia / Interconsulta</label>
+                                            <input type="text" id="nota_indicaciones_referencia" placeholder="Especialidad, motivo de referencia...">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">🚨</span>Nota Importante
+                                        <span class="field-hint">(visible en la próxima consulta)</span>
+                                    </div>
+                                    <textarea id="nota_notaImportante" placeholder="Alertas, seguimiento crítico, datos que el médico debe conocer en la siguiente consulta..."></textarea>
+                                </div>
+                                <div class="record-section-card">
+                                    <div class="record-section-title">
+                                        <span class="record-icon">📝</span>Nota de Evolución
+                                        <span class="field-hint">(resumen de la consulta)</span>
+                                    </div>
+                                    <textarea id="nota_evolucion_nota" style="min-height:80px;" placeholder="Resumen de la evolución del paciente, cambios en tratamiento, respuesta terapéutica..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /tab-nota-medica -->
+
+                    <!-- BLOQUE DOCUMENTOS DE CONSULTA -->
+                    <div id="consultaDocsBlock"></div>
+
+                    <!-- ARCHIVOS ADJUNTOS (común a todos los tabs) -->
+                    <div class="record-block">
+                        <div class="record-block-header">
+                            <span class="record-block-icon">📎</span>
+                            <div>
+                                <div class="record-block-title">Archivos Adjuntos</div>
+                                <div class="record-block-subtitle">Resultados, imágenes, estudios de gabinete</div>
+                            </div>
+                        </div>
+                        <div class="record-block-body">
+                            <div class="record-section-card">
+                                <div class="record-section-title">
+                                    <span class="record-icon">📎</span>Documentos adjuntos
+                                    <span class="tag-cie tag-green">Resultados / Imágenes</span>
+                                </div>
+                                <div class="attachments-wrap">
+                                    <div id="attachmentsList" class="attachments-list"></div>
+                                    <div id="attachDropZone" class="attach-drop-zone">
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                        <p>Arrastra archivos aquí o <label class="attach-browse-label" for="attachInput">selecciona archivos</label></p>
+                                        <p class="attach-hint">PDF, imágenes, DICOM — máx. 20 MB por archivo</p>
+                                        <input type="file" id="attachInput" multiple accept=".pdf,.jpg,.jpeg,.png,.dcm,.tiff,.bmp,.gif" style="display:none">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIRMA DEL MÉDICO (compacta) -->
+                    <div class="record-block" id="firmaBlock">
+                        <div class="record-block-header">
+                            <span class="record-block-icon">✍️</span>
+                            <div>
+                                <div class="record-block-title">Autoría y Firma</div>
+                                <div class="record-block-subtitle">NOM-004-SSA3-2012 · Firma electrónica del médico responsable</div>
+                            </div>
+                        </div>
+                        <div class="record-block-body" style="padding:0;">
+                            <div class="firma-strip" id="firmaStrip">
+                                <!-- Estado: sin firmar -->
+                                <div class="firma-strip-inner" id="firmaStripInner">
+                                    <div class="firma-author">
+                                        <div class="firma-avatar-sm" id="firmaAvatarSm"></div>
+                                        <div>
+                                            <div class="firma-author-name" id="firmaAuthorName">—</div>
+                                            <div class="firma-author-meta">Médico responsable</div>
+                                        </div>
+                                    </div>
+                                    <div class="firma-divider-v"></div>
+                                    <div class="firma-fields-row">
+                                        <div class="firma-field-compact">
+                                            <span class="firma-field-label-sm">Cédula profesional</span>
+                                            <input type="text" id="firma_cedula" placeholder="Núm. cédula">
+                                        </div>
+                                        <div class="firma-field-compact">
+                                            <span class="firma-field-label-sm">Tipo de firma</span>
+                                            <select id="firma_tipo">
+                                                <option value="electronica">Electrónica</option>
+                                                <option value="digital">Digital</option>
+                                                <option value="autografa">Autógrafa</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="firma-actions-col">
+                                        <button class="btn-firmar-compact" onclick="firmarExpediente()" id="btnFirmarCompact">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                            Firmar expediente
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Estado: firmado -->
+                                <div class="firma-strip-signed" id="firmaStripSigned" style="display:none;">
+                                    <div class="firma-author">
+                                        <div class="firma-avatar-sm" id="firmaAvatarSmSigned"></div>
+                                        <div>
+                                            <div class="firma-author-name" id="firmaAuthorNameSigned">—</div>
+                                            <div class="firma-author-meta">Médico responsable</div>
+                                        </div>
+                                    </div>
+                                    <div class="firma-divider-v"></div>
+                                    <div class="firma-fields-row">
+                                        <div class="firma-field-compact">
+                                            <span class="firma-field-label-sm">Cédula profesional</span>
+                                            <input type="text" id="firma_cedula_signed" readonly>
+                                        </div>
+                                        <div class="firma-field-compact">
+                                            <span class="firma-field-label-sm">Tipo de firma</span>
+                                            <input type="text" id="firma_tipo_signed" readonly>
+                                        </div>
+                                        <div class="firma-field-compact">
+                                            <span class="firma-field-label-sm">Fecha y hora</span>
+                                            <input type="text" id="firma_fecha_display" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="firma-actions-col">
+                                        <div class="firma-signed-badge-compact">
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                            Expediente firmado
+                                        </div>
+                                        <button class="firma-remove-btn" onclick="limpiarFirma()" id="btnLimpiarFirma" style="display:none;">
+                                            Remover firma
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Campos ocultos para compatibilidad con fillRecordFields -->
+                            <input type="hidden" id="firma_medico">
+                            <input type="hidden" id="firma_fecha">
+                            <div id="firmaInfo" style="display:none;"></div>
+                            <div id="firmaInfoText" style="display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ACCIONES DEL FORMULARIO -->
+                    <div class="record-form-actions" id="recordFormActions"></div>
+
+                </div><!-- /record-form-wrap -->
+            </section>
+
+            <!-- TRIAGE -->
+            <section id="triageSection" class="section">
+                <div class="section-header">
+                    <div><h2>Formulario de Triage</h2><p class="section-subtitle">Evaluación inicial de urgencias — Sistema Manchester (5 niveles)</p></div>
+                </div>
+                <div class="triage-form-grid">
+                    <div class="form-card triage-card">
+                        <div class="triage-card-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Identificación del Paciente
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group full">
+    <label>Nombre <span class="required">*</span></label>
+    <div style="position:relative;">
+        <input type="text" id="triageName" placeholder="Nombre completo o anónimo" autocomplete="off" oninput="buscarPacienteTriage(this.value)">
+        <div id="triageNameSugerencias" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--bg-surface);border:1px solid var(--border-medium);border-radius:var(--radius);box-shadow:0 4px 16px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+    </div>
+    <div id="triagePacienteVinculado" style="display:none;margin-top:6px;padding:8px 12px;background:var(--color-success-bg,#f0fdf4);border:1px solid var(--color-success,#22c55e);border-radius:var(--radius);font-size:12.5px;color:var(--color-success-text,#15803d);display:flex;align-items:center;gap:8px;">
+        <span>✅</span>
+        <span id="triagePacienteVinculadoTexto"></span>
+        <button type="button" onclick="desvincularPacienteTriage()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);line-height:1;" title="Desvincular">×</button>
+    </div>
+</div>
+                            <div class="form-group"><label>Edad <span class="required">*</span></label><input type="number" id="triageAge" placeholder="Años" min="0"></div>
+                            <div class="form-group"><label>Sexo</label><select id="triageSex"><option value="">Seleccionar...</option><option>Masculino</option><option>Femenino</option></select></div>
+                            <div class="form-group full"><label>Motivo de consulta <span class="required">*</span></label><input type="text" id="triageReason" placeholder="¿Por qué acude a urgencias?"></div>
+                        </div>
+                    </div>
+                    <div class="form-card triage-card">
+                        <div class="triage-card-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                            Signos Vitales
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>FC (lpm)</label><input type="number" id="triageFC" placeholder="60–100"></div>
+                            <div class="form-group"><label>FR (rpm)</label><input type="number" id="triageFR" placeholder="12–20"></div>
+                            <div class="form-group"><label>TA sistólica (mmHg)</label><input type="number" id="triageTAS" placeholder="120"></div>
+                            <div class="form-group"><label>TA diastólica (mmHg)</label><input type="number" id="triageTAD" placeholder="80"></div>
+                            <div class="form-group"><label>Temperatura (°C)</label><input type="number" id="triageTemp" placeholder="36.5" step="0.1"></div>
+                            <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="triageSpo2" placeholder="95–100"></div>
+                            <div class="form-group"><label>Glucemia (mg/dL)</label><input type="number" id="triageGluc" placeholder="70–110"></div>
+                            <div class="form-group"><label>Dolor (0–10)</label><input type="number" id="triageDolor" placeholder="0–10" min="0" max="10"></div>
+                        </div>
+                    </div>
+                    <div class="form-card triage-card full-width">
+                        <div class="triage-card-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            Síntomas y Signos Clínicos
+                        </div>
+                        <div class="symptoms-grid">
+                            <label class="symptom-check red-flag"><input type="checkbox" id="sym_inconsciencia"><span>🔴 Inconsciencia / No responde</span></label>
+                            <label class="symptom-check red-flag"><input type="checkbox" id="sym_paro"><span>🔴 Paro cardiorrespiratorio</span></label>
+                            <label class="symptom-check red-flag"><input type="checkbox" id="sym_dificultad_resp"><span>🟠 Dificultad respiratoria severa</span></label>
+                            <label class="symptom-check red-flag"><input type="checkbox" id="sym_dolor_toracico"><span>🟠 Dolor torácico intenso</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_convulsiones"><span>🟠 Convulsiones activas</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_sangrado_mayor"><span>🟠 Sangrado mayor incontrolado</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_alteracion_consciencia"><span>🟡 Alteración del estado de consciencia</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_vomito_persistente"><span>🟡 Vómito persistente</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_fiebre_alta"><span>🟡 Fiebre &gt;39°C</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_trauma"><span>🟡 Trauma significativo</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_dolor_moderado"><span>🟢 Dolor moderado (4–6)</span></label>
+                            <label class="symptom-check"><input type="checkbox" id="sym_infeccion_leve"><span>🔵 Síntomas leves / Infección menor</span></label>
+                        </div>
+                        <div class="form-group" style="margin-top:16px;padding:0 20px 16px;">
+                            <label>Notas adicionales</label>
+                            <textarea id="triageNotes" placeholder="Observaciones del enfermero/a..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="triage-actions">
+                    <button class="btn-primary btn-large" onclick="calcularTriage()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Calcular nivel de triage
+                    </button>
+                </div>
+                <div id="triageResult" class="triage-result hidden"></div>
+            </section>
+
+            <!-- COLA URGENCIAS -->
+            <section id="triageListSection" class="section">
+                <div class="section-header">
+                    <div><h2>Fila de Urgencias</h2><p class="section-subtitle">Pacientes en espera — ordenados por nivel de prioridad</p></div>
+                    <button class="btn-primary" onclick="navigate('triage')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo triage
+                    </button>
+                </div>
+                <div id="triageQueue" class="triage-queue"></div>
+            </section>
+
+            <!-- ADMIN DE ROLES -->
+            <section id="adminSection" class="section">
+                <div class="section-header">
+                    <div><h2>Gestión de Usuarios y Roles</h2><p class="section-subtitle">Administración del sistema — acceso exclusivo del administrador técnico</p></div>
+                    <button class="btn-primary" onclick="openAddUserModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo usuario
+                    </button>
+                </div>
+                <div id="userTable" class="user-table-wrap"></div>
+            </section>
+
+            <!-- CONSULTORIOS -->
+            <section id="consultoriosSection" class="section">
+                <!-- Content rendered dynamically by renderConsultorios() -->
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<!-- MODAL: USUARIO -->
+<div id="userModal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="modalTitle">Nuevo Usuario</h3>
+            <button class="modal-close" onclick="closeModal('userModal')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editUserId">
+            <div class="form-group"><label>Nombre completo <span class="required">*</span></label><input type="text" id="modalDisplayName" placeholder="Ej: Dr. Juan García"></div>
+            <div class="form-group"><label>Usuario (login) <span class="required">*</span></label><input type="text" id="modalUsername" placeholder="Ej: dr.garcia"></div>
+            <div class="form-group"><label>Contraseña <span class="required">*</span></label><input type="password" id="modalPassword" placeholder="Mínimo 8 caracteres"></div>
+            <div class="form-group"><label>Rol <span class="required">*</span></label>
+                <select id="modalRole">
+                    <option value="">Seleccionar...</option>
+                    <option value="medico">Médico/a</option>
+                    <option value="enfermero">Enfermero/a</option>
+                    <option value="recepcion">Recepción</option>
+                    <option value="admin">Administrador técnico</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Consultorio asignado</label>
+                <select id="modalConsultorio">
+                    <option value="">Sin asignar</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
+            <button class="btn-primary" onclick="saveUserFromModal()">Guardar usuario</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: AGREGAR A COLA -->
+<div id="addToQueueModal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Agregar a fila de consulta</h3>
+            <button class="modal-close" onclick="closeModal('addToQueueModal')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-patient-name" id="queueModalPatientName"></p>
+            <div class="form-group" style="margin-bottom:4px;">
+                <label style="font-size:12px;color:var(--text-muted);">Verificar identidad (opcional)</label>
+                <input type="text" id="queueModalVerificador"
+                    placeholder="Expediente, CURP, NSS o teléfono..."
+                    oninput="verificarIdentidadCola(this.value)"
+                    autocomplete="off"
+                    style="font-size:13px;">
+            </div>
+            <div id="queueModalVerificadorResult" style="display:none;margin-bottom:10px;padding:7px 12px;border-radius:var(--radius);font-size:12.5px;"></div>
+            <div class="form-group">
+                <label>Motivo de consulta de hoy <span class="required">*</span></label>
+                <input type="text" id="queueModalReason" placeholder="¿Por qué acude hoy?">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addToQueueModal')">Cancelar</button>
+            <button class="btn-primary" onclick="confirmAddToQueue()">Agregar a cola</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR PACIENTE -->
+<div id="editPatientModal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-wide">
+        <div class="modal-header">
+            <h3>Editar datos del paciente</h3>
+            <button class="modal-close" onclick="closeModal('editPatientModal')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-grid">
+                <div class="form-group"><label>Número de expediente</label><input type="text" id="editExpediente" readonly></div>
+                <div class="form-group full"><label>Nombre completo</label><input type="text" id="editName"></div>
+                <div class="form-group"><label>Edad</label><input type="number" id="editAge"></div>
+                <div class="form-group"><label>Sexo</label><select id="editSex"><option value="">—</option><option>Masculino</option><option>Femenino</option></select></div>
+                <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="editDob"></div>
+                <div class="form-group"><label>Lugar de nacimiento</label><input type="text" id="editBirthPlace"></div>
+                <div class="form-group"><label>Hemotipo</label><input type="text" id="editHemotype"></div>
+                <div class="form-group"><label>Nacionalidad</label><input type="text" id="editNationality"></div>
+                <div class="form-group"><label>Religión</label><input type="text" id="editReligion" placeholder="Ej: Católica, Evangélica, Sin religión"></div>
+                <div class="form-group"><label>CURP</label><input type="text" id="editCurp"></div>
+                <div class="form-group"><label>RFC</label><input type="text" id="editRfc"></div>
+                <div class="form-group"><label>NSS</label><input type="text" id="editNss"></div>
+                <div class="form-group"><label>Ocupación</label><input type="text" id="editOccupation"></div>
+                <div class="form-group full"><label>Domicilio</label><input type="text" id="editAddress"></div>
+                <div class="form-group">
+                    <label>Teléfono celular</label>
+                    <div style="display:flex;">
+                        <select id="editPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editPhone" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono local / fijo</label>
+                    <div style="display:flex;">
+                        <select id="editPhoneLocalPrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editPhoneLocal" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group"><label>Correo electrónico</label><input type="email" id="editEmail"></div>
+                <div class="form-group"><label>Contacto de emergencia</label><input type="text" id="editEmergencyContact"></div>
+                <div class="form-group">
+                    <label>Teléfono de emergencia</label>
+                    <div style="display:flex;">
+                        <select id="editEmergencyPhonePrefix" style="font-size:13px;padding:7px 6px;border:1px solid var(--border-medium);border-right:none;border-radius:var(--radius) 0 0 var(--radius);background:var(--bg-surface-2);color:var(--text-secondary);font-family:var(--font);outline:none;max-width:110px;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+56">🇨🇱 +56</option>
+                            <option value="+51">🇵🇪 +51</option>
+                            <option value="otro">Otro...</option>
+                        </select>
+                        <input type="tel" id="editEmergencyPhone" style="border-radius:0 var(--radius) var(--radius) 0;flex:1;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Estado civil</label>
+                    <select id="editMaritalStatus">
+                        <option value="">Seleccionar...</option>
+                        <option>Soltero/a</option><option>Casado/a</option><option>Unión libre</option>
+                        <option>Divorciado/a</option><option>Viudo/a</option><option>Separado/a</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de paciente</label>
+                    <select id="editPatientType">
+                        <option value="">Seleccionar...</option>
+                        <option>Primera vez</option><option>Subsecuente</option><option>Urgencia</option>
+                        <option>Referido externo</option><option>Interconsulta</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>Programa médico / social</label>
+                    <select id="editSocialProgram">
+                        <option value="">Ninguno / particular</option>
+                        <option>IMSS</option><option>ISSSTE</option><option>ISSSTE Estatal</option>
+                        <option>Seguro Popular / INSABI</option><option>IMSS Bienestar</option>
+                        <option>PEMEX</option><option>SEDENA / SEMAR</option><option>Cruz Roja</option>
+                        <option>DIF</option><option>Seguro privado</option><option>Otro programa social</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>Aseguradoras vinculadas</label>
+                    <div id="editInsurerList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="editNewInsurerInput" placeholder="Nombre y/o número de póliza" style="flex:1;">
+                        <button type="button" class="btn-secondary" onclick="addEditInsurer()" style="white-space:nowrap;">+ Agregar</button>
+                    </div>
+                </div>
+                <div class="form-group full">
+                    <label>Anotaciones generales</label>
+                    <textarea id="editGeneralNotes" style="min-height:70px;resize:vertical;" placeholder="Notas administrativas u otro contexto relevante..."></textarea>
+                </div>
+                <div class="form-group full"><label>Alergias</label><input type="text" id="editAllergies"></div>
+                <div class="form-group full"><label>Padecimientos crónicos</label><input type="text" id="editChronicConditions"></div>
+                <div class="form-group full"><label>Tratamiento actual</label><input type="text" id="editCurrentTreatment" placeholder="Se sincroniza con la última consulta o edita manualmente"></div>
+                <div class="form-group full"><label>Alertas médicas</label><input type="text" id="editAlerts" placeholder="Ej: Diabético, Hipertenso, Embarazada..."></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('editPatientModal')">Cancelar</button>
+            <button class="btn-primary" onclick="saveEditedPatient()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- DRAWER DE DOCUMENTOS CLÍNICOS -->
+<div id="docDrawer" class="doc-drawer">
+    <div class="doc-drawer-overlay" onclick="closeDocDrawer()"></div>
+    <div class="doc-drawer-panel">
+        <div class="doc-drawer-header">
+            <span class="doc-drawer-title" id="docDrawerTitle">Documento</span>
+            <button class="doc-drawer-close" onclick="closeDocDrawer()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="doc-drawer-body" id="docDrawerBody"></div>
+        <div class="doc-drawer-footer" id="docDrawerFooter"></div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+<script src="Principal_abr.js"></script>
+<script src="database/conceptos-index.js"></script>
+<script src="modules/utils.module.js"></script>
+<script src="modules/auth.module.js"></script>
+<script src="modules/patients.module.js"></script>
+<script src="modules/diagnostics.module.js"></script>
+<script src="modules/queue.module.js"></script>
+<script src="modules/triage.module.js"></script>
+<script src="modules/consultation.module.js"></script>
+<script src="modules/export.module.js"></script>
+<script src="modules/documents.module.js"></script>
+<script src="modules/expediente.module.js"></script>
+<script src="modules/freecapture.module.js"></script>
+<script src="modules/ai_structure.module.js"></script>
+<script src="modules/preview.module.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
