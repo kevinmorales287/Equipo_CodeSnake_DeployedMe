@@ -138,7 +138,7 @@ function validateStructure(obj) {
   return true;
 }
 
-// ── Adapter Anthropic (preparado para soportar más providers) ──────────
+// ── Adapter Anthropic ──────────────────────────────────────────────────
 async function callAnthropic(prompt) {
   const Anthropic = require('@anthropic-ai/sdk');
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -151,7 +151,6 @@ async function callAnthropic(prompt) {
     messages: [{ role: 'user', content: prompt }]
   });
 
-  // Extraer texto del primer bloque
   const textBlock = (message.content || []).find(b => b.type === 'text');
   if (!textBlock) throw new Error('Respuesta sin contenido textual');
 
@@ -186,25 +185,46 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Modo mock
-    if (MOCK_AI) {
-      // Pequeño delay para simular latencia real
+    // Override: el cliente puede forzar mock para fallback de demo
+    const forceMock = req.headers['x-force-mock'] === 'true';
+    if (MOCK_AI || forceMock) {
+      const startTime = Date.now();
       await new Promise(r => setTimeout(r, 800));
       const data = mockResponse({ texto, diagnosticos, paciente });
       return res.json({
         ok: true,
         data,
-        meta: { mocked: true, provider: PROVIDER, model: 'mock-v1' }
+        meta: {
+          mocked: true,
+          provider: PROVIDER,
+          model: 'mock-v1',
+          latencyMs: Date.now() - startTime,
+          forced: forceMock
+        }
       });
     }
 
     // Modo real
+    const startTime = Date.now();
     const prompt = buildPrompt({ texto, diagnosticos, paciente });
-    const aiResp = await callAI(prompt);
+
+    let aiResp;
+    try {
+      aiResp = await callAI(prompt);
+    } catch (apiErr) {
+      console.error('Falla en llamada a IA:', apiErr);
+      return res.status(503).json({
+        ok: false,
+        error: 'La API de IA está temporalmente no disponible.',
+        details: apiErr.message,
+        suggest_fallback: true
+      });
+    }
+
+    const latencyMs = Date.now() - startTime;
 
     let parsed;
     try {
-      // Limpiar posibles markdown fences si aparecen
       const clean = aiResp.text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       parsed = JSON.parse(clean);
     } catch (e) {
@@ -212,7 +232,8 @@ router.post('/', async (req, res) => {
       return res.status(502).json({
         ok: false,
         error: 'La IA devolvió una respuesta no parseable.',
-        raw: aiResp.text.slice(0, 500)
+        raw: aiResp.text.slice(0, 500),
+        suggest_fallback: true
       });
     }
 
@@ -220,7 +241,8 @@ router.post('/', async (req, res) => {
       return res.status(502).json({
         ok: false,
         error: 'La respuesta de la IA no cumple el esquema esperado.',
-        received: parsed
+        received: parsed,
+        suggest_fallback: true
       });
     }
 
@@ -231,7 +253,8 @@ router.post('/', async (req, res) => {
         mocked: false,
         provider: PROVIDER,
         model: aiResp.model,
-        usage: aiResp.usage
+        usage: aiResp.usage,
+        latencyMs
       }
     });
 
@@ -239,7 +262,8 @@ router.post('/', async (req, res) => {
     console.error('Error en /api/structure:', err);
     return res.status(500).json({
       ok: false,
-      error: err.message || 'Error interno'
+      error: err.message || 'Error interno',
+      suggest_fallback: true
     });
   }
 });

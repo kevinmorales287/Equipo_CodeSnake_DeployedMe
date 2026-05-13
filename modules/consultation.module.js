@@ -217,6 +217,9 @@
         }
         if (tipoNota === "libre-medico" && registry.freecapture) {
             registry.freecapture.load();
+        } else {
+            // Salimos de captura libre: ocultar demo bar
+            if (registry.demoCases) registry.demoCases.hideDemoBar();
         }
     }
 

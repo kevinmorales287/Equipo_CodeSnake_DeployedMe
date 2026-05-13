@@ -272,6 +272,10 @@
     }
     renderDxBadges();
     onInput();
+
+    // Activar barra de demo y panel de métricas
+    if (registry.demoCases) registry.demoCases.showDemoBar();
+    if (registry.metrics) registry.metrics.show();
   }
 
   // ── Estructuración con IA + Vista previa ────────────────────────────

@@ -124,10 +124,57 @@
     }
   }
 
+  // Endpoint con forzado de mock (header especial para fallback)
+  async function callEndpointForceMock(payload) {
+    const r = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Force-Mock': 'true'
+      },
+      body: JSON.stringify(payload)
+    });
+    const json = await r.json();
+    if (!r.ok || !json.ok) {
+      throw new Error(json.error || `Error HTTP ${r.status}`);
+    }
+    return json;
+  }
+
+  // ── Modal de fallback ────────────────────────────────────────────────
+  function showFallbackPrompt(errorMsg) {
+    return new Promise(resolve => {
+      const modal = document.createElement('div');
+      modal.className = 'ai-modal-backdrop';
+      modal.innerHTML = `
+        <div class="ai-modal" style="width: min(480px, 92vw);">
+          <div class="ai-modal-header">
+            <h3>⚠️ Fallo en la IA</h3>
+          </div>
+          <div class="ai-modal-body">
+            <p style="font-size: 13px;">La llamada a la IA real falló:</p>
+            <pre class="ai-modal-payload" style="max-height: 120px; font-size: 11px;">${escapeHtml(errorMsg)}</pre>
+            <p style="font-size: 13px; margin-top: 12px;">
+              ¿Quieres usar la <b>respuesta modelo</b> para continuar la demo?
+              <br><small style="color: var(--text-muted);">Los datos serán representativos pero genéricos.</small>
+            </p>
+          </div>
+          <div class="ai-modal-footer">
+            <button data-action="cancel">Cancelar</button>
+            <button class="btn-primary" data-action="fallback">Sí, usar respuesta modelo</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => {
+        const a = e.target.getAttribute('data-action');
+        if (a) { document.body.removeChild(modal); resolve(a === 'fallback'); }
+        if (e.target === modal) { document.body.removeChild(modal); resolve(false); }
+      });
+    });
+  }
+
   // ── Aplicar resultado al consultation ───────────────────────────────
-  // Mapea el JSON estructurado a los campos de ALL_RECORD_FIELDS.
-  // Espeja los valores tanto a campos "historia" como "nota_*" para que
-  // sean visibles en cualquiera de los formatos clásicos.
   function applyResult(data) {
     const c = app().currentConsultation;
     if (!c || !data) return;
@@ -135,7 +182,6 @@
     const sv = data.signos_vitales || {};
     const ef = data.exploracion_fisica || {};
 
-    // Espejado historia ↔ nota
     const set = (field, value) => { if (value !== undefined) c[field] = value; };
 
     // Padecimiento
@@ -169,7 +215,7 @@
     set('estudios_solicitados', data.estudios_solicitados);
     set('nota_estudios_solicitados', data.estudios_solicitados);
 
-    // Diagnóstico narrativo (los CIE-10 ya están en diagnosticos_libre)
+    // Diagnóstico narrativo
     set('diagnostico', data.diagnostico_principal_texto);
     set('nota_diagnostico', data.diagnostico_principal_texto);
 
@@ -187,7 +233,6 @@
     set('indicaciones_cita', data.indicaciones_cita);
     set('nota_indicaciones_cita', data.indicaciones_cita);
 
-    // Guardar resultado completo para vista previa y trazabilidad
     c.ai_structured_result = data;
     c.ai_structured_at = new Date().toISOString();
 
@@ -205,10 +250,7 @@
   // ── Función principal: orquesta todo el flujo ───────────────────────
   async function structure() {
     const payload = buildPayload();
-    if (!payload) {
-      alert('No hay consulta activa.');
-      return;
-    }
+    if (!payload) { alert('No hay consulta activa.'); return; }
     if (!payload.texto || payload.texto.trim().length < 20) {
       alert('Necesitas escribir al menos 20 caracteres antes de estructurar.');
       return;
@@ -218,24 +260,45 @@
     if (!confirmed) return;
 
     showLoadingOverlay();
+    const startedAt = Date.now();
+
     try {
       const resp = await callEndpoint(payload);
+      const totalLatency = Date.now() - startedAt;
       hideLoadingOverlay();
 
       applyResult(resp.data);
 
-      if (resp.meta && resp.meta.mocked) {
-        console.info('🧪 Respuesta mock (MOCK_AI=true)');
+      if (registry.metrics) {
+        registry.metrics.recordCall(resp.meta, resp.meta?.latencyMs || totalLatency);
       }
 
-      // Navegar a vista previa
+      if (registry.demoCases) {
+        const r = registry.demoCases.stopTimer();
+        if (r) console.info(`⏱ Captura: ${r.elapsedSec.toFixed(1)}s, ahorro: ${r.ahorroMin.toFixed(1)} min`);
+      }
+
       if (registry.preview && typeof registry.preview.show === 'function') {
         registry.preview.show();
       }
     } catch (err) {
       hideLoadingOverlay();
-      console.error(err);
-      alert('Error al estructurar:\n\n' + err.message);
+      console.error('Error en flujo de estructuración:', err);
+
+      const useFallback = await showFallbackPrompt(err.message);
+      if (useFallback) {
+        try {
+          const fallbackResp = await callEndpointForceMock(payload);
+          applyResult(fallbackResp.data);
+          if (registry.metrics) {
+            registry.metrics.recordCall(fallbackResp.meta, 0);
+          }
+          if (registry.preview) registry.preview.show();
+          console.warn('🛟 Fallback a MOCK ejecutado por falla de API real');
+        } catch (fbErr) {
+          alert('No fue posible estructurar:\n\n' + fbErr.message);
+        }
+      }
     }
   }
 

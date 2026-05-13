@@ -34,7 +34,6 @@
       return;
     }
     render();
-    // Activar el tab
     document.querySelectorAll('.record-tab-content').forEach(t => t.classList.remove('active'));
     const el = document.getElementById('tab-preview');
     if (el) el.classList.add('active');
@@ -68,6 +67,7 @@
           </div>
           <div class="prev-header-actions">
             <button onclick="previewBackToFree()">← Editar texto libre</button>
+            <button onclick="previewDownloadPdf()">⬇ Descargar PDF NOM-004</button>
             <button class="btn-primary" onclick="previewAcceptAndSave()">✓ Aceptar y guardar</button>
           </div>
         </div>
@@ -209,7 +209,6 @@
         descripcion: sug.sugerencia_descripcion
       });
     }
-    // Quitar de la lista de sugerencias
     c.ai_structured_result.diagnosticos_detectados_en_texto.splice(idx, 1);
     if (typeof global.saveConsultations === 'function') global.saveConsultations();
     render();
@@ -223,9 +222,162 @@
     render();
   }
 
+  function downloadPdf() {
+    const c = app().currentConsultation;
+    if (!c || !c.ai_structured_result) {
+      alert('Estructura con IA primero antes de descargar el PDF.');
+      return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert('jsPDF no está cargado. Recarga la página.');
+      return;
+    }
+
+    const data = c.ai_structured_result;
+    const sv = data.signos_vitales || {};
+    const ef = data.exploracion_fisica || {};
+    const patient = (app().patients || []).find(p => p.id === c.patientId) || {};
+    const medico = app().currentUser || {};
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+    const margin = 15;
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    function addText(text, opts) {
+      opts = opts || {};
+      const fontSize = opts.size || 10;
+      const bold = opts.bold || false;
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      const lines = doc.splitTextToSize(String(text || '—'), contentW);
+      lines.forEach(function(l) {
+        if (y > pageH - margin - 10) { doc.addPage(); y = margin; }
+        doc.text(l, margin, y);
+        y += fontSize * 0.45;
+      });
+      y += 1;
+    }
+
+    function addSection(title) {
+      y += 3;
+      if (y > pageH - margin - 15) { doc.addPage(); y = margin; }
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text(title, margin, y); y += 5;
+      doc.setDrawColor(200); doc.line(margin, y - 1.5, pageW - margin, y - 1.5);
+      doc.setTextColor(0); y += 1;
+    }
+
+    function addRow(label, value) {
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+      doc.text(label + ':', margin, y);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(String(value || '—'), contentW - 45);
+      lines.forEach(function(l, i) {
+        if (y > pageH - margin - 10) { doc.addPage(); y = margin; }
+        doc.text(l, margin + 42, y);
+        if (i < lines.length - 1) y += 4;
+      });
+      y += 5;
+    }
+
+    // Encabezado
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('EXPEDIENTE CLÍNICO - NOM-004-SSA3-2012', pageW / 2, y, { align: 'center' });
+    y += 6;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120);
+    doc.text('Generado: ' + new Date(c.ai_structured_at).toLocaleString('es-MX'), pageW / 2, y, { align: 'center' });
+    y += 4;
+    doc.text('Estructurado con asistencia de IA · ClinData', pageW / 2, y, { align: 'center' });
+    doc.setTextColor(0);
+    y += 8;
+
+    // Datos del paciente
+    addSection('DATOS DEL PACIENTE');
+    const nombrePaciente = patient.name || patient.nombre || ((patient.nombres || '') + ' ' + (patient.apellidos || '')).trim() || '—';
+    addRow('Nombre', nombrePaciente);
+    addRow('Edad', patient.edad || patient.age);
+    addRow('Sexo', patient.sexo || patient.genero || patient.sex);
+    addRow('Expediente', patient.id || patient.expediente);
+
+    // Motivo y padecimiento
+    addSection('MOTIVO DE CONSULTA');
+    addText(data.motivo_consulta);
+
+    addSection('ANTECEDENTES RELEVANTES');
+    addText(data.antecedentes_relevantes);
+
+    addSection('PADECIMIENTO ACTUAL');
+    addRow('Inicio', data.padecimiento_inicio);
+    addRow('Sintomatología', data.padecimiento_sintomas);
+
+    // Signos vitales
+    addSection('SIGNOS VITALES');
+    var sv_text = 'TA: ' + (sv.tas || '—') + '/' + (sv.tad || '—') + ' mmHg   FC: ' + (sv.fc || '—') + ' lpm   FR: ' + (sv.fr || '—') + ' rpm   Temp: ' + (sv.temp || '—') + ' °C   SpO₂: ' + (sv.spo2 || '—') + ' %   Peso: ' + (sv.peso || '—') + ' kg   Talla: ' + (sv.talla || '—') + ' m';
+    addText(sv_text, { size: 9 });
+
+    // Exploración
+    addSection('EXPLORACIÓN FÍSICA');
+    addRow('Habitus', ef.habitus);
+    addRow('Cabeza', ef.cabeza);
+    addRow('Tórax', ef.torax);
+    addRow('Abdomen', ef.abdomen);
+    addRow('Extremidades', ef.extremidades);
+    addRow('Neurológico', ef.neurologico);
+
+    // Diagnósticos
+    addSection('DIAGNÓSTICOS');
+    var dxCap = c.diagnosticos_libre || [];
+    if (dxCap.length) {
+      dxCap.forEach(function(dx) { addRow(dx.codigo, dx.descripcion); });
+    } else {
+      addText('Sin diagnósticos CIE-10 capturados');
+    }
+    if (data.diagnostico_principal_texto) {
+      addRow('Narrativa', data.diagnostico_principal_texto);
+    }
+    addRow('Pronóstico', data.pronostico);
+
+    // Plan
+    addSection('PLAN Y TRATAMIENTO');
+    addRow('Tratamiento', data.tratamiento);
+    addRow('Estudios', data.estudios_solicitados);
+    addRow('Reposo', data.indicaciones_reposo);
+    addRow('Dieta', data.indicaciones_dieta);
+    addRow('Próxima cita', data.indicaciones_cita);
+
+    // Firma
+    y += 6;
+    if (y > pageH - 35) { doc.addPage(); y = margin; }
+    doc.setDrawColor(0); doc.line(margin, y, margin + 70, y);
+    y += 4;
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text(medico.nombre || medico.displayName || medico.username || '—', margin, y); y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Cédula: ' + (medico.cedula || '—'), margin, y);
+
+    // Footer en todas las páginas
+    var totalPages = doc.internal.getNumberOfPages();
+    for (var i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7); doc.setTextColor(140);
+      doc.text('Página ' + i + ' de ' + totalPages + ' · NOM-004-SSA3-2012 · ClinData',
+        pageW / 2, pageH - 8, { align: 'center' });
+    }
+
+    var fname = 'Expediente_' + (patient.id || patient.expediente || 'paciente') + '_' + new Date().toISOString().slice(0, 10) + '.pdf';
+    doc.save(fname);
+  }
+
   registry.preview = { show, render };
   global.previewBackToFree = backToFree;
   global.previewAcceptAndSave = acceptAndSave;
   global.previewAddSuggestedDx = addSuggestedDx;
   global.previewIgnoreSuggestedDx = ignoreSuggestedDx;
+  global.previewDownloadPdf = downloadPdf;
 })(window);
