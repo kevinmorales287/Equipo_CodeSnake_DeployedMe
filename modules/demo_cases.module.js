@@ -8,6 +8,54 @@
   // ── Catálogo de casos ──────────────────────────────────────────────
   const CASOS = [
     {
+      id: 'primera-consulta',
+      titulo: 'Primera consulta · DM2 nuevo dx',
+      descripcion: 'Paciente nueva con historia clínica completa',
+      icono: '🆕',
+      duracion_estimada_clasica: 22,
+      diagnosticos: [
+        { codigo: 'E11.9', descripcion: 'Diabetes mellitus tipo 2 sin complicaciones' },
+        { codigo: 'E78.5', descripcion: 'Hiperlipidemia, no especificada' }
+      ],
+      texto: `Px femenino de 52 años, originaria y residente de Mérida, casada, ama de casa, escolaridad secundaria, católica, ingresa por primera vez a la consulta externa.
+
+Motivo de consulta: acude por presentar poliuria, polidipsia y polifagia de aproximadamente 6 semanas de evolución, asociado a pérdida ponderal no intencionada de 5 kg en ese período. Refiere visión borrosa intermitente y prurito vulvar persistente. Niega cetonas en orina, niega datos de cetoacidosis.
+
+AHF: madre finada por IAM a los 68 años, era portadora de DM2 e HTA. Padre vivo de 78 años con DM2 e HTA en tratamiento. Hermana mayor con DM2 dx hace 10 años. Niega cáncer en familiares de primera línea. Niega tuberculosis ni enfermedades psiquiátricas familiares.
+
+APNP: tabaquismo negado. Alcoholismo ocasional (1-2 copas de vino por mes en eventos sociales). Toxicomanías negadas. Inmunizaciones: esquema básico completo, refuerzo de Td hace 8 años, sin influenza estacional reciente, sin vacuna COVID-19 reciente. Dieta hipercalórica, alta en carbohidratos refinados, 3 comidas + 2 colaciones diarias. Actividad física sedentaria. Sueño 6-7 hrs/noche, refiere despertares nocturnos por nicturia. Habita en casa propia con todos los servicios. Higiene personal adecuada.
+
+APP: niega DM previa, niega HTA, niega cardiopatías. Antecedente de obesidad de larga evolución. Colecistectomía laparoscópica hace 4 años sin complicaciones. Niega traumatismos significativos. Niega transfusiones. Alergias: alérgica a penicilina (rash generalizado en infancia). Niega otros alérgicos. Medicamentos actuales: ninguno de prescripción. Refiere uso ocasional de paracetamol para cefalea.
+
+AGO: menarca a los 13 años, ciclos regulares 28x4. G3P2C1A0. FUM hace 8 meses, refiere irregularidad menstrual reciente probablemente perimenopáusica. IVSA 18 años, PSA 2, MPF: salpingoclasia post-cesárea. Última citología hace 3 años (normal). Mastografía hace 2 años (BIRADS 1).
+
+EF: TA 142/88, FC 84, FR 17, T 36.6, SatO2 97%, peso 78 kg, talla 1.58 m, IMC 31.2 (obesidad grado I), perímetro abdominal 102 cm. Glucemia capilar 248 mg/dL.
+
+Habitus exterior: paciente femenina, edad aparente igual a la cronológica, conformación endomórfica, marcha estable, posición libremente escogida, lúcida, orientada en tiempo, espacio y persona, cooperadora al interrogatorio.
+
+Cabeza: normocéfala, sin exostosis ni hundimientos. Cabello con distribución y cantidad adecuadas. Pabellones auriculares íntegros, conductos auditivos permeables. Pupilas isocóricas, normorreflécticas. Conjuntivas no ictéricas ni pálidas. Cavidad oral con mucosas semihúmedas, dentadura con caries en molares inferiores. Faringe sin alteraciones.
+
+Cuello: cilíndrico, sin adenopatías palpables, tiroides no palpable, tráquea central. Pulsos carotídeos presentes, simétricos. No ingurgitación yugular.
+
+Tórax: simétrico, amplexión y amplexación conservadas. Campos pulmonares con murmullo vesicular presente bilateralmente sin agregados. Ruidos cardíacos rítmicos, sin soplos audibles.
+
+Abdomen: globoso a expensas de panículo adiposo, blando, depresible, no doloroso a la palpación superficial ni profunda. Cicatriz quirúrgica de colecistectomía bien afrontada. Peristalsis presente y normoactiva. No se palpan visceromegalias. Murphy y McBurney negativos.
+
+Extremidades: íntegras, eutróficas, fuerza muscular 5/5 en las 4 extremidades. Pulsos pedios y tibiales posteriores palpables, simétricos. Llenado capilar < 2 segundos. Sensibilidad superficial y profunda conservadas, sin datos de neuropatía. Reflejos osteotendinosos +/++++ rotulianos y aquíleos.
+
+Genitourinario: diferido para exploración ginecológica programada.
+
+Neurológico: alerta, lenguaje coherente, pares craneales sin alteraciones, fuerza simétrica, sensibilidad conservada, marcha sin alteraciones, equilibrio conservado, Romberg negativo.
+
+Impresión diagnóstica: paciente con cuadro clínico altamente sugestivo de DM2 de novo, con factores de riesgo familiar importantes (madre, padre, hermana). Probable dislipidemia asociada al síndrome metabólico dado IMC y perímetro abdominal. HTA en cifras limítrofes que amerita seguimiento estrecho.
+
+Solicito: glucemia central en ayuno, HbA1c, perfil lipídico completo (colesterol total, HDL, LDL, triglicéridos), química sanguínea (urea, creatinina, ácido úrico), EGO, microalbuminuria en orina de 24 hrs, electrolitos séricos, fondo de ojo, EKG basal.
+
+Plan terapéutico: inicio metformina 500 mg VO c/12 horas con alimentos por 1 semana, posteriormente titular a 850 mg c/12 horas según tolerancia gastrointestinal. Dieta DM 1500 kcal/día con distribución 50% carbohidratos complejos, 20% proteínas, 30% grasas (mayoría insaturadas). Actividad física progresiva: caminata 30 min/día 5 días a la semana, iniciar gradualmente. Educación diabetológica: explicar enfermedad, importancia del apego, datos de alarma (hipoglucemia, hiperglucemia severa). Automonitoreo glucémico en ayuno 3 veces por semana. Cita en 2 semanas con resultados de laboratorio para ajuste terapéutico. Citar a nutrición y a oftalmología.
+
+Pronóstico: reservado a corto plazo dependiente de apego terapéutico y modificación de estilo de vida. Pronóstico a largo plazo bueno si se alcanza control metabólico óptimo (HbA1c < 7%).`
+    },
+    {
       id: 'hta-control',
       titulo: 'HTA · Control',
       descripcion: 'Paciente conocido, seguimiento de hipertensión',
