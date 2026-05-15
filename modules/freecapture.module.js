@@ -245,7 +245,7 @@
 
     updateChecklist();
 
-    const btn = document.querySelector(".libre-bottombar .btn-primary");
+    const btn = document.querySelector(".libre-bottombar .btn-ai-structure");
     if (btn) btn.disabled = words < 50;
   }
 
