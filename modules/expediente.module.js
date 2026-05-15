@@ -206,14 +206,11 @@
             </div>
 
             <!-- Protocolo quirúrgico -->
-            <div class="exp-sec-card">
-                <div class="exp-sec-head">
-                    <span class="exp-sec-title">Protocolo quirúrgico</span>
-                    ${perms.canAddProtocolo ? buildAddButton('expDdProtocolo', buildProtocoloMenu()) : ''}
-                </div>
-                <div class="exp-sec-body">
-                    <div class="exp-empty">Sin protocolos registrados.</div>
-                </div>
+            <div id="expProtocolosSection">
+                ${global.ClinDataModules?.protocolos
+                    ? global.ClinDataModules.protocolos.buildExpedienteProtocolosSection(patient, perms)
+                    : `<div class="exp-sec-card"><div class="exp-sec-head"><span class="exp-sec-title">Protocolo quirúrgico</span></div><div class="exp-sec-body"><div class="exp-empty">Módulo de protocolos no disponible.</div></div></div>`
+                }
             </div>
 
             <!-- Documentación clínica -->
@@ -225,14 +222,11 @@
             </div>
 
             <!-- Pagos -->
-            <div class="exp-sec-card">
-                <div class="exp-sec-head">
-                    <span class="exp-sec-title">Pagos y facturación</span>
-                    ${perms.canAddPagos ? `<button class="exp-btn-add" onclick="showExpWip('Módulo de pagos')">+ Añadir concepto</button>` : ''}
-                </div>
-                <div class="exp-sec-body">
-                    <div class="exp-empty">Sin conceptos de pago registrados.</div>
-                </div>
+            <div id="expPagosSection">
+                ${global.ClinDataModules?.pagos
+                    ? global.ClinDataModules.pagos.buildExpedientePagosSection(patient, perms)
+                    : `<div class="exp-sec-card"><div class="exp-sec-head"><span class="exp-sec-title">Pagos y facturación</span></div><div class="exp-sec-body"><div class="exp-empty">Módulo de pagos no disponible.</div></div></div>`
+                }
             </div>
 
         </div>`;
@@ -252,12 +246,6 @@
             ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('libre-medico')">📝 Captura libre (con IA)</div>` : ''}
             ${isEnf ? `<div class="exp-dd-item" onclick="expOpenFormPanel('enfermeria')">Nota de enfermería</div>` : ''}
             ${isMed ? `<div class="exp-dd-item" onclick="expOpenFormPanel('urgencias')">Nota de urgencias</div>` : ''}`;
-    }
-
-    function buildProtocoloMenu() {
-        const opts = ['ATR','ATC','Hombro','Ligamento/Menisco/Condral','Fractura húmero proximal','Fractura meseta tibial','Fractura de cadera','Op-Cadera'];
-        return `<div class="exp-dd-head">Seleccionar protocolo</div>` +
-            opts.map(o => `<div class="exp-dd-item" onclick="showExpWip('${o}')">${o}</div>`).join('');
     }
 
     function buildDocsMenu() {
@@ -454,13 +442,14 @@
     }
 
     // ── Exponer funciones globales que necesita el HTML inline ────────────────
-    global.expToggleDd      = expToggleDd;
-    global.applyHistFilter  = applyHistFilter;
-    global.clearHistFilter  = clearHistFilter;
-    global.expOpenFormPanel = expOpenFormPanel;
-    global.expVerConsulta   = expVerConsulta;
-    global.expConfirmDelete = expConfirmDelete;
-    global.showExpWip       = showExpWip;
+    global.expToggleDd          = expToggleDd;
+    global.applyHistFilter      = applyHistFilter;
+    global.clearHistFilter      = clearHistFilter;
+    global.expOpenFormPanel     = expOpenFormPanel;
+    global.expVerConsulta       = expVerConsulta;
+    global.expConfirmDelete     = expConfirmDelete;
+    global.showExpWip           = showExpWip;
+    global.closeAllExpDropdowns = closeAllExpDropdowns;
 
     registry.expediente = { renderExpediente, buildHistItems };
 })(window);

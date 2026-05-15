@@ -1023,3 +1023,76 @@ body:has(.demo-bar:not([style*="display: none"])) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59,130,246,0.3);
 }
+
+/* ── Protocolos quirúrgicos ── */
+.proto-pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius: var(--radius); font-weight:600; white-space:nowrap; }
+.proto-pill-ATR        { background:#eff6ff; color:#1e40af; }
+.proto-pill-ATC        { background:#f5f3ff; color:#5b21b6; }
+.proto-pill-HOMBRO     { background:#ecfeff; color:#0e7490; }
+.proto-pill-LMC        { background:#f0fdf4; color:#15803d; }
+.proto-pill-FHP        { background:#fffbeb; color:#a16207; }
+.proto-pill-FMT        { background:#fff7ed; color:#c2410c; }
+.proto-pill-FCAD       { background:#fef2f2; color:#991b1b; }
+.proto-pill-OP_CADERA  { background:#fdf2f8; color:#9d174d; }
+
+.proto-fase-chips { display:inline-flex; gap:4px; flex-wrap:wrap; }
+.proto-fase-chip {
+    display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:4px;
+    background: var(--bg-surface-2); color: var(--text-muted);
+    border:1px solid var(--border); opacity:.65;
+}
+.proto-fase-chip.done {
+    background:#ecfdf5; color:#065f46; border-color:#a7f3d0; opacity:1;
+}
+
+.proto-tabs {
+    display:flex; gap:4px; padding:10px 20px 0;
+    border-bottom:1px solid var(--border); background: var(--bg-surface);
+}
+.proto-tab {
+    background:none; border:none; padding:8px 14px; font-size:13px; font-family:inherit;
+    color: var(--text-secondary); cursor:pointer; border-bottom:2px solid transparent;
+    transition: color .12s, border-color .12s;
+}
+.proto-tab:hover { color: var(--text-primary); }
+.proto-tab.active {
+    color: var(--accent); border-bottom-color: var(--accent); font-weight:600;
+}
+.proto-tab.done::after { content:" ✓"; color: var(--success); font-size:11px; }
+
+.proto-unit {
+    font-size:11px; color: var(--text-muted); margin-left:4px; font-weight:400;
+}
+.proto-side-label {
+    display:block; font-size:11px; color: var(--text-muted);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;
+}
+
+/* ── Pagos y facturación ── */
+.pago-tbl { width:100%; border-collapse: collapse; font-size:13px; }
+.pago-tbl th {
+    text-align:left; padding:8px 10px; font-size:11.5px; font-weight:600;
+    color: var(--text-secondary); text-transform:uppercase; letter-spacing:.04em;
+    border-bottom:1px solid var(--border); background: var(--bg-surface-2);
+}
+.pago-tbl td { padding:8px 10px; border-bottom:1px solid var(--border); color: var(--text-primary); }
+.pago-tbl tr:hover td { background: var(--bg-surface-2); }
+.pago-tbl .num { text-align:right; font-variant-numeric: tabular-nums; }
+.pago-tbl .col-acts { width:140px; text-align:right; }
+
+.pago-totales {
+    display:flex; flex-direction:column; align-items:flex-end; gap:4px;
+    padding:14px 16px 4px; font-size:13px; color: var(--text-secondary);
+}
+.pago-totales .row { display:flex; gap:24px; min-width:240px; justify-content:space-between; }
+.pago-totales .row .v { font-variant-numeric: tabular-nums; font-weight:500; color: var(--text-primary); }
+.pago-totales .total {
+    font-size:15px; color: var(--accent); font-weight:700; padding-top:6px;
+    border-top:1px solid var(--border); margin-top:4px;
+}
+.pago-totales .total .v { color: var(--accent); }
+
+.pago-send-bar {
+    display:flex; gap:8px; justify-content:flex-end; padding:10px 16px 4px;
+    border-top:1px solid var(--border); margin-top:8px;
+}
