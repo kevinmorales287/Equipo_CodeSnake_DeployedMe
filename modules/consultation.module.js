@@ -168,6 +168,23 @@
                 tipoNota = prevConsults.length === 0 ? "historia" : "nota-medica";
                 consultation.tipoNota = tipoNota;
             }
+
+            // ── Sprint 1: Captura libre con IA por defecto ──────────────────────
+            // Si es primera consulta (historia) o seguimiento (nota-medica),
+            // el médico arranca en el tab de captura libre con IA. El libreMode
+            // determina el schema de IA y el checklist usados por freecapture.
+            // Excepción: "urgencias" mantiene su flujo clásico.
+            if (tipoNota === "historia" || tipoNota === "nota-medica") {
+                consultation.libreMode = tipoNota;
+                tipoNota = "libre-medico";
+            } else if (tipoNota === "libre-medico" && !consultation.libreMode) {
+                // Captura libre seleccionada manualmente sin libreMode aún:
+                // inferir por presencia de consultas previas del mismo paciente.
+                const prevConsults = app().consultations.filter(
+                    c => c.patientId === patient.id && c.id !== consultation.id
+                );
+                consultation.libreMode = prevConsults.length === 0 ? "historia" : "nota-medica";
+            }
         } else {
             // Cualquier otro rol (recepción, admin): solo lectura, mostrar historia.
             tipoNota = consultation.tipoNota || "historia";

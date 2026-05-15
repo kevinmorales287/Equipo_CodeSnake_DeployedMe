@@ -7,7 +7,7 @@
 
   // Items del checklist NOM-004. El item "diagnostico" se evalúa por array,
   // no por regex (los demás se prenden si la regex matchea el texto libre).
-  const CHECKLIST = [
+  const CHECKLIST_NOTA = [
     { id: "motivo",       label: "Motivo de consulta",
       regex: /\b(acude|consulta|motivo|refiere|presenta)\b/i },
     { id: "padecimiento", label: "Padecimiento actual",
@@ -26,11 +26,49 @@
       regex: /\b(cita|seguimiento|reposo|dieta|referencia|control)\b/i },
   ];
 
+  const CHECKLIST_HISTORIA = [
+    { id: "motivo",       label: "Motivo de consulta",
+      regex: /\b(acude|consulta|motivo|refiere|presenta)\b/i },
+    { id: "ahf",          label: "Antecedentes heredofamiliares",
+      regex: /\b(madre|padre|abuel[oa]s?|hermanos?|familiares?|hereditari[oa]|carga genética|AHF)\b/i },
+    { id: "apnp",         label: "Antecedentes no patológicos",
+      regex: /\b(fum[ao]|tabaq|alcohol|drogas|toxicom|sedentari|ejercicio|escolar|ocupaci|vivienda|alimentaci|vacun)\b/i },
+    { id: "app",          label: "Antecedentes patológicos",
+      regex: /\b(alérgic|alergi|cirug[íi]a|operad|hospitaliz|fractur|traumatis|transfusi|diabet|hipertens|crónic|enfermedad previa|antecedente)\b/i },
+    { id: "padecimiento", label: "Padecimiento actual",
+      regex: /\b(dolor|síntoma|sintoma|inicio|evolución|días|horas|semanas|hace)\b/i },
+    { id: "sistemas",     label: "Revisión por aparatos y sistemas",
+      regex: /\b(cardiovascular|respiratori|digestiv|neurológic|urinari|musculoesquel|piel|endocrin|genitorrep|psiquiátric|sistem)\b/i },
+    { id: "vitales",      label: "Signos vitales",
+      regex: /\b(TA|FC|FR|SatO2|sato2|temp|peso|talla|°C)\b/i },
+    { id: "exploracion",  label: "Exploración física",
+      regex: /\b(EF|abdomen|tórax|torax|cardiopulmonar|extremidades|consciente|exploración|cabeza)\b/i },
+    { id: "estudios",     label: "Estudios solicitados",
+      regex: /\b(laboratori|biomet|química|electrolitos|rayos|radiografía|tomograf|ultrasoni|ecograf|estudio)\b/i },
+    { id: "diagnostico",  label: "Diagnóstico (CIE-10)",
+      regex: null },
+    { id: "pronostico",   label: "Pronóstico",
+      regex: /\b(pronóstico|pronostico|favorable|reservado|grave)\b/i },
+    { id: "plan",         label: "Plan / Tratamiento",
+      regex: /\b(tx|tratamiento|continúa|continua|inicio|suspender|mg|c\/\d+)\b/i },
+    { id: "indicaciones", label: "Indicaciones / Cita",
+      regex: /\b(cita|seguimiento|reposo|dieta|referencia|control)\b/i },
+  ];
+
+  function getLibreMode() {
+    const c = app().currentConsultation;
+    return (c && c.libreMode === "historia") ? "historia" : "nota-medica";
+  }
+
+  function getChecklist() {
+    return getLibreMode() === "historia" ? CHECKLIST_HISTORIA : CHECKLIST_NOTA;
+  }
+
   // ── Render del checklist ────────────────────────────────────────────
   function renderChecklist() {
     const ul = document.getElementById("libre_checklist_items");
     if (!ul) return;
-    ul.innerHTML = CHECKLIST.map(item => `
+    ul.innerHTML = getChecklist().map(item => `
       <li id="chk_${item.id}" class="chk-item chk-pending">
         <span class="chk-mark">○</span><span class="chk-label">${item.label}</span>
       </li>
@@ -218,8 +256,9 @@
     const dxCount = (consultation && consultation.diagnosticos_libre)
       ? consultation.diagnosticos_libre.length : 0;
 
+    const items = getChecklist();
     let covered = 0;
-    CHECKLIST.forEach(item => {
+    items.forEach(item => {
       const li = document.getElementById(`chk_${item.id}`);
       if (!li) return;
       let isDone = false;
@@ -241,9 +280,9 @@
     });
 
     const progEl = document.getElementById("libre_progress");
-    if (progEl) progEl.textContent = `${covered}/${CHECKLIST.length}`;
+    if (progEl) progEl.textContent = `${covered}/${items.length}`;
     const fillEl = document.getElementById("libre_progress_fill");
-    if (fillEl) fillEl.style.width = `${(covered / CHECKLIST.length) * 100}%`;
+    if (fillEl) fillEl.style.width = `${(covered / items.length) * 100}%`;
   }
 
   // ── Guardado debounced ──────────────────────────────────────────────
@@ -270,6 +309,31 @@
     if (ta && consultation) {
       ta.value = consultation.notas_libre_medico || "";
     }
+
+    // ── Adaptación de UI según modo (historia vs nota-medica) ─────────
+    const mode = getLibreMode();
+    const isHistoria = mode === "historia";
+
+    if (ta) {
+      ta.placeholder = isHistoria
+        ? "Describe la primera consulta como hablarías: AHF, antecedentes, padecimiento actual, exploración, plan…"
+        : "Escribe la consulta como hablarías. La IA estructurará al final…";
+    }
+
+    const sectionLabel = document.querySelector('#tab-libre-medico .libre-section:nth-of-type(2) .libre-section-label');
+    if (sectionLabel) {
+      sectionLabel.innerHTML = isHistoria
+        ? `Historia clínica narrada <span class="libre-section-hint">— escribe libre, IA estructura</span>`
+        : `Notas de la consulta <span class="libre-section-hint">— escribe libre, IA estructura</span>`;
+    }
+
+    const checklistHeader = document.querySelector('#tab-libre-medico .libre-checklist-header > span:first-child');
+    if (checklistHeader) {
+      checklistHeader.textContent = isHistoria
+        ? "Cobertura NOM-004 · Historia clínica"
+        : "Cobertura NOM-004 · Nota de evolución";
+    }
+
     renderDxBadges();
     onInput();
 
@@ -324,7 +388,8 @@
 
   // ── Registro y exposición global ────────────────────────────────────
   registry.freecapture = {
-    load, onInput, renderDxBadges, addDx, removeDx, updateChecklist
+    load, onInput, renderDxBadges, addDx, removeDx, updateChecklist,
+    getLibreMode, getChecklist
   };
   global.freecaptureOnInput = onInput;
   global.freecaptureLoad = load;

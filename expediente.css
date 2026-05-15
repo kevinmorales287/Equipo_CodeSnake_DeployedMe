@@ -1184,3 +1184,93 @@ body:has(.demo-bar:not([style*="display: none"])) {
     display:flex; gap:8px; justify-content:flex-end; padding:10px 16px 4px;
     border-top:1px solid var(--border); margin-top:8px;
 }
+
+/* ══════════════════════════════════════════════════════════
+   VISTA PREVIA EDITABLE (Sprint 2)
+   ══════════════════════════════════════════════════════════ */
+.prev-field-editable {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.prev-edit-textarea,
+.prev-edit-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 6px;
+    background: var(--bg-surface, #fff);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary, #111827);
+    resize: vertical;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.3s;
+}
+
+.prev-edit-textarea:focus,
+.prev-edit-input:focus,
+.prev-value-input:focus {
+    outline: none;
+    border-color: var(--accent, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.prev-edit-textarea.is-empty,
+.prev-edit-input.is-empty {
+    background: #fafbfc;
+    border-style: dashed;
+}
+
+.prev-edit-textarea.prev-edit-dirty,
+.prev-edit-input.prev-edit-dirty,
+.prev-value-input.prev-edit-dirty {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.prev-edit-textarea.prev-edit-saved,
+.prev-edit-input.prev-edit-saved,
+.prev-value-input.prev-edit-saved {
+    border-color: #10b981;
+    background: #ecfdf5;
+}
+
+.prev-row-editable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.prev-row-editable .prev-label {
+    min-width: 80px;
+    font-size: 13px;
+    color: var(--text-muted, #6b7280);
+}
+
+.prev-value-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--bg-surface, #fff);
+    color: var(--text-primary, #111827);
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.3s;
+}
+
+.prev-save-indicator {
+    margin-left: 12px;
+    font-size: 12px;
+    color: #10b981;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.prev-save-indicator:not(:empty) {
+    opacity: 1;
+}

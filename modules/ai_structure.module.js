@@ -20,6 +20,7 @@
     return {
       texto: consultation.notas_libre_medico || '',
       diagnosticos: consultation.diagnosticos_libre || [],
+      modo: consultation.libreMode || 'nota-medica',
       paciente: {
         edad: patient ? calcularEdad(patient.fechaNacimiento) : null,
         sexo: patient ? (patient.sexo || patient.genero || null) : null
@@ -210,6 +211,44 @@
     set('exp_abdomen', ef.abdomen);       set('nota_exp_abdomen', ef.abdomen);
     set('exp_extremidades', ef.extremidades); set('nota_exp_extremidades', ef.extremidades);
     set('exp_neurologico', ef.neurologico);   set('nota_exp_neurologico', ef.neurologico);
+
+    // ── Sprint 1: Campos exclusivos de historia clínica ────────────────
+    // El backend solo los retorna cuando modo === "historia". Si vienen
+    // vacíos o ausentes (modo nota), los `set` no escriben nada
+    // (set ignora undefined).
+
+    // Antecedentes heredofamiliares (string libre)
+    set('ahf', data.ahf);
+
+    // Antecedentes personales no patológicos
+    const apnp = data.apnp || {};
+    set('apnp_otros', apnp.otros || apnp.resumen);
+    set('tabaquismo_detalle', apnp.tabaquismo);
+    set('alcoholismo_detalle', apnp.alcoholismo);
+    set('toxicomanias_detalle', apnp.toxicomanias);
+    set('actfisica_detalle', apnp.actividad_fisica);
+
+    // Antecedentes personales patológicos
+    const app_ = data.app || {};
+    set('app_enfermedades', app_.enfermedades);
+    set('app_cirugias', app_.cirugias);
+    set('app_traumatismos', app_.traumatismos);
+    set('app_alergias', app_.alergias);
+    set('app_transfusiones', app_.transfusiones);
+    set('app_medicamentos', app_.medicamentos);
+
+    // Revisión por aparatos y sistemas
+    const sis = data.revision_sistemas || {};
+    set('sis_cardiovascular', sis.cardiovascular);
+    set('sis_respiratorio', sis.respiratorio);
+    set('sis_digestivo', sis.digestivo);
+    set('sis_neurologico', sis.neurologico);
+    set('sis_urinario', sis.urinario);
+    set('sis_musculoesqueletico', sis.musculoesqueletico);
+    set('sis_piel', sis.piel);
+    set('sis_endocrino', sis.endocrino);
+    set('sis_genitoreproductivo', sis.genitoreproductivo);
+    set('sis_psiquiatrico', sis.psiquiatrico);
 
     // Estudios
     set('estudios_solicitados', data.estudios_solicitados);
