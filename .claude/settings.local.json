@@ -14,7 +14,10 @@
       "Bash(metrics)",
       "Bash(autodemo)",
       "Bash(auth)",
-      "Bash(consultation\")"
+      "Bash(consultation\")",
+      "Bash(git ls-tree *)",
+      "Bash(findstr /i \"documenta\")",
+      "Bash(git checkout *)"
     ]
   }
 }
