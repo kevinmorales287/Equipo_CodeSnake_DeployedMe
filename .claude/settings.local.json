@@ -7,7 +7,14 @@
       "Bash(dir C:\\\\Users\\\\Lande\\\\OneDrive\\\\Escritorio\\\\Proyectos personales\\\\ClinData\\\\Repositorio\\\\Equipo_CodeSnake_DeployedMe\\\\api *)",
       "Bash(npm install *)",
       "PowerShell(npm install *)",
-      "PowerShell(Get-Command *)"
+      "PowerShell(Get-Command *)",
+      "Bash(ai_structure)",
+      "Bash(preview)",
+      "Bash(demo_cases)",
+      "Bash(metrics)",
+      "Bash(autodemo)",
+      "Bash(auth)",
+      "Bash(consultation\")"
     ]
   }
 }

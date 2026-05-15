@@ -33,10 +33,30 @@
       alert('Aún no hay resultado estructurado. Haz click en "Estructurar con IA" primero.');
       return;
     }
+
+    // Renderizar el contenido primero
     render();
-    document.querySelectorAll('.record-tab-content').forEach(t => t.classList.remove('active'));
+
+    // Ocultar TODOS los tabs (display:none explícito, no solo quitar .active)
+    document.querySelectorAll('.record-tab-content').forEach(t => {
+      t.classList.remove('active');
+      t.style.display = 'none';
+    });
+
+    // Mostrar el tab preview con display:block explícito
     const el = document.getElementById('tab-preview');
-    if (el) el.classList.add('active');
+    if (!el) {
+      console.error('preview.show(): falta #tab-preview en index.html');
+      return;
+    }
+    el.classList.add('active');
+    el.style.display = 'block';
+
+    // Actualizar estado interno de la app
+    if (app()) app().currentTab = 'preview';
+
+    // Scroll al inicio
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function render() {
@@ -184,9 +204,16 @@
   }
 
   function backToFree() {
-    document.querySelectorAll('.record-tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.record-tab-content').forEach(t => {
+      t.classList.remove('active');
+      t.style.display = 'none';
+    });
     const el = document.getElementById('tab-libre-medico');
-    if (el) el.classList.add('active');
+    if (el) {
+      el.classList.add('active');
+      el.style.display = 'block';
+    }
+    if (app()) app().currentTab = 'libre-medico';
   }
 
   function acceptAndSave() {
