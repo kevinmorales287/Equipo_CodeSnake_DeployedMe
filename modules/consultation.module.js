@@ -751,8 +751,9 @@
         if (!consultation || !currentUser) return;
 
         // Para historia clínica se requiere diagnóstico; para nota médica no
-        const tipoNota = consultation.tipoNota || "historia";
-        if (tipoNota === "historia" && !consultation.tratamiento && !consultation.diagnostico) {
+        const esEnfermero = global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes");
+        const tipoNota = esEnfermero ? "evolucion" : (consultation.tipoNota || "historia");
+        if (!esEnfermero && !consultation.tratamiento && !consultation.diagnostico) {
             global.showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
             return;
         }

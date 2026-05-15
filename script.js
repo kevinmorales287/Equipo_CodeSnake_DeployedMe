@@ -964,7 +964,8 @@ function saveNursingNote() {
 // ===== AUTORÍA Y FIRMA =====
 function firmarExpediente() {
     if (!currentConsultation || !currentUser) return;
-    if (!currentConsultation.tratamiento && !currentConsultation.diagnostico) {
+    const esNotaEnfermeria = currentConsultation.tipoNota === "evolucion";
+    if (!esNotaEnfermeria && !currentConsultation.tratamiento && !currentConsultation.diagnostico) {
         showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
         return;
     }
