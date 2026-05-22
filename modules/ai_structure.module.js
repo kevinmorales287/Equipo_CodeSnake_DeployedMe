@@ -273,7 +273,13 @@
     set('indicaciones_cita', data.indicaciones_cita);
     set('nota_indicaciones_cita', data.indicaciones_cita);
 
-    c.ai_structured_result = data;
+    // Solo guardar metadatos ligeros y los diagnósticos sugeridos (los demás campos
+    // ya quedaron hidratados directamente en la consulta y se guardan con ella).
+    c.ai_structured_result = {
+      diagnosticos_detectados_en_texto: data.diagnosticos_detectados_en_texto || [],
+      confianza_global: data.confianza_global || 'media',
+      abreviaturas_expandidas: data.abreviaturas_expandidas || []
+    };
     c.ai_structured_at = new Date().toISOString();
 
     if (typeof global.saveConsultations === 'function') {

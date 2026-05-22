@@ -107,11 +107,24 @@ const CONSULT_ANTECEDENT_RADIOS = ["tabaquismo","alcoholismo","toxicomanias","ac
 
 // ===== DATOS PERSISTENTES =====
 
-let patients      = JSON.parse(localStorage.getItem("cd_patients"))  || [];
-let consultations = JSON.parse(localStorage.getItem("cd_consults"))  || [];
-let triageQueue   = JSON.parse(localStorage.getItem("cd_triage"))    || [];
-let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
-let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
+function safeLoad(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed ?? fallback;
+    } catch (err) {
+        console.error(`[ClinData] localStorage["${key}"] corrupto, conservando respaldo y usando fallback.`, err);
+        try { localStorage.setItem(key + "_corrupt_" + Date.now(), localStorage.getItem(key) || ""); } catch(e) {}
+        return fallback;
+    }
+}
+
+let patients      = safeLoad("cd_patients",  []);
+let consultations = safeLoad("cd_consults",  []);
+let triageQueue   = safeLoad("cd_triage",    []);
+let consultQueue  = safeLoad("cd_cqueue",    []);
+let systemUsers   = safeLoad("cd_users",     DEFAULT_USERS);
 const HOSPITAL_CODE = "HGR";
 
 function requireClinDataModule(name) {
@@ -120,11 +133,21 @@ function requireClinDataModule(name) {
     return module;
 }
 
-function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
-function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
-function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
-function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
-function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
+function _safeSave(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+        console.error(`[ClinData] No se pudo guardar "${key}":`, err);
+        if (typeof showToast === "function") {
+            showToast("⚠ Error al guardar localmente. Revisa el almacenamiento del navegador.", "error");
+        }
+    }
+}
+function savePatients()      { _safeSave("cd_patients", patients); }
+function saveConsultations() { _safeSave("cd_consults", consultations); }
+function saveTriageQueue()   { _safeSave("cd_triage",   triageQueue); }
+function saveConsultQueue()  { _safeSave("cd_cqueue",   consultQueue); }
+function saveSystemUsers()   { _safeSave("cd_users",    systemUsers); }
 
 function getRecordYear(date = new Date()) { return requireClinDataModule("patients").getRecordYear(date); }
 function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) { return requireClinDataModule("patients").getLastExpedienteSequence(hospitalCode, year); }
@@ -215,6 +238,28 @@ window.addEventListener("DOMContentLoaded", () => {
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
     updateNewPatientExpedientePreview();
     setupSelectableRadioCards();
+
+    // ── Migración: reparar consultas con tipoNota = "libre-medico" ────────
+    // Bug histórico: collectRecordFields() pisaba tipoNota con el tab actual.
+    // Inferimos el tipoNota correcto a partir del contenido y la fecha.
+    (function migrateLibreMedicoTipoNota() {
+        if (localStorage.getItem("cd_migration_v1_done")) return;
+        let changed = false;
+        consultations.forEach(c => {
+            if (c.tipoNota === "libre-medico") {
+                if (c.libreMode === "historia" || c.libreMode === "nota-medica") {
+                    c.tipoNota = c.libreMode;
+                } else {
+                    const prev = consultations.filter(x => x.patientId === c.patientId && new Date(x.date) < new Date(c.date));
+                    c.tipoNota = prev.length === 0 ? "historia" : "nota-medica";
+                }
+                changed = true;
+            }
+        });
+        if (changed) saveConsultations();
+        localStorage.setItem("cd_migration_v1_done", "1");
+        console.log("[ClinData] Migración v1 completada — tipoNota reparado en consultas afectadas.");
+    })();
 });
 
 // =============================================
@@ -923,8 +968,13 @@ function collectRecordFields() {
     
     // Guardar diagnósticos CIE-10 seleccionados
     currentConsultation.diagnosticos_cie10 = [...selectedDiagnosticos];
-    
-    currentConsultation.tipoNota = currentTab;
+
+    // Solo registrar el tipoNota la primera vez (no sobreescribir el original).
+    // Excepción: si el tab actual es "libre-medico", NUNCA pisar el tipoNota
+    // guardado — el tab libre es transitorio y el tipo real es historia/nota-medica.
+    if (!currentConsultation.tipoNota && currentTab && currentTab !== "libre-medico") {
+        currentConsultation.tipoNota = currentTab;
+    }
 }
 
 function saveRecord() {

@@ -156,9 +156,16 @@
             // NO sobreescribimos consultation.tipoNota para no alterar el registro del médico.
             tipoNota = "evolucion";
         } else if (global.can("canWriteMedicalNotes")) {
-            // Médico → usar el tipoNota guardado en la consulta, o calcularlo si es nueva.
+            // Determinar si la consulta es "nueva" (sin nada capturado aún)
+            const isNew = !consultation.notas_libre_medico
+                && !consultation.diagnostico
+                && !consultation.tratamiento
+                && !(consultation.diagnosticos_cie10 || []).length
+                && !(consultation.diagnosticos_libre || []).length
+                && !(consultation.medicamentosLibre || []).length;
+
             if (consultation.tipoNota && consultation.tipoNota !== "evolucion") {
-                // Ya tiene un tipo médico guardado, respetar.
+                // Consulta existente con tipo médico ya definido → respetar.
                 tipoNota = consultation.tipoNota;
             } else {
                 // Es nueva o solo tenía el tab de enfermería → calcular.
@@ -169,17 +176,12 @@
                 consultation.tipoNota = tipoNota;
             }
 
-            // ── Sprint 1: Captura libre con IA por defecto ──────────────────────
-            // Si es primera consulta (historia) o seguimiento (nota-medica),
-            // el médico arranca en el tab de captura libre con IA. El libreMode
-            // determina el schema de IA y el checklist usados por freecapture.
-            // Excepción: "urgencias" mantiene su flujo clásico.
-            if (tipoNota === "historia" || tipoNota === "nota-medica") {
+            // Captura libre con IA SOLO para consultas nuevas. Las consultas
+            // existentes se muestran en su tab estructurado original.
+            if (isNew && (tipoNota === "historia" || tipoNota === "nota-medica")) {
                 consultation.libreMode = tipoNota;
                 tipoNota = "libre-medico";
             } else if (tipoNota === "libre-medico" && !consultation.libreMode) {
-                // Captura libre seleccionada manualmente sin libreMode aún:
-                // inferir por presencia de consultas previas del mismo paciente.
                 const prevConsults = app().consultations.filter(
                     c => c.patientId === patient.id && c.id !== consultation.id
                 );
@@ -753,7 +755,12 @@
         const tipoEl = document.getElementById("firma_tipo");
         if (tipoEl) consultation.firma_tipo = tipoEl.value;
         consultation.diagnosticos_cie10 = [...(app().selectedDiagnosticos || [])];
-        consultation.tipoNota = app().currentTab;
+        // Solo registrar el tipoNota la primera vez (no sobreescribir el original).
+        // Excepción: si el tab actual es "libre-medico", NUNCA pisar el tipoNota
+        // guardado — el tab libre es transitorio y el tipo real es historia/nota-medica.
+        if (!consultation.tipoNota && app().currentTab && app().currentTab !== "libre-medico") {
+            consultation.tipoNota = app().currentTab;
+        }
 
         // Forzar uppercase al guardar en todos los campos de texto clínico
         ALL_RECORD_FIELDS.forEach((field) => {
