@@ -4,7 +4,7 @@
 
     // ── Permisos por rol para la vista de expediente ──────────────────────────
     const EXPEDIENTE_PERMS = {
-        medico:    { canEditPatient: false, canAddRegistro: true,  canAddProtocolo: true,  canAddDocs: true,  canAddPagos: false },
+        medico:    { canEditPatient: false, canAddRegistro: true,  canAddProtocolo: true,  canAddDocs: true,  canAddPagos: true  },
         enfermero: { canEditPatient: false, canAddRegistro: true,  canAddProtocolo: false, canAddDocs: false, canAddPagos: false },
         recepcion: { canEditPatient: true,  canAddRegistro: false, canAddProtocolo: false, canAddDocs: true,  canAddPagos: true  },
         admin:     { canEditPatient: true,  canAddRegistro: false, canAddProtocolo: false, canAddDocs: true,  canAddPagos: true  },

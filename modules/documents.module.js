@@ -125,7 +125,11 @@
     // ── FORMULARIOS DE CADA DOCUMENTO ────────────────────────────────────────
 
     function formReceta(patient, consultation) {
-        const meds = consultation?.medicamentos || [];
+        // Consolidar medicamentos de historia clínica + nota médica
+        const meds = [
+            ...(consultation?.medicamentos || []),
+            ...(consultation?.medicamentosNota || [])
+        ].filter(m => m && (m.nombre || m.dosis || m.concentracion));
         const medRows = meds.length
             ? meds.map(m => `
                 <tr>
@@ -156,7 +160,7 @@
                     <table style="width:100%;border-collapse:collapse;">${medRows}</table>
                 </div>
                 <div class="doc-form-label" style="margin-top:12px;">Medicamento adicional (texto libre)</div>
-                <textarea id="df_meds_extra" rows="4" placeholder="Nombre genérico · Concentración · Dosis · Vía · Frecuencia · Duración&#10;Ejemplo: Paracetamol · 500 mg · 1 tableta · VO · cada 8h · por 5 días"></textarea>
+                <textarea id="df_meds_extra" rows="4" placeholder="Nombre genérico · Concentración · Dosis · Vía · Frecuencia · Duración&#10;Ejemplo: Paracetamol · 500 mg · 1 tableta · VO · cada 8h · por 5 días">${global.escapeHtml(consultation?.nota_tratamiento || consultation?.tratamiento || '')}</textarea>
             </div>
             <div class="doc-form-section">
                 <div class="doc-form-label">Indicaciones adicionales</div>

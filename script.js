@@ -507,6 +507,9 @@ function renderMedicalRecord() {
         tabEl.classList.add("active");
     }
 
+    // setupRecordActions debe ir antes que fillRecordFields porque crea
+    // los inputs firma_cedula y firma_tipo que viven en el footer.
+    setupRecordActions();
     // Fill all fields
     fillRecordFields();
 
@@ -520,7 +523,6 @@ function renderMedicalRecord() {
     setupIMCCalc();
     setupNotaIMCCalc();
     setupNursingIMCCalc();
-    setupRecordActions();
     renderAttachments();
     setupAttachments();
     setupAbbreviationDetection();
@@ -860,9 +862,21 @@ function setupRecordActions() {
             <button class="btn-secondary" onclick="saveRecord()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                 Guardar</button>
+            <div class="firma-inline-field">
+                <label for="firma_cedula">Cédula</label>
+                <input type="text" id="firma_cedula" placeholder="Núm. cédula">
+            </div>
+            <div class="firma-inline-field">
+                <label for="firma_tipo">Tipo firma</label>
+                <select id="firma_tipo">
+                    <option value="electronica">Electrónica</option>
+                    <option value="digital">Digital</option>
+                    <option value="autografa">Autógrafa</option>
+                </select>
+            </div>
             <button class="btn-primary" onclick="closeConsultation()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Marcar como Atendido</button>`;
+                Firmar y cerrar consulta</button>`;
     } else if (can("canWriteNursingNotes")) {
         el.innerHTML = `
             <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
@@ -923,6 +937,18 @@ function saveRecord() {
 function closeConsultation() {
     collectRecordFields();
     if (!currentConsultation) return;
+    // Firmar automáticamente si aún no está firmada (NOM-004 exige firma del responsable)
+    if (!currentConsultation.firma_medico) {
+        const tipoEl = document.getElementById("firma_tipo");
+        const cedulaEl = document.getElementById("firma_cedula");
+        currentConsultation.firma_tipo = tipoEl?.value || "electronica";
+        currentConsultation.firma_cedula = cedulaEl?.value || currentConsultation.firma_cedula || "";
+        currentConsultation.firma_medico = currentUser?.displayName || "";
+        currentConsultation.firma_fecha = new Date().toLocaleString("es-MX", {
+            weekday: "short", year: "numeric", month: "short", day: "numeric",
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+    }
     currentConsultation.status = "closed";
     if (currentPatient && currentConsultation.tratamiento) {
         currentPatient.currentTreatment = currentConsultation.tratamiento;

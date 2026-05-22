@@ -168,7 +168,7 @@
 
     function openPagoItem(patientId, itemId) {
         const role = app().currentUser?.role || '';
-        if (role !== 'recepcion' && role !== 'admin') {
+        if (role !== 'recepcion' && role !== 'admin' && role !== 'medico') {
             return global.showToast('No tienes permiso para registrar pagos.', 'error');
         }
 
@@ -287,7 +287,7 @@
 
     function deletePagoItem(patientId, itemId) {
         const role = app().currentUser?.role || '';
-        if (role !== 'recepcion' && role !== 'admin') {
+        if (role !== 'recepcion' && role !== 'admin' && role !== 'medico') {
             return global.showToast('No tienes permiso para eliminar pagos.', 'error');
         }
         if (!confirm('¿Eliminar este concepto de pago?')) return;

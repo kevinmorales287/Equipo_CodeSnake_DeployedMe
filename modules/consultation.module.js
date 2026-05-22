@@ -204,6 +204,7 @@
             tabEl.classList.add("active");
         }
 
+        setupRecordActions();
         fillRecordFields();
         const isReadOnly = !global.can("canWriteMedicalNotes");
         setRecordReadOnly(isReadOnly);
@@ -213,7 +214,6 @@
         setupIMCCalc();
         setupNotaIMCCalc();
         setupNursingIMCCalc();
-        setupRecordActions();
         global.renderAttachments();
         global.setupAttachments();
         global.setupAbbreviationDetection();
@@ -641,7 +641,19 @@
                 <button class="btn-secondary" onclick="abrevIniciarExport('patient')">PDF Paciente</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('doctor')">PDF Médico</button>
                 <button class="btn-secondary" onclick="saveRecord()">Guardar</button>
-                <button class="btn-primary" onclick="closeConsultation()">Marcar como Atendido</button>`;
+                <div class="firma-inline-field">
+                    <label for="firma_cedula">Cédula</label>
+                    <input type="text" id="firma_cedula" placeholder="Núm. cédula">
+                </div>
+                <div class="firma-inline-field">
+                    <label for="firma_tipo">Tipo firma</label>
+                    <select id="firma_tipo">
+                        <option value="electronica">Electrónica</option>
+                        <option value="digital">Digital</option>
+                        <option value="autografa">Autógrafa</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="closeConsultation()">✓ Firmar y cerrar consulta</button>`;
         } else if (global.can("canWriteNursingNotes")) {
             el.innerHTML = `
                 <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
@@ -716,6 +728,18 @@
         collectRecordFields();
         const consultation = app().currentConsultation;
         if (!consultation) return;
+        // Firmar automáticamente si aún no está firmada (NOM-004 exige firma del responsable)
+        if (!consultation.firma_medico) {
+            const tipoEl = document.getElementById("firma_tipo");
+            const cedulaEl = document.getElementById("firma_cedula");
+            consultation.firma_tipo = tipoEl?.value || "electronica";
+            consultation.firma_cedula = cedulaEl?.value || consultation.firma_cedula || "";
+            consultation.firma_medico = app().currentUser?.displayName || "";
+            consultation.firma_fecha = new Date().toLocaleString("es-MX", {
+                weekday: "short", year: "numeric", month: "short", day: "numeric",
+                hour: "2-digit", minute: "2-digit", second: "2-digit"
+            });
+        }
         consultation.status = "closed";
         if (app().currentPatient && consultation.tratamiento) {
             app().currentPatient.currentTreatment = consultation.tratamiento;
