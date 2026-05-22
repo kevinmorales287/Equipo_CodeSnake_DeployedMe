@@ -1068,6 +1068,10 @@ function agregarMedicamentoNota() { return requireClinDataModule("consultation")
 function renderMedicamentosNota() { return requireClinDataModule("consultation").renderMedicamentosNota(); }
 function updateMedicamentoNota(id, field, value) { return requireClinDataModule("consultation").updateMedicamentoNota(id, field, value); }
 function eliminarMedicamentoNota(id) { return requireClinDataModule("consultation").eliminarMedicamentoNota(id); }
+function agregarMedicamentoLibre() { return requireClinDataModule("consultation").agregarMedicamentoLibre(); }
+function renderMedicamentosLibre() { return requireClinDataModule("consultation").renderMedicamentosLibre(); }
+function updateMedicamentoLibre(id, field, value) { return requireClinDataModule("consultation").updateMedicamentoLibre(id, field, value); }
+function eliminarMedicamentoLibre(id) { return requireClinDataModule("consultation").eliminarMedicamentoLibre(id); }
 function setupRecordActions() { return requireClinDataModule("consultation").setupRecordActions(); }
 function collectRecordFields() { return requireClinDataModule("consultation").collectRecordFields(); }
 function saveRecord() { return requireClinDataModule("consultation").saveRecord(); }

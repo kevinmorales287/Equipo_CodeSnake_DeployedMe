@@ -340,6 +340,8 @@
     // Activar barra de demo y panel de métricas
     if (registry.demoCases) registry.demoCases.showDemoBar();
     if (registry.metrics) registry.metrics.show();
+
+    if (typeof global.renderMedicamentosLibre === 'function') global.renderMedicamentosLibre();
   }
 
   // ── Estructuración con IA + Vista previa ────────────────────────────
@@ -366,8 +368,9 @@
     if (!consultation) return;
     const hasDx = (consultation.diagnosticos_libre || []).length > 0;
     const hasNotes = (consultation.notas_libre_medico || "").trim().length > 0;
-    if (!hasDx || !hasNotes) {
-      alert("Para firmar y cerrar necesitas al menos un diagnóstico CIE-10 y notas de la consulta.");
+    const hasMeds = (consultation.medicamentosLibre || []).length > 0;
+    if (!hasDx || (!hasNotes && !hasMeds)) {
+      alert("Para firmar y cerrar necesitas al menos un diagnóstico CIE-10 y notas o medicamentos.");
       return;
     }
     if (!consultation.tratamiento && !consultation.diagnostico) {

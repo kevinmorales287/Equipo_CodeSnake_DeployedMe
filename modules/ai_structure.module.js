@@ -20,6 +20,7 @@
     return {
       texto: consultation.notas_libre_medico || '',
       diagnosticos: consultation.diagnosticos_libre || [],
+      medicamentos_estructurados: consultation.medicamentosLibre || [],
       modo: consultation.libreMode || 'nota-medica',
       paciente: {
         edad: patient ? calcularEdad(patient.fechaNacimiento) : null,

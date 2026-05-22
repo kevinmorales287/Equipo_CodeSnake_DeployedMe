@@ -460,8 +460,8 @@
                                      class="libre-dx-input"
                                      placeholder="+ buscar diagnóstico CIE-10..."
                                      autocomplete="off">
+                              <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
                             </div>
-                            <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
                           </div>
 
                           <div class="libre-section">
@@ -480,6 +480,23 @@
                               <span id="libre_autosave">● Listo</span>
                               <span id="libre_wordcount">0 palabras</span>
                             </div>
+                          </div>
+
+                          <!-- Medicamentos manuales (captura libre) -->
+                          <div class="libre-section">
+                            <div class="libre-section-header">
+                              <p class="libre-section-label">
+                                Medicamentos prescritos
+                                <span class="libre-section-hint">— captura manual estructurada</span>
+                              </p>
+                              <button class="btn-add-med" type="button" onclick="agregarMedicamentoLibre()" id="btnAgregarMedLibre">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Agregar medicamento
+                              </button>
+                            </div>
+                            <div id="medicamentosLibreList" class="medicamentos-list"></div>
                           </div>
 
                           <div class="libre-bottombar">

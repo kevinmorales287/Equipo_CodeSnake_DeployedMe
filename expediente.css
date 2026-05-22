@@ -435,6 +435,7 @@
 
 /* ── Zona de diagnósticos ─────────────────────────── */
 .libre-dx-box {
+  position: relative;
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
   padding: 8px 10px;
   border: 1px solid var(--border);

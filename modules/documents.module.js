@@ -125,10 +125,11 @@
     // ── FORMULARIOS DE CADA DOCUMENTO ────────────────────────────────────────
 
     function formReceta(patient, consultation) {
-        // Consolidar medicamentos de historia clínica + nota médica
+        // Consolidar medicamentos de historia clínica + nota médica + captura libre
         const meds = [
             ...(consultation?.medicamentos || []),
-            ...(consultation?.medicamentosNota || [])
+            ...(consultation?.medicamentosNota || []),
+            ...(consultation?.medicamentosLibre || [])
         ].filter(m => m && (m.nombre || m.dosis || m.concentracion));
         const medRows = meds.length
             ? meds.map(m => `

@@ -219,6 +219,7 @@
         global.setupAbbreviationDetection();
         renderMedicamentos();
         renderMedicamentosNota();
+        renderMedicamentosLibre();
         // Insertar bloque de documentos clínicos (si el médico tiene permisos)
         if (global.can("canWriteMedicalNotes")) {
             const docsBlock = document.getElementById("consultaDocsBlock");
@@ -630,6 +631,67 @@
         renderMedicamentosNota();
     }
 
+    function agregarMedicamentoLibre() {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        if (!consultation.medicamentosLibre) consultation.medicamentosLibre = [];
+        consultation.medicamentosLibre.push({ id: Date.now(), nombre: "", concentracion: "", dosis: "", via: "", frecuencia: "", duracion: "" });
+        global.saveConsultations();
+        renderMedicamentosLibre();
+    }
+
+    function renderMedicamentosLibre() {
+        const list = document.getElementById("medicamentosLibreList");
+        const consultation = app().currentConsultation;
+        if (!list || !consultation) return;
+        const meds = consultation.medicamentosLibre || [];
+        const isReadOnly = !global.can("canWriteMedicalNotes");
+        if (meds.length === 0) {
+            list.innerHTML = `<div class="med-empty">Sin medicamentos prescritos. Use el botón "Agregar medicamento".</div>`;
+            return;
+        }
+        list.innerHTML = meds.map((med, idx) => `
+            <div class="med-row" data-id="${med.id}">
+                <div class="med-num">${idx + 1}</div>
+                <div class="med-fields">
+                    <input class="med-input" type="text" placeholder="Nombre del medicamento" value="${med.nombre || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'nombre',this.value)">
+                    <input class="med-input med-conc" type="text" placeholder="Concentración" value="${med.concentracion || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'concentracion',this.value)">
+                    <input class="med-input med-dosis" type="text" placeholder="Dosis" value="${med.dosis || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'dosis',this.value)">
+                    <select class="med-input med-via" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'via',this.value)">
+                        <option value="">Vía...</option>
+                        <option ${med.via === 'VO' ? 'selected' : ''}>VO</option>
+                        <option ${med.via === 'IV' ? 'selected' : ''}>IV</option>
+                        <option ${med.via === 'IM' ? 'selected' : ''}>IM</option>
+                        <option ${med.via === 'SC' ? 'selected' : ''}>SC</option>
+                        <option ${med.via === 'SL' ? 'selected' : ''}>SL</option>
+                        <option ${med.via === 'Tópica' ? 'selected' : ''}>Tópica</option>
+                        <option ${med.via === 'Inhalada' ? 'selected' : ''}>Inhalada</option>
+                    </select>
+                    <input class="med-input med-freq" type="text" placeholder="Frecuencia (ej: c/8h)" value="${med.frecuencia || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'frecuencia',this.value)">
+                    <input class="med-input med-dur" type="text" placeholder="Duración (ej: 7 días)" value="${med.duracion || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'duracion',this.value)">
+                </div>
+                ${!isReadOnly ? `<button class="med-delete" type="button" onclick="eliminarMedicamentoLibre(${med.id})" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>` : ''}
+            </div>`).join("");
+    }
+
+    function updateMedicamentoLibre(id, field, value) {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        const med = (consultation.medicamentosLibre || []).find((item) => item.id === id);
+        if (med) {
+            med[field] = value;
+            global.saveConsultations();
+        }
+    }
+
+    function eliminarMedicamentoLibre(id) {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        consultation.medicamentosLibre = (consultation.medicamentosLibre || []).filter((item) => item.id !== id);
+        global.saveConsultations();
+        renderMedicamentosLibre();
+    }
+
     function setupRecordActions() {
         const el = document.getElementById("recordFormActions");
         if (!el) return;
@@ -884,6 +946,10 @@
         renderMedicamentosNota,
         updateMedicamentoNota,
         eliminarMedicamentoNota,
+        agregarMedicamentoLibre,
+        renderMedicamentosLibre,
+        updateMedicamentoLibre,
+        eliminarMedicamentoLibre,
         setupRecordActions,
         collectRecordFields,
         saveRecord,
