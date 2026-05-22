@@ -229,6 +229,30 @@
     const dxSugeridos = data.diagnosticos_detectados_en_texto || [];
     const abreviaturas = data.abreviaturas_expandidas || [];
 
+    // Consolidar medicamentos estructurados capturados manualmente en el cuadro Tratamiento
+    function formatMedLine(m) {
+      const partes = [
+        m.nombre,
+        m.concentracion,
+        m.dosis,
+        m.via,
+        m.frecuencia,
+        m.duracion ? `por ${m.duracion}` : ''
+      ].filter(Boolean);
+      return '• ' + partes.join(' · ');
+    }
+    const medsEstructurados = [
+      ...(c.medicamentosLibre || []),
+      ...(c.medicamentosNota || []),
+      ...(c.medicamentos || [])
+    ].filter(m => m && (m.nombre || m.dosis));
+    if (medsEstructurados.length) {
+      const medsTexto = medsEstructurados.map(formatMedLine).join('\n');
+      data.tratamiento = (data.tratamiento && data.tratamiento.trim())
+        ? (data.tratamiento.trim() + '\n\n' + medsTexto)
+        : medsTexto;
+    }
+
     // ── Detección de modo historia ────────────────────────────────────
     // Se considera "historia" si la consulta tiene libreMode=historia
     // o si la IA devolvió cualquiera de los bloques exclusivos de historia.

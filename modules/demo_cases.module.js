@@ -64,11 +64,14 @@ Pronóstico: reservado a corto plazo dependiente de apego terapéutico y modific
       diagnosticos: [
         { codigo: 'I10', descripcion: 'Hipertensión esencial (primaria)' }
       ],
+      medicamentos: [
+        { nombre: 'Losartán', concentracion: '50 mg', dosis: '1 tableta', via: 'VO', frecuencia: 'c/24h', duracion: 'continuo' }
+      ],
       texto: `Px masculino de 45 años acude para seguimiento de HTA. Refiere apego al tratamiento, niega cefalea, dolor torácico ni disnea. APP de DM2 controlada, niega alergias.
 
 EF: TA 138/85, FC 76, FR 16, T 36.5, SatO2 97%, peso 82 kg, talla 1.72 m. Buen estado general, consciente. Cardiopulmonar sin compromiso. Abdomen blando depresible no doloroso. Extremidades sin edema.
 
-Continúa con losartán 50 mg c/24 h. Solicito QS y perfil lipídico. Cita en 2 meses. Pronóstico favorable.`
+Solicito QS y perfil lipídico. Cita en 2 meses. Pronóstico favorable.`
     },
     {
       id: 'abdomen-agudo',
@@ -79,11 +82,15 @@ Continúa con losartán 50 mg c/24 h. Solicito QS y perfil lipídico. Cita en 2 
       diagnosticos: [
         { codigo: 'K35.80', descripcion: 'Apendicitis aguda no especificada' }
       ],
+      medicamentos: [
+        { nombre: 'Ketorolaco', concentracion: '30 mg', dosis: '1 ámp', via: 'IV', frecuencia: 'STAT', duracion: 'dosis única' },
+        { nombre: 'Ondansetrón', concentracion: '4 mg', dosis: '1 ámp', via: 'IV', frecuencia: 'STAT', duracion: 'dosis única' }
+      ],
       texto: `Px masculino de 24 años acude a urgencias por dolor abdominal de 18 horas de evolución, inicio periumbilical con migración a FID, intensidad 8/10, asociado a náusea y vómito en 2 ocasiones. Niega evacuaciones. Última ingesta hace 8 horas.
 
 EF: TA 110/70, FC 102, FR 20, T 37.8, SatO2 98%. Px álgico, consciente, deshidratación leve. Abdomen con dolor a la palpación en FID, McBurney positivo, Blumberg positivo, Rovsing positivo. Peristalsis disminuida.
 
-Laboratorios: leucocitos 14500, neutrófilos 82%. Solicito USG abdominal urgente y valoración por cirugía general. NPO, soluciones cristaloides IV, ketorolaco 30 mg IV STAT, ondansetrón 4 mg IV. Pronóstico reservado pendiente de evolución y resolución quirúrgica.`
+Laboratorios: leucocitos 14500, neutrófilos 82%. Solicito USG abdominal urgente y valoración por cirugía general. NPO, soluciones cristaloides IV. Pronóstico reservado pendiente de evolución y resolución quirúrgica.`
     },
     {
       id: 'dx-multiple',
@@ -95,11 +102,17 @@ Laboratorios: leucocitos 14500, neutrófilos 82%. Solicito USG abdominal urgente
         { codigo: 'E11.65', descripcion: 'Diabetes mellitus tipo 2 con hiperglucemia' },
         { codigo: 'I10', descripcion: 'Hipertensión esencial (primaria)' }
       ],
-      texto: `Px femenino de 62 años acude por mal control glucémico de 3 semanas. Refiere poliuria, polidipsia y pérdida ponderal de 4 kg. Niega cetonas en orina. APP: DM2 de 12 años, HTA de 8 años, dislipidemia. Usuaria de metformina 850 mg c/12h y losartán 50 mg c/24h. Refiere falta de apego dietético reciente.
+      medicamentos: [
+        { nombre: 'Metformina', concentracion: '850 mg', dosis: '1 tableta', via: 'VO', frecuencia: 'c/12h', duracion: 'continuo' },
+        { nombre: 'Losartán', concentracion: '50 mg', dosis: '1 tableta', via: 'VO', frecuencia: 'c/24h', duracion: 'continuo' },
+        { nombre: 'Insulina NPH', concentracion: '100 UI/mL', dosis: '10 UI', via: 'SC', frecuencia: 'c/24h nocturna', duracion: 'continuo' },
+        { nombre: 'Empagliflozina', concentracion: '10 mg', dosis: '1 tableta', via: 'VO', frecuencia: 'c/24h', duracion: 'continuo' }
+      ],
+      texto: `Px femenino de 62 años acude por mal control glucémico de 3 semanas. Refiere poliuria, polidipsia y pérdida ponderal de 4 kg. Niega cetonas en orina. APP: DM2 de 12 años, HTA de 8 años, dislipidemia. Refiere falta de apego dietético reciente.
 
 EF: TA 145/92, FC 88, FR 18, T 36.7, SatO2 96%, peso 78 kg, talla 1.58 m. Glucemia capilar 312. Px con sobrepeso, mucosas semihúmedas, sin datos de deshidratación severa. Cardiopulmonar sin compromiso. Abdomen globoso a expensas de panículo, no doloroso. Extremidades sin lesiones, pulsos pedios palpables, sensibilidad conservada.
 
-Solicito HbA1c, QS completa, EGO, microalbuminuria y fondo de ojo. Inicio insulina NPH 10 UI SC c/24h nocturna, continúa metformina 850 mg c/12h, agrego empagliflozina 10 mg c/24h. Reforzar dieta DM e hiposódica, actividad física 30 min/día. Cita en 7 días con resultados. Pronóstico reservado para función a largo plazo.`
+Solicito HbA1c, QS completa, EGO, microalbuminuria y fondo de ojo. Reforzar dieta DM e hiposódica, actividad física 30 min/día. Cita en 7 días con resultados. Pronóstico reservado para función a largo plazo.`
     },
     {
       id: 'pediatrico',
@@ -110,11 +123,15 @@ Solicito HbA1c, QS completa, EGO, microalbuminuria y fondo de ojo. Inicio insuli
       diagnosticos: [
         { codigo: 'J03.90', descripcion: 'Amigdalitis aguda, no especificada' }
       ],
+      medicamentos: [
+        { nombre: 'Amoxicilina', concentracion: '250 mg/5 mL', dosis: '350 mg', via: 'VO', frecuencia: 'c/8h', duracion: '10 días' },
+        { nombre: 'Paracetamol', concentracion: '100 mg/mL', dosis: '15 mg/kg/dosis', via: 'VO', frecuencia: 'c/6h PRN fiebre', duracion: 'según evolución' }
+      ],
       texto: `Px femenino de 7 años traída por madre por fiebre de 39°C de 48 hrs de evolución, odinofagia y rechazo a la alimentación. Niega tos, rinorrea o dificultad respiratoria. Esquema de vacunación completo. Niega alergias.
 
 EF: TA 90/60, FC 110, FR 22, T 38.9, SatO2 98%, peso 22 kg. Px irritable, hidratada, sin datos de dificultad respiratoria. Faringe hiperémica con amígdalas hipertróficas grado III, exudado blanquecino bilateral. Adenopatías cervicales submandibulares dolorosas. Cardiopulmonar sin compromiso. Abdomen blando no doloroso.
 
-Inicio amoxicilina 50 mg/kg/día VO c/8h por 10 días (350 mg c/8h), paracetamol 15 mg/kg/dosis VO c/6h PRN fiebre. Líquidos abundantes, dieta blanda fría. Datos de alarma. Cita de control en 72 hrs si no mejora. Pronóstico bueno.`
+Líquidos abundantes, dieta blanda fría. Datos de alarma. Cita de control en 72 hrs si no mejora. Pronóstico bueno.`
     }
   ];
 
@@ -181,11 +198,20 @@ Inicio amoxicilina 50 mg/kg/día VO c/8h por 10 días (350 mg c/8h), paracetamol
     consultation.notas_libre_medico = caso.texto;
     consultation.diagnosticos_libre = JSON.parse(JSON.stringify(caso.diagnosticos));
 
+    consultation.medicamentosLibre = (caso.medicamentos || []).map((m, idx) => ({
+      ...m,
+      id: Date.now() + idx
+    }));
+
     const ta = document.getElementById('notas_libre_medico');
     if (ta) ta.value = caso.texto;
     if (registry.freecapture) {
       registry.freecapture.renderDxBadges();
       registry.freecapture.onInput();
+    }
+
+    if (typeof global.renderMedicamentosLibre === 'function') {
+      global.renderMedicamentosLibre();
     }
 
     if (typeof global.saveConsultations === 'function') global.saveConsultations();

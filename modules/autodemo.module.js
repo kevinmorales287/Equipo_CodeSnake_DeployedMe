@@ -32,6 +32,14 @@
       consultation.diagnosticos_libre = JSON.parse(JSON.stringify(caso.diagnosticos || []));
       if (registry.freecapture) registry.freecapture.renderDxBadges();
 
+      consultation.medicamentosLibre = (caso.medicamentos || []).map((m, idx) => ({
+        ...m,
+        id: Date.now() + idx
+      }));
+      if (typeof global.renderMedicamentosLibre === 'function') {
+        global.renderMedicamentosLibre();
+      }
+
       const fullText = caso.texto || '';
       ta.value = '';
       consultation.notas_libre_medico = '';

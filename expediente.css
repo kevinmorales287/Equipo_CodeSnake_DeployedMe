@@ -491,12 +491,14 @@
 .libre-dx-sug-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 12px; cursor: pointer;
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
+  transition: background-color 0.15s ease;
 }
 .libre-dx-sug-item:last-child { border-bottom: none; }
 .libre-dx-sug-item:hover,
-.libre-dx-sug-item.active { background: var(--bg-surface-2); }
+.libre-dx-sug-item.active { background: var(--bg-surface-2, #eff6ff); }
 .libre-dx-sug-text { flex: 1; color: var(--text-primary); }
 .libre-dx-sug-code {
   font-family: var(--mono, monospace);
