@@ -460,8 +460,8 @@
                                      class="libre-dx-input"
                                      placeholder="+ buscar diagnóstico CIE-10..."
                                      autocomplete="off">
+                              <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
                             </div>
-                            <div id="libre_dx_suggestions" class="diagnostico-suggestions" style="display:none;"></div>
                           </div>
 
                           <div class="libre-section">
@@ -482,8 +482,25 @@
                             </div>
                           </div>
 
+                          <!-- Medicamentos manuales (captura libre) -->
+                          <div class="libre-section">
+                            <div class="libre-section-header">
+                              <p class="libre-section-label">
+                                Medicamentos prescritos
+                                <span class="libre-section-hint">— captura manual estructurada</span>
+                              </p>
+                              <button class="btn-add-med" type="button" onclick="agregarMedicamentoLibre()" id="btnAgregarMedLibre">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Agregar medicamento
+                              </button>
+                            </div>
+                            <div id="medicamentosLibreList" class="medicamentos-list"></div>
+                          </div>
+
                           <div class="libre-bottombar">
-                            <button type="button" class="btn-primary" onclick="freecaptureStructure()" disabled>
+                            <button type="button" class="btn-ai-structure" onclick="freecaptureStructure()" disabled>
                               🤖 Estructurar con IA
                             </button>
                             <button type="button" onclick="freecapturePreview()">👁 Vista previa NOM-004</button>
@@ -1524,90 +1541,9 @@
                         </div>
                     </div>
 
-                    <!-- FIRMA DEL MÉDICO (compacta) -->
-                    <div class="record-block" id="firmaBlock">
-                        <div class="record-block-header">
-                            <span class="record-block-icon">✍️</span>
-                            <div>
-                                <div class="record-block-title">Autoría y Firma</div>
-                                <div class="record-block-subtitle">NOM-004-SSA3-2012 · Firma electrónica del médico responsable</div>
-                            </div>
-                        </div>
-                        <div class="record-block-body" style="padding:0;">
-                            <div class="firma-strip" id="firmaStrip">
-                                <!-- Estado: sin firmar -->
-                                <div class="firma-strip-inner" id="firmaStripInner">
-                                    <div class="firma-author">
-                                        <div class="firma-avatar-sm" id="firmaAvatarSm"></div>
-                                        <div>
-                                            <div class="firma-author-name" id="firmaAuthorName">—</div>
-                                            <div class="firma-author-meta">Médico responsable</div>
-                                        </div>
-                                    </div>
-                                    <div class="firma-divider-v"></div>
-                                    <div class="firma-fields-row">
-                                        <div class="firma-field-compact">
-                                            <span class="firma-field-label-sm">Cédula profesional</span>
-                                            <input type="text" id="firma_cedula" placeholder="Núm. cédula">
-                                        </div>
-                                        <div class="firma-field-compact">
-                                            <span class="firma-field-label-sm">Tipo de firma</span>
-                                            <select id="firma_tipo">
-                                                <option value="electronica">Electrónica</option>
-                                                <option value="digital">Digital</option>
-                                                <option value="autografa">Autógrafa</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="firma-actions-col">
-                                        <button class="btn-firmar-compact" onclick="firmarExpediente()" id="btnFirmarCompact">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                                            Firmar expediente
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- Estado: firmado -->
-                                <div class="firma-strip-signed" id="firmaStripSigned" style="display:none;">
-                                    <div class="firma-author">
-                                        <div class="firma-avatar-sm" id="firmaAvatarSmSigned"></div>
-                                        <div>
-                                            <div class="firma-author-name" id="firmaAuthorNameSigned">—</div>
-                                            <div class="firma-author-meta">Médico responsable</div>
-                                        </div>
-                                    </div>
-                                    <div class="firma-divider-v"></div>
-                                    <div class="firma-fields-row">
-                                        <div class="firma-field-compact">
-                                            <span class="firma-field-label-sm">Cédula profesional</span>
-                                            <input type="text" id="firma_cedula_signed" readonly>
-                                        </div>
-                                        <div class="firma-field-compact">
-                                            <span class="firma-field-label-sm">Tipo de firma</span>
-                                            <input type="text" id="firma_tipo_signed" readonly>
-                                        </div>
-                                        <div class="firma-field-compact">
-                                            <span class="firma-field-label-sm">Fecha y hora</span>
-                                            <input type="text" id="firma_fecha_display" readonly>
-                                        </div>
-                                    </div>
-                                    <div class="firma-actions-col">
-                                        <div class="firma-signed-badge-compact">
-                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                            Expediente firmado
-                                        </div>
-                                        <button class="firma-remove-btn" onclick="limpiarFirma()" id="btnLimpiarFirma" style="display:none;">
-                                            Remover firma
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Campos ocultos para compatibilidad con fillRecordFields -->
-                            <input type="hidden" id="firma_medico">
-                            <input type="hidden" id="firma_fecha">
-                            <div id="firmaInfo" style="display:none;"></div>
-                            <div id="firmaInfoText" style="display:none;"></div>
-                        </div>
-                    </div>
+                    <!-- Campos ocultos de firma (para compatibilidad con fillRecordFields/collectRecordFields) -->
+                    <input type="hidden" id="firma_medico">
+                    <input type="hidden" id="firma_fecha">
 
                     <!-- ACCIONES DEL FORMULARIO -->
                     <div class="record-form-actions" id="recordFormActions"></div>
@@ -1949,10 +1885,15 @@
 <script src="modules/consultation.module.js"></script>
 <script src="modules/export.module.js"></script>
 <script src="modules/documents.module.js"></script>
+<script src="modules/protocolos_module.js"></script>
+<script src="modules/pagos_module.js"></script>
 <script src="modules/expediente.module.js"></script>
 <script src="modules/freecapture.module.js"></script>
 <script src="modules/ai_structure.module.js"></script>
 <script src="modules/preview.module.js"></script>
+<script src="modules/demo_cases.module.js"></script>
+<script src="modules/metrics.module.js"></script>
+<script src="modules/autodemo.module.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

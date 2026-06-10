@@ -107,11 +107,24 @@ const CONSULT_ANTECEDENT_RADIOS = ["tabaquismo","alcoholismo","toxicomanias","ac
 
 // ===== DATOS PERSISTENTES =====
 
-let patients      = JSON.parse(localStorage.getItem("cd_patients"))  || [];
-let consultations = JSON.parse(localStorage.getItem("cd_consults"))  || [];
-let triageQueue   = JSON.parse(localStorage.getItem("cd_triage"))    || [];
-let consultQueue  = JSON.parse(localStorage.getItem("cd_cqueue"))    || [];
-let systemUsers   = JSON.parse(localStorage.getItem("cd_users"))     || DEFAULT_USERS;
+function safeLoad(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return parsed ?? fallback;
+    } catch (err) {
+        console.error(`[ClinData] localStorage["${key}"] corrupto, conservando respaldo y usando fallback.`, err);
+        try { localStorage.setItem(key + "_corrupt_" + Date.now(), localStorage.getItem(key) || ""); } catch(e) {}
+        return fallback;
+    }
+}
+
+let patients      = safeLoad("cd_patients",  []);
+let consultations = safeLoad("cd_consults",  []);
+let triageQueue   = safeLoad("cd_triage",    []);
+let consultQueue  = safeLoad("cd_cqueue",    []);
+let systemUsers   = safeLoad("cd_users",     DEFAULT_USERS);
 const HOSPITAL_CODE = "HGR";
 
 function requireClinDataModule(name) {
@@ -120,11 +133,21 @@ function requireClinDataModule(name) {
     return module;
 }
 
-function savePatients()      { localStorage.setItem("cd_patients", JSON.stringify(patients)); }
-function saveConsultations() { localStorage.setItem("cd_consults",  JSON.stringify(consultations)); }
-function saveTriageQueue()   { localStorage.setItem("cd_triage",    JSON.stringify(triageQueue)); }
-function saveConsultQueue()  { localStorage.setItem("cd_cqueue",    JSON.stringify(consultQueue)); }
-function saveSystemUsers()   { localStorage.setItem("cd_users",     JSON.stringify(systemUsers)); }
+function _safeSave(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+        console.error(`[ClinData] No se pudo guardar "${key}":`, err);
+        if (typeof showToast === "function") {
+            showToast("⚠ Error al guardar localmente. Revisa el almacenamiento del navegador.", "error");
+        }
+    }
+}
+function savePatients()      { _safeSave("cd_patients", patients); }
+function saveConsultations() { _safeSave("cd_consults", consultations); }
+function saveTriageQueue()   { _safeSave("cd_triage",   triageQueue); }
+function saveConsultQueue()  { _safeSave("cd_cqueue",   consultQueue); }
+function saveSystemUsers()   { _safeSave("cd_users",    systemUsers); }
 
 function getRecordYear(date = new Date()) { return requireClinDataModule("patients").getRecordYear(date); }
 function getLastExpedienteSequence(hospitalCode = HOSPITAL_CODE, year = getRecordYear()) { return requireClinDataModule("patients").getLastExpedienteSequence(hospitalCode, year); }
@@ -215,6 +238,28 @@ window.addEventListener("DOMContentLoaded", () => {
     if (s) s.addEventListener("input", function() { searchPatients(this.value.toLowerCase()); });
     updateNewPatientExpedientePreview();
     setupSelectableRadioCards();
+
+    // ── Migración: reparar consultas con tipoNota = "libre-medico" ────────
+    // Bug histórico: collectRecordFields() pisaba tipoNota con el tab actual.
+    // Inferimos el tipoNota correcto a partir del contenido y la fecha.
+    (function migrateLibreMedicoTipoNota() {
+        if (localStorage.getItem("cd_migration_v1_done")) return;
+        let changed = false;
+        consultations.forEach(c => {
+            if (c.tipoNota === "libre-medico") {
+                if (c.libreMode === "historia" || c.libreMode === "nota-medica") {
+                    c.tipoNota = c.libreMode;
+                } else {
+                    const prev = consultations.filter(x => x.patientId === c.patientId && new Date(x.date) < new Date(c.date));
+                    c.tipoNota = prev.length === 0 ? "historia" : "nota-medica";
+                }
+                changed = true;
+            }
+        });
+        if (changed) saveConsultations();
+        localStorage.setItem("cd_migration_v1_done", "1");
+        console.log("[ClinData] Migración v1 completada — tipoNota reparado en consultas afectadas.");
+    })();
 });
 
 // =============================================
@@ -507,6 +552,9 @@ function renderMedicalRecord() {
         tabEl.classList.add("active");
     }
 
+    // setupRecordActions debe ir antes que fillRecordFields porque crea
+    // los inputs firma_cedula y firma_tipo que viven en el footer.
+    setupRecordActions();
     // Fill all fields
     fillRecordFields();
 
@@ -520,7 +568,6 @@ function renderMedicalRecord() {
     setupIMCCalc();
     setupNotaIMCCalc();
     setupNursingIMCCalc();
-    setupRecordActions();
     renderAttachments();
     setupAttachments();
     setupAbbreviationDetection();
@@ -860,9 +907,21 @@ function setupRecordActions() {
             <button class="btn-secondary" onclick="saveRecord()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                 Guardar</button>
+            <div class="firma-inline-field">
+                <label for="firma_cedula">Cédula</label>
+                <input type="text" id="firma_cedula" placeholder="Núm. cédula">
+            </div>
+            <div class="firma-inline-field">
+                <label for="firma_tipo">Tipo firma</label>
+                <select id="firma_tipo">
+                    <option value="electronica">Electrónica</option>
+                    <option value="digital">Digital</option>
+                    <option value="autografa">Autógrafa</option>
+                </select>
+            </div>
             <button class="btn-primary" onclick="closeConsultation()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                Marcar como Atendido</button>`;
+                Firmar y cerrar consulta</button>`;
     } else if (can("canWriteNursingNotes")) {
         el.innerHTML = `
             <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
@@ -909,8 +968,13 @@ function collectRecordFields() {
     
     // Guardar diagnósticos CIE-10 seleccionados
     currentConsultation.diagnosticos_cie10 = [...selectedDiagnosticos];
-    
-    currentConsultation.tipoNota = currentTab;
+
+    // Solo registrar el tipoNota la primera vez (no sobreescribir el original).
+    // Excepción: si el tab actual es "libre-medico", NUNCA pisar el tipoNota
+    // guardado — el tab libre es transitorio y el tipo real es historia/nota-medica.
+    if (!currentConsultation.tipoNota && currentTab && currentTab !== "libre-medico") {
+        currentConsultation.tipoNota = currentTab;
+    }
 }
 
 function saveRecord() {
@@ -923,6 +987,18 @@ function saveRecord() {
 function closeConsultation() {
     collectRecordFields();
     if (!currentConsultation) return;
+    // Firmar automáticamente si aún no está firmada (NOM-004 exige firma del responsable)
+    if (!currentConsultation.firma_medico) {
+        const tipoEl = document.getElementById("firma_tipo");
+        const cedulaEl = document.getElementById("firma_cedula");
+        currentConsultation.firma_tipo = tipoEl?.value || "electronica";
+        currentConsultation.firma_cedula = cedulaEl?.value || currentConsultation.firma_cedula || "";
+        currentConsultation.firma_medico = currentUser?.displayName || "";
+        currentConsultation.firma_fecha = new Date().toLocaleString("es-MX", {
+            weekday: "short", year: "numeric", month: "short", day: "numeric",
+            hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+    }
     currentConsultation.status = "closed";
     if (currentPatient && currentConsultation.tratamiento) {
         currentPatient.currentTreatment = currentConsultation.tratamiento;
@@ -964,7 +1040,8 @@ function saveNursingNote() {
 // ===== AUTORÍA Y FIRMA =====
 function firmarExpediente() {
     if (!currentConsultation || !currentUser) return;
-    if (!currentConsultation.tratamiento && !currentConsultation.diagnostico) {
+    const esNotaEnfermeria = currentConsultation.tipoNota === "evolucion";
+    if (!esNotaEnfermeria && !currentConsultation.tratamiento && !currentConsultation.diagnostico) {
         showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
         return;
     }
@@ -1041,6 +1118,10 @@ function agregarMedicamentoNota() { return requireClinDataModule("consultation")
 function renderMedicamentosNota() { return requireClinDataModule("consultation").renderMedicamentosNota(); }
 function updateMedicamentoNota(id, field, value) { return requireClinDataModule("consultation").updateMedicamentoNota(id, field, value); }
 function eliminarMedicamentoNota(id) { return requireClinDataModule("consultation").eliminarMedicamentoNota(id); }
+function agregarMedicamentoLibre() { return requireClinDataModule("consultation").agregarMedicamentoLibre(); }
+function renderMedicamentosLibre() { return requireClinDataModule("consultation").renderMedicamentosLibre(); }
+function updateMedicamentoLibre(id, field, value) { return requireClinDataModule("consultation").updateMedicamentoLibre(id, field, value); }
+function eliminarMedicamentoLibre(id) { return requireClinDataModule("consultation").eliminarMedicamentoLibre(id); }
 function setupRecordActions() { return requireClinDataModule("consultation").setupRecordActions(); }
 function collectRecordFields() { return requireClinDataModule("consultation").collectRecordFields(); }
 function saveRecord() { return requireClinDataModule("consultation").saveRecord(); }

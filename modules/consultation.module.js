@@ -156,9 +156,16 @@
             // NO sobreescribimos consultation.tipoNota para no alterar el registro del médico.
             tipoNota = "evolucion";
         } else if (global.can("canWriteMedicalNotes")) {
-            // Médico → usar el tipoNota guardado en la consulta, o calcularlo si es nueva.
+            // Determinar si la consulta es "nueva" (sin nada capturado aún)
+            const isNew = !consultation.notas_libre_medico
+                && !consultation.diagnostico
+                && !consultation.tratamiento
+                && !(consultation.diagnosticos_cie10 || []).length
+                && !(consultation.diagnosticos_libre || []).length
+                && !(consultation.medicamentosLibre || []).length;
+
             if (consultation.tipoNota && consultation.tipoNota !== "evolucion") {
-                // Ya tiene un tipo médico guardado, respetar.
+                // Consulta existente con tipo médico ya definido → respetar.
                 tipoNota = consultation.tipoNota;
             } else {
                 // Es nueva o solo tenía el tab de enfermería → calcular.
@@ -167,6 +174,18 @@
                 );
                 tipoNota = prevConsults.length === 0 ? "historia" : "nota-medica";
                 consultation.tipoNota = tipoNota;
+            }
+
+            // Captura libre con IA SOLO para consultas nuevas. Las consultas
+            // existentes se muestran en su tab estructurado original.
+            if (isNew && (tipoNota === "historia" || tipoNota === "nota-medica")) {
+                consultation.libreMode = tipoNota;
+                tipoNota = "libre-medico";
+            } else if (tipoNota === "libre-medico" && !consultation.libreMode) {
+                const prevConsults = app().consultations.filter(
+                    c => c.patientId === patient.id && c.id !== consultation.id
+                );
+                consultation.libreMode = prevConsults.length === 0 ? "historia" : "nota-medica";
             }
         } else {
             // Cualquier otro rol (recepción, admin): solo lectura, mostrar historia.
@@ -187,6 +206,7 @@
             tabEl.classList.add("active");
         }
 
+        setupRecordActions();
         fillRecordFields();
         const isReadOnly = !global.can("canWriteMedicalNotes");
         setRecordReadOnly(isReadOnly);
@@ -196,12 +216,12 @@
         setupIMCCalc();
         setupNotaIMCCalc();
         setupNursingIMCCalc();
-        setupRecordActions();
         global.renderAttachments();
         global.setupAttachments();
         global.setupAbbreviationDetection();
         renderMedicamentos();
         renderMedicamentosNota();
+        renderMedicamentosLibre();
         // Insertar bloque de documentos clínicos (si el médico tiene permisos)
         if (global.can("canWriteMedicalNotes")) {
             const docsBlock = document.getElementById("consultaDocsBlock");
@@ -217,6 +237,9 @@
         }
         if (tipoNota === "libre-medico" && registry.freecapture) {
             registry.freecapture.load();
+        } else {
+            // Salimos de captura libre: ocultar demo bar
+            if (registry.demoCases) registry.demoCases.hideDemoBar();
         }
     }
 
@@ -610,6 +633,67 @@
         renderMedicamentosNota();
     }
 
+    function agregarMedicamentoLibre() {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        if (!consultation.medicamentosLibre) consultation.medicamentosLibre = [];
+        consultation.medicamentosLibre.push({ id: Date.now(), nombre: "", concentracion: "", dosis: "", via: "", frecuencia: "", duracion: "" });
+        global.saveConsultations();
+        renderMedicamentosLibre();
+    }
+
+    function renderMedicamentosLibre() {
+        const list = document.getElementById("medicamentosLibreList");
+        const consultation = app().currentConsultation;
+        if (!list || !consultation) return;
+        const meds = consultation.medicamentosLibre || [];
+        const isReadOnly = !global.can("canWriteMedicalNotes");
+        if (meds.length === 0) {
+            list.innerHTML = `<div class="med-empty">Sin medicamentos prescritos. Use el botón "Agregar medicamento".</div>`;
+            return;
+        }
+        list.innerHTML = meds.map((med, idx) => `
+            <div class="med-row" data-id="${med.id}">
+                <div class="med-num">${idx + 1}</div>
+                <div class="med-fields">
+                    <input class="med-input" type="text" placeholder="Nombre del medicamento" value="${med.nombre || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'nombre',this.value)">
+                    <input class="med-input med-conc" type="text" placeholder="Concentración" value="${med.concentracion || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'concentracion',this.value)">
+                    <input class="med-input med-dosis" type="text" placeholder="Dosis" value="${med.dosis || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'dosis',this.value)">
+                    <select class="med-input med-via" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'via',this.value)">
+                        <option value="">Vía...</option>
+                        <option ${med.via === 'VO' ? 'selected' : ''}>VO</option>
+                        <option ${med.via === 'IV' ? 'selected' : ''}>IV</option>
+                        <option ${med.via === 'IM' ? 'selected' : ''}>IM</option>
+                        <option ${med.via === 'SC' ? 'selected' : ''}>SC</option>
+                        <option ${med.via === 'SL' ? 'selected' : ''}>SL</option>
+                        <option ${med.via === 'Tópica' ? 'selected' : ''}>Tópica</option>
+                        <option ${med.via === 'Inhalada' ? 'selected' : ''}>Inhalada</option>
+                    </select>
+                    <input class="med-input med-freq" type="text" placeholder="Frecuencia (ej: c/8h)" value="${med.frecuencia || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'frecuencia',this.value)">
+                    <input class="med-input med-dur" type="text" placeholder="Duración (ej: 7 días)" value="${med.duracion || ''}" ${isReadOnly ? 'disabled' : ''} onchange="updateMedicamentoLibre(${med.id},'duracion',this.value)">
+                </div>
+                ${!isReadOnly ? `<button class="med-delete" type="button" onclick="eliminarMedicamentoLibre(${med.id})" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>` : ''}
+            </div>`).join("");
+    }
+
+    function updateMedicamentoLibre(id, field, value) {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        const med = (consultation.medicamentosLibre || []).find((item) => item.id === id);
+        if (med) {
+            med[field] = value;
+            global.saveConsultations();
+        }
+    }
+
+    function eliminarMedicamentoLibre(id) {
+        const consultation = app().currentConsultation;
+        if (!consultation) return;
+        consultation.medicamentosLibre = (consultation.medicamentosLibre || []).filter((item) => item.id !== id);
+        global.saveConsultations();
+        renderMedicamentosLibre();
+    }
+
     function setupRecordActions() {
         const el = document.getElementById("recordFormActions");
         if (!el) return;
@@ -621,7 +705,19 @@
                 <button class="btn-secondary" onclick="abrevIniciarExport('patient')">PDF Paciente</button>
                 <button class="btn-secondary" onclick="abrevIniciarExport('doctor')">PDF Médico</button>
                 <button class="btn-secondary" onclick="saveRecord()">Guardar</button>
-                <button class="btn-primary" onclick="closeConsultation()">Marcar como Atendido</button>`;
+                <div class="firma-inline-field">
+                    <label for="firma_cedula">Cédula</label>
+                    <input type="text" id="firma_cedula" placeholder="Núm. cédula">
+                </div>
+                <div class="firma-inline-field">
+                    <label for="firma_tipo">Tipo firma</label>
+                    <select id="firma_tipo">
+                        <option value="electronica">Electrónica</option>
+                        <option value="digital">Digital</option>
+                        <option value="autografa">Autógrafa</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="closeConsultation()">✓ Firmar y cerrar consulta</button>`;
         } else if (global.can("canWriteNursingNotes")) {
             el.innerHTML = `
                 <button class="btn-secondary" onclick="goBackFromRecord()">Cancelar</button>
@@ -659,7 +755,12 @@
         const tipoEl = document.getElementById("firma_tipo");
         if (tipoEl) consultation.firma_tipo = tipoEl.value;
         consultation.diagnosticos_cie10 = [...(app().selectedDiagnosticos || [])];
-        consultation.tipoNota = app().currentTab;
+        // Solo registrar el tipoNota la primera vez (no sobreescribir el original).
+        // Excepción: si el tab actual es "libre-medico", NUNCA pisar el tipoNota
+        // guardado — el tab libre es transitorio y el tipo real es historia/nota-medica.
+        if (!consultation.tipoNota && app().currentTab && app().currentTab !== "libre-medico") {
+            consultation.tipoNota = app().currentTab;
+        }
 
         // Forzar uppercase al guardar en todos los campos de texto clínico
         ALL_RECORD_FIELDS.forEach((field) => {
@@ -696,6 +797,18 @@
         collectRecordFields();
         const consultation = app().currentConsultation;
         if (!consultation) return;
+        // Firmar automáticamente si aún no está firmada (NOM-004 exige firma del responsable)
+        if (!consultation.firma_medico) {
+            const tipoEl = document.getElementById("firma_tipo");
+            const cedulaEl = document.getElementById("firma_cedula");
+            consultation.firma_tipo = tipoEl?.value || "electronica";
+            consultation.firma_cedula = cedulaEl?.value || consultation.firma_cedula || "";
+            consultation.firma_medico = app().currentUser?.displayName || "";
+            consultation.firma_fecha = new Date().toLocaleString("es-MX", {
+                weekday: "short", year: "numeric", month: "short", day: "numeric",
+                hour: "2-digit", minute: "2-digit", second: "2-digit"
+            });
+        }
         consultation.status = "closed";
         if (app().currentPatient && consultation.tratamiento) {
             app().currentPatient.currentTreatment = consultation.tratamiento;
@@ -748,8 +861,9 @@
         if (!consultation || !currentUser) return;
 
         // Para historia clínica se requiere diagnóstico; para nota médica no
-        const tipoNota = consultation.tipoNota || "historia";
-        if (tipoNota === "historia" && !consultation.tratamiento && !consultation.diagnostico) {
+        const esEnfermero = global.can("canWriteNursingNotes") && !global.can("canWriteMedicalNotes");
+        const tipoNota = esEnfermero ? "evolucion" : (consultation.tipoNota || "historia");
+        if (!esEnfermero && !consultation.tratamiento && !consultation.diagnostico) {
             global.showToast("Por favor completa al menos el diagnóstico antes de firmar.", "error");
             return;
         }
@@ -839,6 +953,10 @@
         renderMedicamentosNota,
         updateMedicamentoNota,
         eliminarMedicamentoNota,
+        agregarMedicamentoLibre,
+        renderMedicamentosLibre,
+        updateMedicamentoLibre,
+        eliminarMedicamentoLibre,
         setupRecordActions,
         collectRecordFields,
         saveRecord,

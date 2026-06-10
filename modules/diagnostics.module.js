@@ -123,7 +123,15 @@
         box.id = explicitId;
         box.className = "diagnostico-suggestions";
         box.style.display = "none";
-        document.body.appendChild(box);
+        const formGroup = input.closest(".form-group");
+        if (formGroup) {
+            if (getComputedStyle(formGroup).position === "static") {
+                formGroup.style.position = "relative";
+            }
+            formGroup.appendChild(box);
+        } else {
+            document.body.appendChild(box);
+        }
         return box;
     }
 
@@ -183,12 +191,15 @@
             `;
         }).join("");
 
-        const rect = input.getBoundingClientRect();
-        box.style.position = "fixed";
-        box.style.top = `${Math.round(rect.bottom + 6)}px`;
-        box.style.left = `${Math.round(rect.left)}px`;
-        box.style.width = `${Math.round(rect.width)}px`;
-        box.style.zIndex = "20000";
+        // Si el box está fuera del form-group (fallback en body), aún necesita coords
+        if (box.parentNode === document.body) {
+            const rect = input.getBoundingClientRect();
+            box.style.position = "fixed";
+            box.style.top = `${Math.round(rect.bottom + 6)}px`;
+            box.style.left = `${Math.round(rect.left)}px`;
+            box.style.width = `${Math.round(rect.width)}px`;
+            box.style.zIndex = "20000";
+        }
         box.style.display = "block";
     }
 

@@ -471,7 +471,9 @@
         addInsurer,
         addEditInsurer
     };
-
+    global.submitPatient       = submitPatient;
+    global.openEditPatientModal = openEditPatientModal;
+    global.saveEditedPatient   = saveEditedPatient;
     global.addInsurer     = addInsurer;
     global.addEditInsurer = addEditInsurer;
 })(window);

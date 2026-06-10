@@ -12,7 +12,7 @@ const MOCK_AI = process.env.MOCK_AI === 'true';
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
 const MAX_TOKENS = parseInt(process.env.AI_MAX_TOKENS || '4096', 10);
 
-// ── Esquema esperado de la respuesta ───────────────────────────────────
+// ── Esquema esperado de la respuesta (modo nota-medica) ────────────────
 const RESPONSE_SCHEMA_HINT = `
 {
   "motivo_consulta": "string — motivo principal expresado por el paciente",
@@ -50,16 +50,90 @@ const RESPONSE_SCHEMA_HINT = `
 }
 `.trim();
 
+// ── Esquema ampliado para modo "historia" (primera consulta) ──────────
+const RESPONSE_SCHEMA_HINT_HISTORIA = `
+{
+  "motivo_consulta": "string",
+  "ahf": "string libre con antecedentes heredofamiliares",
+  "apnp": {
+    "tabaquismo": "string o null",
+    "alcoholismo": "string o null",
+    "toxicomanias": "string o null",
+    "actividad_fisica": "string o null",
+    "otros": "string libre con escolaridad/ocupación/vivienda/alimentación/vacunación/etc."
+  },
+  "app": {
+    "enfermedades": "string o null",
+    "cirugias": "string o null",
+    "traumatismos": "string o null",
+    "alergias": "string o null",
+    "transfusiones": "string o null",
+    "medicamentos": "string o null"
+  },
+  "padecimiento_inicio": "string",
+  "padecimiento_sintomas": "string",
+  "revision_sistemas": {
+    "cardiovascular": "string o null",
+    "respiratorio": "string o null",
+    "digestivo": "string o null",
+    "neurologico": "string o null",
+    "urinario": "string o null",
+    "musculoesqueletico": "string o null",
+    "piel": "string o null",
+    "endocrino": "string o null",
+    "genitoreproductivo": "string o null",
+    "psiquiatrico": "string o null"
+  },
+  "signos_vitales": {
+    "tas": "string", "tad": "string", "fc": "string", "fr": "string",
+    "temp": "string", "spo2": "string", "peso": "string", "talla": "string",
+    "glucemia": "string", "dolor": "string"
+  },
+  "exploracion_fisica": {
+    "habitus": "string",
+    "cabeza": "string",
+    "torax": "string",
+    "abdomen": "string",
+    "extremidades": "string",
+    "neurologico": "string"
+  },
+  "estudios_solicitados": "string",
+  "diagnostico_principal_texto": "string",
+  "diagnosticos_detectados_en_texto": [
+    { "mencion": "string", "sugerencia_codigo_cie10": "string", "sugerencia_descripcion": "string" }
+  ],
+  "pronostico": "string",
+  "tratamiento": "string",
+  "indicaciones_reposo": "string",
+  "indicaciones_dieta": "string",
+  "indicaciones_cita": "string",
+  "abreviaturas_expandidas": [
+    { "original": "string", "expandida": "string" }
+  ],
+  "campos_no_inferidos": ["string"],
+  "confianza_global": "alta | media | baja"
+}
+`.trim();
+
 // ── Prompt builder ─────────────────────────────────────────────────────
 function buildPrompt(payload) {
-  const { texto, diagnosticos, paciente } = payload;
+  const { texto, diagnosticos, paciente, modo } = payload;
   const dxList = (diagnosticos || []).map(d =>
     `  - ${d.codigo}: ${d.descripcion}`).join('\n') || '  (ninguno capturado)';
 
+  const isHistoria = modo === 'historia';
+  const schema = isHistoria ? RESPONSE_SCHEMA_HINT_HISTORIA : RESPONSE_SCHEMA_HINT;
+
+  const modoHeader = isHistoria
+    ? `MODO: HISTORIA CLÍNICA (primera consulta). Debes inferir y poblar antecedentes heredofamiliares (ahf), antecedentes personales no patológicos (apnp con desglose de tabaquismo, alcoholismo, toxicomanías, actividad física, y otros), antecedentes personales patológicos (app con desglose por categoría) y revisión por aparatos y sistemas (10 sistemas). Si un campo no aparece, déjalo null o "" y agrégalo a "campos_no_inferidos".`
+    : `MODO: NOTA DE EVOLUCIÓN (seguimiento). Concéntrate en padecimiento actual, signos vitales, exploración, diagnóstico, pronóstico y plan.`;
+
   return `Eres un asistente clínico especializado en estructurar notas médicas según la NOM-004-SSA3-2012 (Del expediente clínico) de México.
 
+${modoHeader}
+
 REGLAS ESTRICTAS:
-1. NO inventes información. Si un campo no aparece en el texto, déjalo "" y agrégalo a "campos_no_inferidos".
+1. NO inventes información. Si un campo no aparece en el texto, déjalo "" o null y agrégalo a "campos_no_inferidos".
 2. Expande TODAS las abreviaturas a su forma completa en los campos estructurados (DM2 → diabetes mellitus tipo 2, HTA → hipertensión arterial, c/24h → cada 24 horas, etc.). Reporta las expansiones en "abreviaturas_expandidas".
 3. Si detectas en el texto un diagnóstico que NO está en la lista de capturados, agrégalo a "diagnosticos_detectados_en_texto" con sugerencia CIE-10. NO modifiques la lista original.
 4. Los signos vitales se extraen a campos numéricos individuales (sin unidades, ej. "138" no "138 mmHg"). TA se separa en TAS y TAD.
@@ -67,7 +141,7 @@ REGLAS ESTRICTAS:
 6. Devuelve EXCLUSIVAMENTE JSON válido, sin markdown, sin \`\`\`json fences, sin texto antes ni después.
 
 ESQUEMA DE RESPUESTA:
-${RESPONSE_SCHEMA_HINT}
+${schema}
 
 DATOS DE ENTRADA:
 - Edad del paciente: ${paciente?.edad || 'no especificada'}
@@ -85,7 +159,7 @@ Devuelve el JSON ahora:`;
 
 // ── Mock para desarrollo ───────────────────────────────────────────────
 function mockResponse(payload) {
-  return {
+  const base = {
     motivo_consulta: "Seguimiento de hipertensión arterial",
     padecimiento_inicio: "Paciente conocido con hipertensión arterial de larga evolución",
     padecimiento_sintomas: "Acude para control. Refiere apego al tratamiento. Niega cefalea, dolor torácico ni disnea.",
@@ -125,6 +199,41 @@ function mockResponse(payload) {
     campos_no_inferidos: ["indicaciones_reposo"],
     confianza_global: "alta"
   };
+
+  if (payload.modo === 'historia') {
+    return Object.assign({}, base, {
+      ahf: "Padre con hipertensión arterial y diabetes mellitus tipo 2. Madre con dislipidemia. Hermanos sanos.",
+      apnp: {
+        tabaquismo: "Negado",
+        alcoholismo: "Ocasional, social",
+        toxicomanias: "Negado",
+        actividad_fisica: "Sedentario",
+        otros: "Escolaridad: licenciatura. Ocupación: oficinista. Vivienda con todos los servicios. Alimentación regular. Esquema de vacunación completo."
+      },
+      app: {
+        enfermedades: "Diabetes mellitus tipo 2 (10 años) e hipertensión arterial (8 años)",
+        cirugias: "Apendicectomía en la infancia",
+        traumatismos: "Negados",
+        alergias: "Negadas",
+        transfusiones: "Negadas",
+        medicamentos: "Metformina 850 mg y losartán 50 mg"
+      },
+      revision_sistemas: {
+        cardiovascular: "Sin dolor torácico ni palpitaciones",
+        respiratorio: "Sin tos ni disnea",
+        digestivo: "Sin alteraciones",
+        neurologico: "Sin cefalea ni mareos",
+        urinario: "Sin disuria ni hematuria",
+        musculoesqueletico: "Lumbalgia ocasional",
+        piel: "Sin lesiones",
+        endocrino: "Diabetes en control",
+        genitoreproductivo: "Sin alteraciones",
+        psiquiatrico: "Sin sintomatología"
+      }
+    });
+  }
+
+  return base;
 }
 
 // ── Validación de respuesta ────────────────────────────────────────────
@@ -138,7 +247,7 @@ function validateStructure(obj) {
   return true;
 }
 
-// ── Adapter Anthropic (preparado para soportar más providers) ──────────
+// ── Adapter Anthropic ──────────────────────────────────────────────────
 async function callAnthropic(prompt) {
   const Anthropic = require('@anthropic-ai/sdk');
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -151,7 +260,6 @@ async function callAnthropic(prompt) {
     messages: [{ role: 'user', content: prompt }]
   });
 
-  // Extraer texto del primer bloque
   const textBlock = (message.content || []).find(b => b.type === 'text');
   if (!textBlock) throw new Error('Respuesta sin contenido textual');
 
@@ -170,7 +278,8 @@ async function callAI(prompt) {
 // ── Endpoint principal ─────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { texto, diagnosticos, paciente } = req.body || {};
+    const { texto, diagnosticos, paciente, modo } = req.body || {};
+    const modeNorm = modo === 'historia' ? 'historia' : 'nota-medica';
 
     if (!texto || typeof texto !== 'string' || texto.trim().length < 20) {
       return res.status(400).json({
@@ -186,25 +295,47 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Modo mock
-    if (MOCK_AI) {
-      // Pequeño delay para simular latencia real
+    // Override: el cliente puede forzar mock para fallback de demo
+    const forceMock = req.headers['x-force-mock'] === 'true';
+    if (MOCK_AI || forceMock) {
+      const startTime = Date.now();
       await new Promise(r => setTimeout(r, 800));
-      const data = mockResponse({ texto, diagnosticos, paciente });
+      const data = mockResponse({ texto, diagnosticos, paciente, modo: modeNorm });
       return res.json({
         ok: true,
         data,
-        meta: { mocked: true, provider: PROVIDER, model: 'mock-v1' }
+        meta: {
+          mocked: true,
+          provider: PROVIDER,
+          model: 'mock-v1',
+          latencyMs: Date.now() - startTime,
+          forced: forceMock,
+          modo: modeNorm
+        }
       });
     }
 
     // Modo real
-    const prompt = buildPrompt({ texto, diagnosticos, paciente });
-    const aiResp = await callAI(prompt);
+    const startTime = Date.now();
+    const prompt = buildPrompt({ texto, diagnosticos, paciente, modo: modeNorm });
+
+    let aiResp;
+    try {
+      aiResp = await callAI(prompt);
+    } catch (apiErr) {
+      console.error('Falla en llamada a IA:', apiErr);
+      return res.status(503).json({
+        ok: false,
+        error: 'La API de IA está temporalmente no disponible.',
+        details: apiErr.message,
+        suggest_fallback: true
+      });
+    }
+
+    const latencyMs = Date.now() - startTime;
 
     let parsed;
     try {
-      // Limpiar posibles markdown fences si aparecen
       const clean = aiResp.text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       parsed = JSON.parse(clean);
     } catch (e) {
@@ -212,7 +343,8 @@ router.post('/', async (req, res) => {
       return res.status(502).json({
         ok: false,
         error: 'La IA devolvió una respuesta no parseable.',
-        raw: aiResp.text.slice(0, 500)
+        raw: aiResp.text.slice(0, 500),
+        suggest_fallback: true
       });
     }
 
@@ -220,7 +352,8 @@ router.post('/', async (req, res) => {
       return res.status(502).json({
         ok: false,
         error: 'La respuesta de la IA no cumple el esquema esperado.',
-        received: parsed
+        received: parsed,
+        suggest_fallback: true
       });
     }
 
@@ -231,7 +364,9 @@ router.post('/', async (req, res) => {
         mocked: false,
         provider: PROVIDER,
         model: aiResp.model,
-        usage: aiResp.usage
+        usage: aiResp.usage,
+        latencyMs,
+        modo: modeNorm
       }
     });
 
@@ -239,7 +374,8 @@ router.post('/', async (req, res) => {
     console.error('Error en /api/structure:', err);
     return res.status(500).json({
       ok: false,
-      error: err.message || 'Error interno'
+      error: err.message || 'Error interno',
+      suggest_fallback: true
     });
   }
 });

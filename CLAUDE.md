@@ -107,3 +107,24 @@ Una entrada de fila (`consultQueue`) y una consulta (`consultations`) se vincula
 ## Norma clínica
 
 NOM-004-SSA3-2012 — Del expediente clínico. La estructura de `tab-nota-medica` sigue el numeral 7.1 (nota de evolución). La `tab-historia` sigue el numeral 7.2 (historia clínica).
+
+## Módulo de Protocolos Quirúrgicos
+
+- Archivo: `modules/protocolos_module.js`
+- localStorage: `cd_protocolos`
+- Schema: `ClinDataModules.protocolos.PROTOCOLO_SCHEMA` — diccionario por protocolo y fase.
+- 8 protocolos: ATR, ATC, HOMBRO, LMC, FHP, FMT, FCAD (con tres fases PreQx/TransQx/Seguimiento)
+  y OP_CADERA (vista única, evaluación pediátrica por US).
+- Permisos: solo `medico` puede crear/editar; el resto ve en modo lectura.
+- Cada fase se guarda independientemente con `_meta` para auditoría NOM-004.
+- Drawer reusa el patrón visual de `docDrawer` (id propio `protoDrawer`).
+
+## Módulo de Pagos y Facturación
+
+- Archivo: `modules/pagos_module.js`
+- localStorage: `cd_pagos` — un registro por paciente con array `items`.
+- Permisos: `recepcion` y `admin` (CRUD); médico y enfermería en modo lectura.
+- IVA: 16% / 8% / 0% / Exento.
+- **Botones de envío por correo y WhatsApp son representativos**: solo muestran toast,
+  no abren `mailto:` ni `wa.me/`. Decisión explícita del cliente para esta iteración.
+- Drawer con id propio `pagoDrawer`.
